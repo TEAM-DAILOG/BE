@@ -16,7 +16,7 @@ export class ResponseInterceptor implements NestInterceptor {
         resultType: 'SUCCESS',
         message: data?.message ?? '요청 성공',
         data: data?.data ?? null,
-        })),
+      })),
     );
   }
 }

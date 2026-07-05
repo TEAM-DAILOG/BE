@@ -15,11 +15,11 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalInterceptors(new ResponseInterceptor()); 
+  app.useGlobalInterceptors(new ResponseInterceptor());
   app.set('trust proxy', 1);
 
   app.enableCors({
-    origin: ['http://localhost:8000', 'http://localhost:3000',], //배포 URL 추후 설정
+    origin: ['http://localhost:8000', 'http://localhost:3000'], //배포 URL 추후 설정
     credentials: true,
   });
 
@@ -29,23 +29,22 @@ async function bootstrap() {
   // const prod = ''; // 배포 URL 추후 설정
 
   const config = new DocumentBuilder()
-  .setTitle('API')
-  .setDescription('API Documentation')
-  .setVersion('1.0')
-  .addCookieAuth('connect.sid')
-  .addServer(local)
-  // .addServer(isProd ? prod : local)
-  // .addServer(isProd ? local : prod)
-  .build();
+    .setTitle('API')
+    .setDescription('API Documentation')
+    .setVersion('1.0')
+    .addCookieAuth('connect.sid')
+    .addServer(local)
+    // .addServer(isProd ? prod : local)
+    // .addServer(isProd ? local : prod)
+    .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document, {
     swaggerOptions: {
-      withCredentials: true
-    }
+      withCredentials: true,
+    },
   });
 
   await app.listen(Number(process.env.BACKEND_PORT) || 3000);
-
 }
 bootstrap();

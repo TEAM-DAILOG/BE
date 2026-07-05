@@ -5,7 +5,7 @@ export class AppController {
   @Get()
   getHello() {
     return {
-      data: '서버 실행 확인 성공'
+      data: '서버 실행 확인 성공',
     };
   }
 }

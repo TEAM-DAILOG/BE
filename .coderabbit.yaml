@@ -1,0 +1,127 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit 설정 파일
+
+# ─────────────────────────────────────────
+# 🌐 언어 설정
+# ─────────────────────────────────────────
+language: 'ko-KR'
+
+# ─────────────────────────────────────────
+# 🔍 코드래빗 리뷰 기본 설정
+# ─────────────────────────────────────────
+reviews:
+  profile: 'chill'
+  request_changes_workflow: false
+  high_level_summary: false
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  sequence_diagrams: false
+  changed_files_summary: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+    base_branches:
+      - 'develop'
+
+  # ── 리뷰에서 제외할 파일/폴더 패턴 ──
+  path_filters:
+    - '!**/node_modules/**'
+    - '!**/dist/**'
+    - '!**/build/**'
+    - '!**/coverage/**'
+    - '!**/*.lock'
+    - '!**/package-lock.json'
+
+  # ── 폴더별 컨벤션 지침 ──
+  path_instructions:
+    - path: 'src/**/*.controller.ts'
+      instructions: |
+        NestJS 컨트롤러를 리뷰할 때 다음을 확인해주세요:
+        - 요청을 받고 응답을 반환하는 역할만 담당하는지
+        - 비즈니스 로직을 컨트롤러에 작성하지 않고 서비스에 위임하는지
+        - 라우팅 prefix는 도메인명 복수형 kebab-case로 작성했는지
+        - 메서드명은 동사 + 명사 형태로 작성했는지
+        - try/catch를 사용하지 않고 예외를 Exception Filter로 위임하는지
+        - 성공 응답 포맷을 직접 감싸지 않고 공통 Interceptor에 위임하는지
+
+    - path: 'src/**/*.service.ts'
+      instructions: |
+        NestJS 서비스 레이어를 리뷰할 때 다음을 확인해주세요:
+        - 실제 비즈니스 로직, DB 접근, 외부 API 호출이 서비스에 위치하는지
+        - @Injectable()이 선언되어 있는지
+        - 의존성은 constructor 주입 방식으로 처리하는지
+        - HTTP req/res에 직접 의존하지 않는지
+        - 비즈니스 규칙 검증은 서비스에서 수행하는지
+        - ORM 호출은 컨트롤러가 아닌 서비스 레이어에서 수행하는지
+        - try/catch로 감싸지 않고 커스텀 예외를 throw하는지
+
+    - path: 'src/**/*.module.ts'
+      instructions: |
+        NestJS 모듈을 리뷰할 때 다음을 확인해주세요:
+        - 하나의 도메인은 하나의 module에서 controller/service를 등록하는지
+        - 다른 모듈의 provider가 필요하면 imports/exports 구조가 적절한지
+        - 순환 의존성이 생기지 않는지
+
+    - path: 'src/**/*.dto.ts'
+      instructions: |
+        DTO를 리뷰할 때 다음을 확인해주세요:
+        - 파일명은 <도메인명>.dto.ts 형식을 따르는지
+        - Create, Update 등 같은 도메인의 DTO를 하나의 dto 파일에 모았는지
+        - 필수값 검증은 DTO 데코레이터로 표현되어 있는지
+        - any 타입 사용을 지양하는지
+
+    - path: 'src/**/*.entity.ts'
+      instructions: |
+        TypeORM 엔티티를 리뷰할 때 다음을 확인해주세요:
+        - 파일명은 <도메인명>.entity.ts 형식을 따르는지
+        - 컬럼 타입, nullable, default 설정이 의도와 일치하는지
+        - 관계 매핑과 cascade 설정이 안전한지
+        - 필요한 인덱스/유니크 제약이 누락되지 않았는지
+
+    - path: 'src/global/error/**'
+      instructions: |
+        커스텀 예외와 전역 예외 필터를 리뷰할 때 다음을 확인해주세요:
+        - 실패 응답은 { resultType: "FAIL", code, errorCode, reason, data } 형식을 따르는지
+        - 커스텀 예외는 statusCode, errorCode, reason, data를 포함하는지
+        - 기본 예외 유형은 400, 401, 403, 404, 500을 제공하는지
+        - 컨벤션상 서비스/컨트롤러에서는 try/catch 대신 커스텀 예외를 throw하는지
+        - 민감 정보나 내부 스택 트레이스가 응답으로 노출되지 않는지
+
+    - path: 'src/global/common/**'
+      instructions: |
+        공통 응답 Interceptor 등을 리뷰할 때 다음을 확인해주세요:
+        - 성공 응답은 { resultType: "SUCCESS", message, data } 형식을 따르는지
+        - 도메인 전용 로직이 common 폴더에 섞이지 않았는지
+
+  instructions: |
+    다음 팀 컨벤션을 기준으로 리뷰해주세요:
+    - 커밋 메시지는 '태그: 작업내용' 형식을 따릅니다.
+    - 커밋 타입은 Feat, Fix, Chore, Docs, Refactor를 우선 사용합니다.
+    - 브랜치는 develop에서 분기하고, 기능은 feat/#<이슈번호>, 버그 수정은 fix/#<이슈번호> 형식을 따릅니다.
+    - 함수명과 변수명은 camelCase를 사용합니다.
+    - 클래스명은 PascalCase를 사용합니다.
+    - 파일명은 kebab-case + 역할 접미사를 사용합니다. 예: schedule.controller.ts, schedule.service.ts, schedule.dto.ts
+    - 도메인 폴더명은 복수형 kebab-case를 사용합니다. 예: schedules, diaries
+    - TypeScript에서 any 타입 사용은 지양합니다.
+    - NestJS 계층 구조에서 Controller, Service, Module의 책임을 분리합니다.
+    - 민감 정보가 코드에 하드코딩되지 않았는지 확인합니다.
+    - 코드 스타일 포매팅은 Prettier가 담당하므로 단순 포매팅은 리뷰하지 않아도 됩니다.
+
+# ─────────────────────────────────────────
+# 💬 채팅(코멘트 답변) 설정
+# ─────────────────────────────────────────
+chat:
+  auto_reply: false
+
+# ─────────────────────────────────────────
+# 🧠 지식베이스 설정
+# ─────────────────────────────────────────
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: local
