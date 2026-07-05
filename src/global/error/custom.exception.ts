@@ -1,46 +1,46 @@
-import { HttpException } from "@nestjs/common";
+import { HttpException } from '@nestjs/common';
 
 //기본 커스텀 에러
-export class CustomException extends HttpException{
+export class CustomException extends HttpException {
   constructor(
     public readonly statusCode: number,
     public readonly errorCode: string,
     public readonly reason: string,
     public readonly data: unknown = null,
-  ){
+  ) {
     super({ statusCode, errorCode, reason, data }, statusCode);
   }
 }
 
 // BAD_REQUEST
-export class BadRequestException extends CustomException{
+export class BadRequestException extends CustomException {
   constructor(
     reason = '잘못된 요청입니다.',
     errorCode = 'BAD_REQUEST',
     data = null,
-  ){
+  ) {
     super(400, errorCode, reason, data);
   }
 }
 
 // UNAUTHORIZED
-export class UnauthorizedException extends CustomException{
+export class UnauthorizedException extends CustomException {
   constructor(
     reason = '인증에 실패했습니다.',
     errorCode = 'UNAUTHORIZED',
     data = null,
-  ){
+  ) {
     super(401, errorCode, reason, data);
   }
 }
 
 // FORBIDDEN
-export class ForbiddenException extends CustomException{
+export class ForbiddenException extends CustomException {
   constructor(
     reason = '접근 권한이 없습니다.',
     errorCode = 'FORBIDDEN',
     data = null,
-  ){
+  ) {
     super(403, errorCode, reason, data);
   }
 }
