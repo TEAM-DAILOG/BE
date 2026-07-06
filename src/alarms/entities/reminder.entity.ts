@@ -33,7 +33,7 @@ export class ReminderEntity extends BaseEntity {
     })
     updatedAt: Date;
 
-    @OneToOne(() => UserAlarmEntity, (userAlarm) => userAlarm.reminder)
+    @OneToOne(() => UserAlarmEntity, (userAlarm) => userAlarm.reminder, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'alarm_id' })
     userAlarm: UserAlarmEntity;
 }

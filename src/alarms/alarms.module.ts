@@ -8,5 +8,6 @@ import { ReminderEntity } from "./entities/reminder.entity";
     imports: [TypeOrmModule.forFeature([UserAlarmEntity, PushTokenEntity, ReminderEntity])],
     controllers: [],
     providers: [],
+    exports: [TypeOrmModule],
 })
 export class AlarmsModule {}
