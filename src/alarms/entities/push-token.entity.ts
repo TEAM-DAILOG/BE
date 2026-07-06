@@ -1,11 +1,10 @@
-import { BaseEntity, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 export enum DeviceType {
     IOS = 'IOS', // 애플
     ANDROID = "ANDROID" // 안드로이드
 }
 
-// 푸시 알람
 @Entity('PushToken')
 export class PushTokenEntity extends BaseEntity {
 

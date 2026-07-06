@@ -1,4 +1,4 @@
-import { BaseEntity, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";// 유저 알람
+import { BaseEntity, Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { ReminderEntity } from "./reminder.entity";
 
 @Entity('UserAlarm')
@@ -27,6 +27,19 @@ export class UserAlarmEntity extends BaseEntity {
         comment: '일기 답장 알람 여부'
     })
     isDiaryReply: boolean;
+
+    @CreateDateColumn({
+        type: 'timestamp',
+        nullable: false,
+        comment: '생성일'
+    })
+    createdAt: Date;
+
+    @UpdateDateColumn({
+        type: 'timestamp',
+        comment: '수정일',
+    })
+    updatedAt: Date;
     
     @OneToOne(() => ReminderEntity, (reminder) => reminder.userAlarm)
     reminder: ReminderEntity;
