@@ -1,39 +1,50 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { UserAlarmEntity } from "./user-alarm.entity";
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { UserAlarmEntity } from './user-alarm.entity';
 
 @Entity('Reminder')
 export class ReminderEntity extends BaseEntity {
-    @PrimaryGeneratedColumn()
-    reminderId: number;
+  @PrimaryGeneratedColumn()
+  reminderId: number;
 
-    @Column({
-        type: 'jsonb',
-        nullable: true,
-        comment: '알람 요일'
-    })
-    days: string[] | null;
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+    comment: '알람 요일',
+  })
+  days: string[] | null;
 
-    @Column({
-        type: 'time',
-        nullable: true,
-        comment: '알람 시간'
-    })
-    time: string | null;
+  @Column({
+    type: 'time',
+    nullable: true,
+    comment: '알람 시간',
+  })
+  time: string | null;
 
-    @CreateDateColumn({
-        type: 'timestamp',
-        nullable: false,
-        comment: '생성일'
-    })
-    createdAt: Date;
+  @CreateDateColumn({
+    type: 'timestamp',
+    nullable: false,
+    comment: '생성일',
+  })
+  createdAt: Date;
 
-    @UpdateDateColumn({
-        type: 'timestamp',
-        comment: '수정일',
-    })
-    updatedAt: Date;
+  @UpdateDateColumn({
+    type: 'timestamp',
+    comment: '수정일',
+  })
+  updatedAt: Date;
 
-    @OneToOne(() => UserAlarmEntity, (userAlarm) => userAlarm.reminder, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'alarm_id' })
-    userAlarm: UserAlarmEntity;
+  @OneToOne(() => UserAlarmEntity, (userAlarm) => userAlarm.reminder, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'alarm_id' })
+  userAlarm: UserAlarmEntity;
 }
