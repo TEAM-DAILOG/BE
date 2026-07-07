@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { AppController } from './app.controller';
+import { SchedulesModule } from './schedules/schedules.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AppController } from './app.controller';
         logging: true,
       }),
     }),
+    SchedulesModule,
   ],
   controllers: [AppController],
   providers: [],
