@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { AppController } from './app.controller';
 import { AlarmsModule } from './alarms/alarms.module';
-import { SchedulesModule } from './schedules/schedules.module';
+import { ScheduleModule } from './schedules/schedule.module';
 
 @Module({
   imports: [
@@ -26,7 +26,7 @@ import { SchedulesModule } from './schedules/schedules.module';
       }),
     }),
     AlarmsModule,
-    SchedulesModule,
+    ScheduleModule,
   ],
   controllers: [AppController],
   providers: [],
