@@ -5,6 +5,7 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { AppController } from './app.controller';
 import { AlarmsModule } from './alarms/alarms.module';
 import { ScheduleModule } from './schedules/schedule.module';
+import { UserModule } from './users/user.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ScheduleModule } from './schedules/schedule.module';
     }),
     AlarmsModule,
     ScheduleModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [],
