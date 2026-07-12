@@ -1,17 +1,15 @@
 import {
-  BaseEntity,
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { UserAlarmEntity } from './user-alarm.entity';
+import { BaseModel } from '@/src/global/base-model';
 
 @Entity('Reminder')
-export class ReminderEntity extends BaseEntity {
+export class ReminderEntity extends BaseModel {
   @PrimaryGeneratedColumn()
   reminderId: number;
 
@@ -28,19 +26,6 @@ export class ReminderEntity extends BaseEntity {
     comment: '알람 시간',
   })
   time: string | null;
-
-  @CreateDateColumn({
-    type: 'timestamp',
-    nullable: false,
-    comment: '생성일',
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    type: 'timestamp',
-    comment: '수정일',
-  })
-  updatedAt: Date;
 
   @OneToOne(() => UserAlarmEntity, (userAlarm) => userAlarm.reminder, {
     onDelete: 'CASCADE',
