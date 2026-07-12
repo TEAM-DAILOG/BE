@@ -1,11 +1,11 @@
+import { SoftDeleteModel } from '@/src/global/base-model';
+import { UserEntity } from '@/src/users/entities/user.entity';
 import {
-  BaseEntity,
   Column,
-  CreateDateColumn,
-  DeleteDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
 export enum DeviceType {
@@ -14,7 +14,7 @@ export enum DeviceType {
 }
 
 @Entity('PushToken')
-export class PushTokenEntity extends BaseEntity {
+export class PushTokenEntity extends SoftDeleteModel {
   @PrimaryGeneratedColumn()
   tokenId: number;
 
@@ -34,22 +34,7 @@ export class PushTokenEntity extends BaseEntity {
   })
   deviceType: DeviceType;
 
-  @CreateDateColumn({
-    type: 'timestamp',
-    nullable: false,
-    comment: '생성일',
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    type: 'timestamp',
-    comment: '수정일',
-  })
-  updatedAt: Date;
-
-  @DeleteDateColumn({
-    type: 'timestamp',
-    comment: '삭제일',
-  })
-  deletedAt: Date;
+  @ManyToOne(() => UserEntity, (user) => user.pushToken, { onDelete: 'CASCADE'})
+  @JoinColumn({ name: 'user_id'})
+  user: UserEntity;
 }
