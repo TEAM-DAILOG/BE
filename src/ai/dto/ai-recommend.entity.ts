@@ -49,3 +49,18 @@ export class RecommendDTO {
     this.isAdded = recommend.isAdded;
   }
 }
+
+export class RecommendListDTO {
+  @ApiProperty({ example: '추천일정 개수 입니다' })
+  recommendedScheduleCount: number;
+
+  @ApiProperty({ example: '추천일정 리스트 입니다' })
+  recommendedSchedules: RecommendDTO[];
+
+  constructor(recommendList: RecommendEntity[]) {
+    this.recommendedScheduleCount = recommendList.length;
+    this.recommendedSchedules = recommendList.map(
+      (recommend) => new RecommendDTO(recommend),
+    );
+  }
+}
