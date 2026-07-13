@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AlarmsModule } from './alarms/alarms.module';
 import { ScheduleModule } from './schedules/schedule.module';
 import { UserModule } from './users/user.module';
+import { DiariesModule } from './diaries/diary.module';
 import { AiModule } from './ai/ai.module';
 
 @Module({
@@ -30,6 +31,7 @@ import { AiModule } from './ai/ai.module';
     AlarmsModule,
     ScheduleModule,
     UserModule,
+    DiariesModule,
     AiModule,
   ],
   controllers: [AppController],
