@@ -20,7 +20,7 @@ type CreateSignupAgreementsParams = {
   user: UserEntity;
   termsOfServiceAgreed: boolean;
   privacyPolicyAgreed: boolean;
-  marketingAgreed?: boolean;
+  marketingAgreed?: boolean | null;
 };
 
 @Injectable()
@@ -60,9 +60,10 @@ export class UserService {
     user,
     termsOfServiceAgreed,
     privacyPolicyAgreed,
-    marketingAgreed = false,
+    marketingAgreed,
   }: CreateSignupAgreementsParams): Promise<UserAgreementEntity[]> {
     const now = new Date();
+    const isMarketingAgreed = marketingAgreed === true;
     const agreements = this.userAgreementRepository.create([
       this.createAgreement({
         user,
@@ -79,7 +80,7 @@ export class UserService {
       this.createAgreement({
         user,
         agreementType: AgreementType.MARKETING,
-        isAgreed: marketingAgreed,
+        isAgreed: isMarketingAgreed,
         now,
       }),
     ]);
