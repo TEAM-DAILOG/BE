@@ -7,6 +7,7 @@ import { AlarmsModule } from './alarms/alarms.module';
 import { ScheduleModule } from './schedules/schedule.module';
 import { UserModule } from './users/user.module';
 import { DiariesModule } from './diaries/diary.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { DiariesModule } from './diaries/diary.module';
     ScheduleModule,
     UserModule,
     DiariesModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [],
