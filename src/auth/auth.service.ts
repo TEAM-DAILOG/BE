@@ -44,6 +44,12 @@ export class AuthService {
       name,
       profileImageUrl,
     });
+    await this.userService.createSignupAgreements({
+      user,
+      termsOfServiceAgreed: signupDto.termsOfServiceAgreed,
+      privacyPolicyAgreed: signupDto.privacyPolicyAgreed,
+      marketingAgreed: signupDto.marketingAgreed,
+    });
 
     return {
       message: '회원가입에 성공했습니다.',
