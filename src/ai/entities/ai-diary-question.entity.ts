@@ -2,8 +2,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { QuestionEntity } from './ai-question.entity';
 
 @Entity('DiaryQuestion')
 export class DiaryQuestionEntity {
@@ -28,4 +31,8 @@ export class DiaryQuestionEntity {
     comment: '생성일자',
   })
   createdAt: Date;
+
+  @ManyToOne(() => QuestionEntity, { nullable: false })
+  @JoinColumn({ name: 'question_id' })
+  question: QuestionEntity;
 }

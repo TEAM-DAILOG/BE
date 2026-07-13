@@ -1,7 +1,10 @@
+import { DiaryEntity } from '@/src/diaries/entities/diary.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -20,4 +23,8 @@ export class AnswerEntity {
     comment: '생성일',
   })
   createdAt: Date;
+
+  @OneToOne(() => DiaryEntity, { nullable: false })
+  @JoinColumn({ name: 'diary_id' })
+  diary: DiaryEntity;
 }
