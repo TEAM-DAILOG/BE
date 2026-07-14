@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { QuestionEntity } from './entities/ai.question.entity';
-import { AnswerEntity } from './entities/ai.answer.entity';
-import { DiaryQuestionEntity } from './entities/ai.diary.question.entity';
+import { QuestionEntity } from './entities/ai-question.entity';
+import { AnswerEntity } from './entities/ai-answer.entity';
+import { DiaryQuestionEntity } from './entities/ai-diary.question.entity';
+import { RecommendEntity } from './entities/ai-recommend.entitiy';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { DiaryQuestionEntity } from './entities/ai.diary.question.entity';
       QuestionEntity,
       AnswerEntity,
       DiaryQuestionEntity,
+      RecommendEntity,
     ]),
   ],
   controllers: [],
