@@ -1,7 +1,11 @@
+import { CategoryEntity } from '@/src/categories/entities/category.entity';
+import { DiaryEntity } from '@/src/diaries/entities/diary.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -39,4 +43,13 @@ export class RecommendEntity {
     comment: '생성일자',
   })
   createdAt: Date;
+
+  //TODO: 카테고리 연결
+  @ManyToOne(() => DiaryEntity, { nullable: false })
+  @JoinColumn({ name: 'diary_id' })
+  diary: DiaryEntity;
+
+  @ManyToOne(() => CategoryEntity, { nullable: false })
+  @JoinColumn({ name: 'category_id' })
+  category: CategoryEntity;
 }
