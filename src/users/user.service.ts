@@ -143,6 +143,15 @@ export class UserService {
     return this.refreshTokenRepository.save(refreshToken);
   }
 
+  async findRefreshTokenByHash(
+    tokenHash: string,
+  ): Promise<RefreshTokenEntity | null> {
+    return this.refreshTokenRepository.findOne({
+      where: { tokenHash },
+      relations: { user: true },
+    });
+  }
+
   private createAgreement({
     user,
     agreementType,
