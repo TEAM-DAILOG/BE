@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
+import { BadRequestException } from '../global/error/custom.exception';
 import {
   AgreementType,
   UserAgreementEntity,
@@ -8,6 +9,7 @@ import {
 import { UserEntity } from './entities/user.entity';
 
 const CURRENT_AGREEMENT_VERSION = '1.0';
+const POSTGRES_UNIQUE_VIOLATION_CODE = '23505';
 
 type CreateUserParams = {
   email: string;
@@ -53,7 +55,15 @@ export class UserService {
       isAiSummary: false,
     });
 
-    return userRepository.save(user);
+    try {
+      return await userRepository.save(user);
+    } catch (error) {
+      if (this.isUniqueConstraintViolation(error)) {
+        throw new BadRequestException('이미 가입된 이메일입니다');
+      }
+
+      throw error;
+    }
   }
 
   async createSignupAgreements(
@@ -113,5 +123,14 @@ export class UserService {
       agreedAt: isAgreed ? now : null,
       revokedAt: null,
     };
+  }
+
+  private isUniqueConstraintViolation(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === POSTGRES_UNIQUE_VIOLATION_CODE
+    );
   }
 }
