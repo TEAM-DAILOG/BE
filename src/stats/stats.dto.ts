@@ -4,6 +4,7 @@ import {
   CategoryColor,
   CategoryEntity,
 } from '../categories/entities/category.entity';
+import { RecommendDTO } from '../ai/dto/ai-recommend.dto';
 
 export class mostFrequentCategoryDto {
   @ApiProperty({ description: '가장 많이 사용한 카테고리 ID입니다' })
@@ -24,12 +25,20 @@ export class statsMainDTO {
 
   @ApiProperty({ description: '추천일정 목록 입니다' })
   //TODO : 추후 ai-recommendDTO 연결
-  recommendedSchedules: any[];
+  recommendedSchedules: RecommendDTO[];
 
   @ApiProperty({ description: '스트레스 관련 정보 입니다' })
   stress: 'string';
 
-  //TODO : 추후 constructor추가
+  constructor(
+    mostFrequentCategory: mostFrequentCategoryDto,
+    recommendedSchedules: RecommendDTO[],
+    stress: 'string',
+  ) {
+    this.mostFrequentCategory = mostFrequentCategory;
+    this.recommendedSchedules = recommendedSchedules;
+    this.stress = stress;
+  }
 }
 
 //카테고리 현재 구현
