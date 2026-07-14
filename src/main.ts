@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -16,6 +17,12 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
   app.set('trust proxy', 1);
 
   app.enableCors({
