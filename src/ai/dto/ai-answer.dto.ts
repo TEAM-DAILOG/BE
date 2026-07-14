@@ -1,11 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { AnswerEntity } from '../entities/ai-answer.entity';
 
 export class AIAnswerCreateRequestDTO {
   @ApiProperty({ example: '일기의 제목입니다' })
+  @IsString()
+  @IsNotEmpty()
   title: string;
 
   @ApiProperty({ example: '일기의 내용입니다' })
+  @IsString()
+  @IsNotEmpty()
   content: string;
 }
 
