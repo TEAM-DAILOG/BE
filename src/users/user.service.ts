@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import {
   AgreementType,
   UserAgreementEntity,
@@ -39,13 +39,13 @@ export class UserService {
     });
   }
 
-  async createUser({
-    email,
-    password,
-    name,
-    profileImageUrl,
-  }: CreateUserParams): Promise<UserEntity> {
-    const user = this.userRepository.create({
+  async createUser(
+    { email, password, name, profileImageUrl }: CreateUserParams,
+    manager?: EntityManager,
+  ): Promise<UserEntity> {
+    const userRepository =
+      manager?.getRepository(UserEntity) ?? this.userRepository;
+    const user = userRepository.create({
       email,
       password,
       name,
@@ -53,18 +53,24 @@ export class UserService {
       isAiSummary: false,
     });
 
-    return this.userRepository.save(user);
+    return userRepository.save(user);
   }
 
-  async createSignupAgreements({
-    user,
-    termsOfServiceAgreed,
-    privacyPolicyAgreed,
-    marketingAgreed,
-  }: CreateSignupAgreementsParams): Promise<UserAgreementEntity[]> {
+  async createSignupAgreements(
+    {
+      user,
+      termsOfServiceAgreed,
+      privacyPolicyAgreed,
+      marketingAgreed,
+    }: CreateSignupAgreementsParams,
+    manager?: EntityManager,
+  ): Promise<UserAgreementEntity[]> {
     const now = new Date();
     const isMarketingAgreed = marketingAgreed === true;
-    const agreements = this.userAgreementRepository.create([
+    const userAgreementRepository =
+      manager?.getRepository(UserAgreementEntity) ??
+      this.userAgreementRepository;
+    const agreements = userAgreementRepository.create([
       this.createAgreement({
         user,
         agreementType: AgreementType.TERMS_OF_SERVICE,
@@ -85,7 +91,7 @@ export class UserService {
       }),
     ]);
 
-    return this.userAgreementRepository.save(agreements);
+    return userAgreementRepository.save(agreements);
   }
 
   private createAgreement({

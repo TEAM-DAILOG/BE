@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { DataSource } from 'typeorm';
 import { BadRequestException } from '../global/error/custom.exception';
 import { UserService } from '../users/user.service';
 import { CheckSignupEmailDto, SignupDto } from './auth.dto';
@@ -8,7 +9,10 @@ const BCRYPT_SALT_ROUNDS = 10;
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async checkSignupEmail({ email }: CheckSignupEmailDto) {
     const normalizedEmail = this.normalizeEmail(email);
@@ -38,17 +42,29 @@ export class AuthService {
       signupDto.password,
       BCRYPT_SALT_ROUNDS,
     );
-    const user = await this.userService.createUser({
-      email,
-      password: hashedPassword,
-      name,
-      profileImageUrl,
-    });
-    await this.userService.createSignupAgreements({
-      user,
-      termsOfServiceAgreed: signupDto.termsOfServiceAgreed,
-      privacyPolicyAgreed: signupDto.privacyPolicyAgreed,
-      marketingAgreed: signupDto.marketingAgreed,
+
+    const user = await this.dataSource.transaction(async (manager) => {
+      const createdUser = await this.userService.createUser(
+        {
+          email,
+          password: hashedPassword,
+          name,
+          profileImageUrl,
+        },
+        manager,
+      );
+
+      await this.userService.createSignupAgreements(
+        {
+          user: createdUser,
+          termsOfServiceAgreed: signupDto.termsOfServiceAgreed,
+          privacyPolicyAgreed: signupDto.privacyPolicyAgreed,
+          marketingAgreed: signupDto.marketingAgreed,
+        },
+        manager,
+      );
+
+      return createdUser;
     });
 
     return {
