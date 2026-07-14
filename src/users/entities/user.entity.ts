@@ -1,9 +1,13 @@
+import { PushTokenEntity } from '@/src/alarms/entities/push-token.entity';
+import { UserAlarmEntity } from '@/src/alarms/entities/user-alarm.entity';
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -89,4 +93,10 @@ export class UserEntity extends BaseEntity {
     comment: '삭제일',
   })
   deletedAt: Date | null;
+
+  @OneToOne(() => UserAlarmEntity, (userAlarm) => userAlarm.user)
+  userAlarm: UserAlarmEntity;
+
+  @OneToMany(() => PushTokenEntity, (pushToken) => pushToken.user)
+  pushTokens: PushTokenEntity[];
 }
