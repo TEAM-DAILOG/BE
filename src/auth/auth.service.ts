@@ -1,17 +1,28 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { createHash, randomUUID } from 'crypto';
 import { DataSource } from 'typeorm';
-import { BadRequestException } from '../global/error/custom.exception';
+import {
+  BadRequestException,
+  UnauthorizedException,
+} from '../global/error/custom.exception';
 import { UserService } from '../users/user.service';
-import { CheckSignupEmailDto, SignupDto } from './auth.dto';
+import { CheckSignupEmailDto, LoginDto, SignupDto } from './auth.dto';
 
 const BCRYPT_SALT_ROUNDS = 10;
+const ACCESS_TOKEN_EXPIRES_IN = '1h';
+const REFRESH_TOKEN_EXPIRES_IN = '14d';
+const REFRESH_TOKEN_EXPIRES_IN_MS = 14 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly dataSource: DataSource,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async checkSignupEmail({ email }: CheckSignupEmailDto) {
@@ -78,6 +89,61 @@ export class AuthService {
     };
   }
 
+  async login(loginDto: LoginDto) {
+    const email = this.normalizeEmail(loginDto.email);
+    const user = await this.userService.findActiveByEmail(email);
+
+    if (!user?.password) {
+      throw new UnauthorizedException('인증에 실패했습니다');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('인증에 실패했습니다');
+    }
+
+    const accessToken = await this.jwtService.signAsync(
+      { sub: user.userId, email: user.email },
+      {
+        secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
+        expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+      },
+    );
+    const refreshToken = await this.jwtService.signAsync(
+      { sub: user.userId, email: user.email, jti: randomUUID() },
+      {
+        secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+        expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+      },
+    );
+
+    await this.userService.createRefreshToken({
+      user,
+      tokenHash: this.hashToken(refreshToken),
+      deviceId: this.normalizeOptionalString(loginDto.deviceId),
+      deviceType: loginDto.deviceType ?? null,
+      expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRES_IN_MS),
+    });
+
+    return {
+      message: '로그인에 성공했습니다.',
+      data: {
+        accessToken,
+        refreshToken,
+        user: {
+          userId: user.userId,
+          email: user.email,
+          name: user.name,
+          profileImageUrl: user.profileImageUrl,
+        },
+      },
+    };
+  }
+
   private async validateSignupEmail(email: string): Promise<void> {
     if (!this.isValidEmail(email)) {
       throw new BadRequestException('이메일 형식이 올바르지 않습니다');
@@ -138,5 +204,9 @@ export class AuthService {
 
   private isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 }

@@ -1,10 +1,30 @@
 import {
   IsBoolean,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator';
+import { DeviceType } from '../users/entities/refresh-token.entity';
+
+export class LoginDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password: string;
+
+  @IsOptional()
+  @IsString()
+  deviceId?: string | null;
+
+  @IsOptional()
+  @IsEnum(DeviceType)
+  deviceType?: DeviceType | null;
+}
 
 export class CheckSignupEmailDto {
   @IsEmail()
