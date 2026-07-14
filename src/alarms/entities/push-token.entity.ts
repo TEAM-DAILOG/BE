@@ -34,7 +34,7 @@ export class PushTokenEntity extends SoftDeleteModel {
   })
   deviceType: DeviceType;
 
-  @ManyToOne(() => UserEntity, (user) => user.pushToken, { onDelete: 'CASCADE'})
+  @ManyToOne(() => UserEntity, (user) => user.pushTokens, { onDelete: 'CASCADE'})
   @JoinColumn({ name: 'user_id'})
   user: UserEntity;
 }

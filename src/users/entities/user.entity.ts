@@ -98,5 +98,5 @@ export class UserEntity extends BaseEntity {
   userAlarm: UserAlarmEntity;
 
   @OneToMany(() => PushTokenEntity, (pushToken) => pushToken.user)
-  pushToken: PushTokenEntity;
+  pushTokens: PushTokenEntity[];
 }

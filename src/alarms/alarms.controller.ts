@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
-import { AlarmsService } from "./alarms.service";
+import { AlarmsService } from "./services/alarms.service";
 import { PushTokenRequestDto, UpdateAlarmDto, UpdateReminderDto } from "./alarms.dto";
 import { ApiTags } from "@nestjs/swagger";
 import { DeletePushTokenSwagger, FindOneAlarmSwagger, FindOneReminderSwagger, RegisterPushTokenSwagger, UpdateAlarmSwagger, UpdateReminderSwagger } from "./alarms.swagger";

@@ -16,6 +16,7 @@ export class ReminderEntity extends BaseModel {
   @Column({
     type: 'jsonb',
     nullable: true,
+    default: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
     comment: '알람 요일',
   })
   days: string[] | null;
@@ -23,6 +24,7 @@ export class ReminderEntity extends BaseModel {
   @Column({
     type: 'time',
     nullable: true,
+    default: '18:00:00',
     comment: '알람 시간',
   })
   time: string | null;
