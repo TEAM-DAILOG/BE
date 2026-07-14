@@ -1,0 +1,214 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import { createHash, randomUUID } from 'crypto';
+import { DataSource } from 'typeorm';
+import {
+  BadRequestException,
+  UnauthorizedException,
+} from '../global/error/custom.exception';
+import { UserService } from '../users/user.service';
+import { CheckSignupEmailDto, LoginDto, SignupDto } from './auth.dto';
+
+const BCRYPT_SALT_ROUNDS = 10;
+const ACCESS_TOKEN_EXPIRES_IN = '1h';
+const REFRESH_TOKEN_EXPIRES_IN = '14d';
+const REFRESH_TOKEN_EXPIRES_IN_MS = 14 * 24 * 60 * 60 * 1000;
+const DUMMY_PASSWORD_HASH =
+  '$2b$10$MgTW7kAnV06Ef1oI8wAtbenaFF9594ASF7d5.c42.TGHtiOYh/gsm';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private readonly userService: UserService,
+    private readonly dataSource: DataSource,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  async checkSignupEmail({ email }: CheckSignupEmailDto) {
+    const normalizedEmail = this.normalizeEmail(email);
+
+    await this.validateSignupEmail(normalizedEmail);
+
+    return {
+      message: '사용 가능한 이메일입니다.',
+      data: {
+        isAvailable: true,
+      },
+    };
+  }
+
+  async signup(signupDto: SignupDto) {
+    const email = this.normalizeEmail(signupDto.email);
+    const name = this.normalizeName(signupDto.name);
+    const profileImageUrl = this.normalizeOptionalString(
+      signupDto.profileImageUrl,
+    );
+
+    await this.validateSignupEmail(email);
+    this.validatePassword(signupDto.password);
+    this.validateRequiredAgreements(signupDto);
+
+    const hashedPassword = await bcrypt.hash(
+      signupDto.password,
+      BCRYPT_SALT_ROUNDS,
+    );
+
+    const user = await this.dataSource.transaction(async (manager) => {
+      const createdUser = await this.userService.createUser(
+        {
+          email,
+          password: hashedPassword,
+          name,
+          profileImageUrl,
+        },
+        manager,
+      );
+
+      await this.userService.createSignupAgreements(
+        {
+          user: createdUser,
+          termsOfServiceAgreed: signupDto.termsOfServiceAgreed,
+          privacyPolicyAgreed: signupDto.privacyPolicyAgreed,
+          marketingAgreed: signupDto.marketingAgreed,
+        },
+        manager,
+      );
+
+      return createdUser;
+    });
+
+    return {
+      message: '회원가입에 성공했습니다.',
+      data: {
+        userId: user.userId,
+        email: user.email,
+        name: user.name,
+        profileImageUrl: user.profileImageUrl,
+      },
+    };
+  }
+
+  async login(loginDto: LoginDto) {
+    const email = this.normalizeEmail(loginDto.email);
+    const user = await this.userService.findActiveByEmail(email);
+    const userPassword = user?.password;
+    const hasUserPassword =
+      typeof userPassword === 'string' && userPassword.length > 0;
+    const passwordHash = hasUserPassword ? userPassword : DUMMY_PASSWORD_HASH;
+
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      passwordHash,
+    );
+
+    if (!user || !hasUserPassword || !isPasswordValid) {
+      throw new UnauthorizedException('인증에 실패했습니다');
+    }
+
+    const accessToken = await this.jwtService.signAsync(
+      { sub: user.userId, email: user.email },
+      {
+        secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
+        expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+      },
+    );
+    const refreshToken = await this.jwtService.signAsync(
+      { sub: user.userId, email: user.email, jti: randomUUID() },
+      {
+        secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+        expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+      },
+    );
+
+    await this.userService.createRefreshToken({
+      user,
+      tokenHash: this.hashToken(refreshToken),
+      deviceId: this.normalizeOptionalString(loginDto.deviceId),
+      deviceType: loginDto.deviceType ?? null,
+      expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRES_IN_MS),
+    });
+
+    return {
+      message: '로그인에 성공했습니다.',
+      data: {
+        accessToken,
+        refreshToken,
+        user: {
+          userId: user.userId,
+          email: user.email,
+          name: user.name,
+          profileImageUrl: user.profileImageUrl,
+        },
+      },
+    };
+  }
+
+  private async validateSignupEmail(email: string): Promise<void> {
+    if (!this.isValidEmail(email)) {
+      throw new BadRequestException('이메일 형식이 올바르지 않습니다');
+    }
+
+    const existingUser = await this.userService.findByEmail(email);
+
+    if (existingUser) {
+      throw new BadRequestException('이미 가입된 이메일입니다');
+    }
+  }
+
+  private validatePassword(password: string): void {
+    if (
+      typeof password !== 'string' ||
+      password.length < 8 ||
+      password.length > 16 ||
+      !/[A-Za-z]/.test(password) ||
+      !/[0-9]/.test(password) ||
+      !/[!@#$%^&*(),.?":{}|<>]/.test(password)
+    ) {
+      throw new BadRequestException('비밀번호 조건이 올바르지 않습니다');
+    }
+  }
+
+  private validateRequiredAgreements({
+    termsOfServiceAgreed,
+    privacyPolicyAgreed,
+  }: SignupDto): void {
+    if (termsOfServiceAgreed !== true || privacyPolicyAgreed !== true) {
+      throw new BadRequestException('필수 약관에 동의해야 합니다');
+    }
+  }
+
+  private normalizeEmail(email: string): string {
+    return typeof email === 'string' ? email.trim().toLowerCase() : '';
+  }
+
+  private normalizeName(name: string): string {
+    const normalizedName = typeof name === 'string' ? name.trim() : '';
+
+    if (normalizedName.length === 0) {
+      throw new BadRequestException('닉네임을 입력해주세요');
+    }
+
+    return normalizedName;
+  }
+
+  private normalizeOptionalString(value?: string | null): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const normalizedValue = value.trim();
+
+    return normalizedValue.length > 0 ? normalizedValue : null;
+  }
+
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
+  }
+}

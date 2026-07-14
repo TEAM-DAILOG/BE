@@ -1,16 +1,16 @@
 import {
-  BaseEntity,
   Column,
-  CreateDateColumn,
   Entity,
+  JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { ReminderEntity } from './reminder.entity';
+import { UserEntity } from '@/src/users/entities/user.entity';
+import { BaseModel } from '@/src/global/base-model';
 
 @Entity('UserAlarm')
-export class UserAlarmEntity extends BaseEntity {
+export class UserAlarmEntity extends BaseModel {
   @PrimaryGeneratedColumn()
   alarmId: number;
 
@@ -35,19 +35,12 @@ export class UserAlarmEntity extends BaseEntity {
   })
   isDiaryReply: boolean;
 
-  @CreateDateColumn({
-    type: 'timestamp',
-    nullable: false,
-    comment: '생성일',
-  })
-  createdAt: Date;
 
-  @UpdateDateColumn({
-    type: 'timestamp',
-    comment: '수정일',
-  })
-  updatedAt: Date;
 
   @OneToOne(() => ReminderEntity, (reminder) => reminder.userAlarm)
   reminder: ReminderEntity;
+
+  @OneToOne(() => UserEntity, (user) => user.userAlarm, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }
