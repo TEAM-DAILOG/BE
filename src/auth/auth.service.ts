@@ -15,6 +15,8 @@ const BCRYPT_SALT_ROUNDS = 10;
 const ACCESS_TOKEN_EXPIRES_IN = '1h';
 const REFRESH_TOKEN_EXPIRES_IN = '14d';
 const REFRESH_TOKEN_EXPIRES_IN_MS = 14 * 24 * 60 * 60 * 1000;
+const DUMMY_PASSWORD_HASH =
+  '$2b$10$MgTW7kAnV06Ef1oI8wAtbenaFF9594ASF7d5.c42.TGHtiOYh/gsm';
 
 @Injectable()
 export class AuthService {
@@ -92,17 +94,17 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const email = this.normalizeEmail(loginDto.email);
     const user = await this.userService.findActiveByEmail(email);
-
-    if (!user?.password) {
-      throw new UnauthorizedException('인증에 실패했습니다');
-    }
+    const userPassword = user?.password;
+    const hasUserPassword =
+      typeof userPassword === 'string' && userPassword.length > 0;
+    const passwordHash = hasUserPassword ? userPassword : DUMMY_PASSWORD_HASH;
 
     const isPasswordValid = await bcrypt.compare(
       loginDto.password,
-      user.password,
+      passwordHash,
     );
 
-    if (!isPasswordValid) {
+    if (!user || !hasUserPassword || !isPasswordValid) {
       throw new UnauthorizedException('인증에 실패했습니다');
     }
 
