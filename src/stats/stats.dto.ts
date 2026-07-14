@@ -1,4 +1,9 @@
+import { Schedule } from './../schedules/entities/schedule.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import {
+  CategoryColor,
+  CategoryEntity,
+} from '../categories/entities/category.entity';
 
 export class mostFrequentCategoryDto {
   @ApiProperty({ description: '가장 많이 사용한 카테고리 ID입니다' })
@@ -7,7 +12,10 @@ export class mostFrequentCategoryDto {
   @ApiProperty({ description: '가장 많이 사용한 카테고리 이름입니다' })
   categoryName: string;
 
-  //TODO 카테고리 생성시 constructor추가
+  constructor(cartegory: CategoryEntity) {
+    this.categoryId = cartegory.categoryId;
+    this.categoryName = cartegory.categoryName;
+  }
 }
 
 export class statsMainDTO {
@@ -43,14 +51,23 @@ export class CategoryRankInfoDTO {
   @ApiProperty({ description: '카테고리 사용 횟수입니다' })
   count: number;
 
-  @ApiProperty({ description: '카테고리 색깔입니다' })
-  //TODO : 추후 enum으로 변경
-  color: string;
+  @ApiProperty({ description: '카테고리 색깔입니다', enum: CategoryColor })
+  categoryColor: CategoryColor;
 
   @ApiProperty({ description: '카테고리별 스케쥴 목록입니다' })
   schedules: categoryRankScheduleDTO[];
 
-  //TODO : 추후 constructor추가
+  constructor(
+    category: CategoryEntity,
+    count: number,
+    schedules: categoryRankScheduleDTO[],
+  ) {
+    this.categoryId = category.categoryId;
+    this.categoryName = category.categoryName;
+    this.count = count;
+    this.categoryColor = category.categoryColor;
+    this.schedules = schedules;
+  }
 }
 
 export class scheduledetailDTO {
@@ -59,6 +76,14 @@ export class scheduledetailDTO {
 
   @ApiProperty({ description: '카테고리별 사용 횟수 정보입니다' })
   categoryRankInfo: CategoryRankInfoDTO[];
+
+  constructor(
+    mostFrequentCategory: mostFrequentCategoryDto,
+    categoryRankInfo: CategoryRankInfoDTO[],
+  ) {
+    this.mostFrequentCategory = mostFrequentCategory;
+    this.categoryRankInfo = categoryRankInfo;
+  }
 }
 
 export class SceheduleStatsDTO {
@@ -69,7 +94,7 @@ export class SceheduleStatsDTO {
   title: string;
 
   @ApiProperty({ description: '스케쥴 날짜입니다' })
-  date: Date;
+  date: string;
 
   @ApiProperty({ description: '스케쥴 카테고리 Id입니다' })
   categoryId: number;
@@ -77,11 +102,20 @@ export class SceheduleStatsDTO {
   @ApiProperty({ description: '스케쥴 카테고리 이름입니다' })
   categoryName: string;
 
-  @ApiProperty({ description: '스케쥴 카테고리 색깔입니다' })
-  //TODO : 추후 enum으로 변경
-  categoryColor: string;
+  @ApiProperty({
+    description: '스케쥴 카테고리 색깔입니다',
+    enum: CategoryColor,
+  })
+  categoryColor: CategoryColor;
 
-  //TODO : 추후 constructor추가
+  constructor(Schedule: Schedule, category: CategoryEntity) {
+    this.scheduleId = Schedule.scheduleId;
+    this.title = Schedule.title;
+    this.date = Schedule.date;
+    this.categoryId = category.categoryId;
+    this.categoryName = category.categoryName;
+    this.categoryColor = category.categoryColor;
+  }
 }
 
 export class incompletedSceheduleStatsDTO {
@@ -97,7 +131,17 @@ export class incompletedSceheduleStatsDTO {
   @ApiProperty({ description: '완료되지 않은 스케쥴 목록입니다' })
   incompletedSchedules: SceheduleStatsDTO[];
 
-  //TODO : 추후 constructor추가
+  constructor(
+    incompletedScheduleCount: number,
+    incompletedScheduleRate: number,
+    targetMonth: string,
+    incompletedSchedules: SceheduleStatsDTO[],
+  ) {
+    this.incompletedScheduleCount = incompletedScheduleCount;
+    this.incompletedScheduleRate = incompletedScheduleRate;
+    this.targetMonth = targetMonth;
+    this.incompletedSchedules = incompletedSchedules;
+  }
 }
 
 export class completedSceheduleStatsDTO {
@@ -107,5 +151,11 @@ export class completedSceheduleStatsDTO {
   @ApiProperty({ description: '완료된 스케쥴 목록입니다' })
   completedSchedules: SceheduleStatsDTO[];
 
-  //TODO : 추후 constructor추가
+  constructor(
+    completedScheduleCount: number,
+    completedSchedules: SceheduleStatsDTO[],
+  ) {
+    this.completedScheduleCount = completedScheduleCount;
+    this.completedSchedules = completedSchedules;
+  }
 }
