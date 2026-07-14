@@ -45,7 +45,7 @@ export class UserEntity extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    length: 50,
+    length: 255,
     nullable: true,
     comment: '비밀번호',
   })
