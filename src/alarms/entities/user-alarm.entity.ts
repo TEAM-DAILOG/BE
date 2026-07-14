@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -39,6 +40,7 @@ export class UserAlarmEntity extends BaseModel {
   @OneToOne(() => ReminderEntity, (reminder) => reminder.userAlarm)
   reminder: ReminderEntity;
 
-  @OneToOne(() => UserEntity, (user) => user.userAlarm)
+  @OneToOne(() => UserEntity, (user) => user.userAlarm, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 }
