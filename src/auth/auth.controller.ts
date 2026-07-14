@@ -1,6 +1,11 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CheckSignupEmailDto, LoginDto, SignupDto } from './auth.dto';
+import {
+  CheckSignupEmailDto,
+  LoginDto,
+  ReissueAccessTokenDto,
+  SignupDto,
+} from './auth.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -22,5 +27,11 @@ export class AuthController {
   @HttpCode(200)
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Post('token/reissue')
+  @HttpCode(200)
+  reissueAccessToken(@Body() reissueAccessTokenDto: ReissueAccessTokenDto) {
+    return this.authService.reissueAccessToken(reissueAccessTokenDto);
   }
 }

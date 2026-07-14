@@ -8,8 +8,14 @@ import {
   BadRequestException,
   UnauthorizedException,
 } from '../global/error/custom.exception';
+import { RefreshTokenEntity } from '../users/entities/refresh-token.entity';
 import { UserService } from '../users/user.service';
-import { CheckSignupEmailDto, LoginDto, SignupDto } from './auth.dto';
+import {
+  CheckSignupEmailDto,
+  LoginDto,
+  ReissueAccessTokenDto,
+  SignupDto,
+} from './auth.dto';
 
 const BCRYPT_SALT_ROUNDS = 10;
 const ACCESS_TOKEN_EXPIRES_IN = '1h';
@@ -108,13 +114,7 @@ export class AuthService {
       throw new UnauthorizedException('인증에 실패했습니다');
     }
 
-    const accessToken = await this.jwtService.signAsync(
-      { sub: user.userId, email: user.email },
-      {
-        secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
-        expiresIn: ACCESS_TOKEN_EXPIRES_IN,
-      },
-    );
+    const accessToken = await this.signAccessToken(user);
     const refreshToken = await this.jwtService.signAsync(
       { sub: user.userId, email: user.email, jti: randomUUID() },
       {
@@ -142,6 +142,27 @@ export class AuthService {
           name: user.name,
           profileImageUrl: user.profileImageUrl,
         },
+      },
+    };
+  }
+
+  async reissueAccessToken({ refreshToken }: ReissueAccessTokenDto) {
+    await this.verifyRefreshToken(refreshToken);
+
+    const storedRefreshToken = await this.userService.findRefreshTokenByHash(
+      this.hashToken(refreshToken),
+    );
+
+    if (!this.isUsableRefreshToken(storedRefreshToken)) {
+      throw new UnauthorizedException('인증에 실패했습니다');
+    }
+
+    const accessToken = await this.signAccessToken(storedRefreshToken.user);
+
+    return {
+      message: 'Access Token 재발급에 성공했습니다.',
+      data: {
+        accessToken,
       },
     };
   }
@@ -210,5 +231,39 @@ export class AuthService {
 
   private hashToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private async signAccessToken(user: {
+    userId: number;
+    email: string | null;
+  }) {
+    return this.jwtService.signAsync(
+      { sub: user.userId, email: user.email },
+      {
+        secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
+        expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+      },
+    );
+  }
+
+  private async verifyRefreshToken(refreshToken: string): Promise<void> {
+    try {
+      await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+      });
+    } catch {
+      throw new UnauthorizedException('인증에 실패했습니다');
+    }
+  }
+
+  private isUsableRefreshToken(
+    refreshToken: RefreshTokenEntity | null,
+  ): refreshToken is RefreshTokenEntity {
+    return (
+      refreshToken !== null &&
+      typeof refreshToken.user?.userId === 'number' &&
+      refreshToken.revokedAt === null &&
+      refreshToken.expiresAt.getTime() > Date.now()
+    );
   }
 }
