@@ -1,11 +1,11 @@
-import { Injectable, OnModuleInit } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { PushTokenEntity } from "./entities/push-token.entity";
-import { ReminderEntity } from "./entities/reminder.entity";
-import { UserAlarmEntity } from "./entities/user-alarm.entity";
+import { PushTokenEntity } from "../entities/push-token.entity";
+import { ReminderEntity } from "../entities/reminder.entity";
+import { UserAlarmEntity } from "../entities/user-alarm.entity";
 import { Repository } from "typeorm";
-import { NotFoundException } from "../global/error/custom.exception";
-import { PushTokenRequestDto, UpdateAlarmDto, UpdateReminderDto } from "./alarms.dto";
+import { NotFoundException } from "../../global/error/custom.exception";
+import { PushTokenRequestDto, UpdateAlarmDto, UpdateReminderDto } from "../alarms.dto";
 
 @Injectable()
 export class AlarmsService {
@@ -18,6 +18,7 @@ export class AlarmsService {
         
         @InjectRepository(ReminderEntity)
         private readonly reminderRepository: Repository<ReminderEntity>,
+
     ) {}
     
     // 사용자 정보 포함 내부 단건 알람 조회
@@ -49,6 +50,13 @@ export class AlarmsService {
     // 알람 수정
     async updateAlarmEntity(userId: number, updateAlarmDto: UpdateAlarmDto): Promise<UserAlarmEntity> {
         const foundAlarm = await this.findOneAlarmEntity(userId);
+        
+        // isPush가 false로 변경시 나머지 알람도 OFF
+        if (updateAlarmDto.isPush === false) {
+            updateAlarmDto.isDiary = false;
+            updateAlarmDto.isDiaryReply = false;
+        }
+
         // 변경값 적용
         Object.assign(foundAlarm, updateAlarmDto);
         return await this.userAlarmRepository.save(foundAlarm);
@@ -92,5 +100,4 @@ export class AlarmsService {
         
         return await this.pushTokenRepository.softDelete(tokenId);
     }
-
 }
