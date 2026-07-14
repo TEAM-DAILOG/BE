@@ -7,6 +7,8 @@ import { AlarmsModule } from './alarms/alarms.module';
 import { ScheduleModule } from './schedules/schedule.module';
 import { UserModule } from './users/user.module';
 import { CategoryModule } from './categories/category.module';
+import { DiariesModule } from './diaries/diary.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { CategoryModule } from './categories/category.module';
     ScheduleModule,
     UserModule,
     CategoryModule,
+    DiariesModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [],
