@@ -26,6 +26,12 @@ export class LoginDto {
   deviceType?: DeviceType | null;
 }
 
+export class ReissueAccessTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  refreshToken: string;
+}
+
 export class CheckSignupEmailDto {
   @IsEmail()
   @IsNotEmpty()
