@@ -1,3 +1,4 @@
+import { CategoryEntity } from '@/src/categories/entities/category.entity';
 import { DiaryEntity } from '@/src/diaries/entities/diary.entity';
 import {
   Column,
@@ -47,4 +48,8 @@ export class RecommendEntity {
   @ManyToOne(() => DiaryEntity, { nullable: false })
   @JoinColumn({ name: 'diary_id' })
   diary: DiaryEntity;
+
+  @ManyToOne(() => CategoryEntity, { nullable: false })
+  @JoinColumn({ name: 'category_id' })
+  category: CategoryEntity;
 }
