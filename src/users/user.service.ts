@@ -3,6 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { BadRequestException } from '../global/error/custom.exception';
 import {
+  DeviceType,
+  RefreshTokenEntity,
+} from './entities/refresh-token.entity';
+import {
   AgreementType,
   UserAgreementEntity,
 } from './entities/user-agreement.entity';
@@ -25,6 +29,14 @@ type CreateSignupAgreementsParams = {
   marketingAgreed?: boolean | null;
 };
 
+type CreateRefreshTokenParams = {
+  user: UserEntity;
+  tokenHash: string;
+  deviceId?: string | null;
+  deviceType?: DeviceType | null;
+  expiresAt: Date;
+};
+
 @Injectable()
 export class UserService {
   constructor(
@@ -32,12 +44,20 @@ export class UserService {
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(UserAgreementEntity)
     private readonly userAgreementRepository: Repository<UserAgreementEntity>,
+    @InjectRepository(RefreshTokenEntity)
+    private readonly refreshTokenRepository: Repository<RefreshTokenEntity>,
   ) {}
 
   async findByEmail(email: string): Promise<UserEntity | null> {
     return this.userRepository.findOne({
       where: { email },
       withDeleted: true,
+    });
+  }
+
+  async findActiveByEmail(email: string): Promise<UserEntity | null> {
+    return this.userRepository.findOne({
+      where: { email },
     });
   }
 
@@ -102,6 +122,25 @@ export class UserService {
     ]);
 
     return userAgreementRepository.save(agreements);
+  }
+
+  async createRefreshToken({
+    user,
+    tokenHash,
+    deviceId = null,
+    deviceType = null,
+    expiresAt,
+  }: CreateRefreshTokenParams): Promise<RefreshTokenEntity> {
+    const refreshToken = this.refreshTokenRepository.create({
+      user,
+      tokenHash,
+      deviceId,
+      deviceType,
+      expiresAt,
+      revokedAt: null,
+    });
+
+    return this.refreshTokenRepository.save(refreshToken);
   }
 
   private createAgreement({
