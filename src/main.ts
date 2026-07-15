@@ -40,6 +40,15 @@ async function bootstrap() {
     .setDescription('API Documentation')
     .setVersion('1.0')
     .addCookieAuth('connect.sid')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Access Token을 입력하세요.',
+      },
+      'access-token',
+    )
     .addServer(local)
     // .addServer(isProd ? prod : local)
     // .addServer(isProd ? local : prod)
