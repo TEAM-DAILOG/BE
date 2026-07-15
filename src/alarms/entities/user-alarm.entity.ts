@@ -35,8 +35,6 @@ export class UserAlarmEntity extends BaseModel {
   })
   isDiaryReply: boolean;
 
-
-
   @OneToOne(() => ReminderEntity, (reminder) => reminder.userAlarm)
   reminder: ReminderEntity;
 

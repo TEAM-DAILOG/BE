@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { BadRequestException, NotFoundException } from '../global/error/custom.exception';
+import {
+  BadRequestException,
+  NotFoundException,
+} from '../global/error/custom.exception';
 import {
   DeviceType,
   RefreshTokenEntity,
@@ -188,27 +191,31 @@ export class UserService {
     const foundUser = await this.userRepository.findOne({
       where: { userId },
     });
-    if(!foundUser) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    if (!foundUser) throw new NotFoundException('사용자를 찾을 수 없습니다.');
 
     const { userId: id, email, name, profileImageUrl } = foundUser;
     return { userId: id, email, name, profileImageUrl };
   }
 
   // 사용자 정보 수정
-  async updateUserEntity(userId: number, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+  async updateUserEntity(
+    userId: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
     const foundUser = await this.userRepository.findOne({
       where: { userId },
     });
-    if(!foundUser) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    if (!foundUser) throw new NotFoundException('사용자를 찾을 수 없습니다.');
 
-    Object.assign(foundUser,updateUserDto);
-    
+    Object.assign(foundUser, updateUserDto);
+
     try {
       const saved = await this.userRepository.save(foundUser);
       const { userId: id, email, name, profileImageUrl } = saved;
       return { userId: id, email, name, profileImageUrl };
     } catch (error) {
-      if (this.isUniqueConstraintViolation(error)) throw new BadRequestException('이미 사용 중인 이메일입니다.');
+      if (this.isUniqueConstraintViolation(error))
+        throw new BadRequestException('이미 사용 중인 이메일입니다.');
       throw error;
     }
   }
