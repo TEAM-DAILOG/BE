@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -28,6 +29,7 @@ import { AuthenticatedUser } from '../auth/auth.interface';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   CreateScheduleDto,
+  DeleteScheduleScopeQueryDto,
   GetSchedulesQueryDto,
   ScheduleScopeQueryDto,
   UpdateScheduleDto,
@@ -247,6 +249,46 @@ export class ScheduleController {
     return {
       message: '일정 수정에 성공했습니다.',
       data,
+    };
+  }
+
+  @Delete(':scheduleId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '일정 삭제',
+    description:
+      '로그인한 사용자의 일정을 삭제합니다. 반복 일정은 선택한 일정만 삭제하거나 동일한 반복 그룹 전체를 삭제할 수 있습니다.',
+  })
+  @ApiParam({
+    name: 'scheduleId',
+    required: true,
+    type: Number,
+    example: 1,
+    description: '삭제할 일정 ID',
+  })
+  @ApiQuery({
+    name: 'scope',
+    required: true,
+    enum: ['SINGLE', 'ALL'],
+    example: 'SINGLE',
+    description: '삭제 범위',
+  })
+  async deleteSchedule(
+    @Req() request: AuthenticatedRequest,
+    @Param('scheduleId', ParseIntPipe) scheduleId: number,
+    @Query() query: DeleteScheduleScopeQueryDto,
+  ) {
+    const userId = request.user.userId;
+
+    const result = await this.scheduleService.deleteSchedule(
+      userId,
+      scheduleId,
+      query.scope,
+    );
+
+    return {
+      message: '일정 삭제에 성공했습니다.',
+      data: result,
     };
   }
 }

@@ -1,5 +1,6 @@
 import { Transform, Type } from 'class-transformer';
 import {
+  Allow,
   ArrayNotEmpty,
   ArrayUnique,
   IsArray,
@@ -174,4 +175,15 @@ export class ScheduleScopeQueryDto {
   })
   @IsIn(SCHEDULE_SCOPES)
   scope: (typeof SCHEDULE_SCOPES)[number];
+}
+
+export class DeleteScheduleScopeQueryDto {
+  @ApiProperty({
+    enum: ['SINGLE', 'ALL'],
+    example: 'SINGLE',
+    description: '삭제 범위',
+    type: String,
+  })
+  @Allow()
+  scope: unknown;
 }

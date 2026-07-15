@@ -101,6 +101,10 @@ export interface UpdatedSchedule {
   repeatDays: string | null;
 }
 
+export interface DeleteScheduleResult {
+  scheduleId: number;
+}
+
 @Injectable()
 export class ScheduleService {
   constructor(
@@ -315,6 +319,77 @@ export class ScheduleService {
       }
 
       return this.updateAll(manager, userId, schedule, dto);
+    });
+  }
+
+  async deleteSchedule(
+    userId: number,
+    scheduleId: number,
+    scope: unknown,
+  ): Promise<DeleteScheduleResult> {
+    if (scope !== 'SINGLE' && scope !== 'ALL') {
+      throw new CustomBadRequestException(
+        '삭제 범위가 올바르지 않습니다.',
+        'INVALID_SCOPE',
+      );
+    }
+
+    return this.dataSource.transaction(async (manager) => {
+      const scheduleRepository = manager.getRepository(ScheduleEntity);
+      const repeatGroupRepository = manager.getRepository(
+        ScheduleRepeatGroupEntity,
+      );
+      const schedule = await scheduleRepository.findOne({
+        where: {
+          scheduleId,
+          userId,
+        },
+      });
+
+      if (!schedule) {
+        throw new CustomNotFoundException(
+          '일정을 찾을 수 없습니다.',
+          'SCHEDULE_NOT_FOUND',
+        );
+      }
+
+      if (scope === 'ALL' && schedule.groupId !== null) {
+        await scheduleRepository.delete({
+          groupId: schedule.groupId,
+          userId,
+        });
+        await repeatGroupRepository.delete({
+          groupId: schedule.groupId,
+          userId,
+        });
+      } else {
+        const groupId = schedule.groupId;
+
+        await scheduleRepository.delete({
+          scheduleId,
+          userId,
+        });
+
+        if (groupId !== null) {
+          const remainingCount = await scheduleRepository.count({
+            where: {
+              groupId,
+              userId,
+            },
+          });
+
+          if (remainingCount === 0) {
+            await repeatGroupRepository.delete({
+              groupId,
+              userId,
+            });
+          }
+        }
+      }
+
+      return {
+        scheduleId,
+      };
     });
   }
 
