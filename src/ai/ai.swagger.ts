@@ -150,3 +150,50 @@ export function FindDiaryQuestionSwagger() {
     }),
   );
 }
+
+// AI 일정 추천 생성
+export function CreateRecommendationsSwagger() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'AI 일정 추천 생성',
+      description:
+        '로그인한 유저의 오늘 일기 내용을 바탕으로 일정을 하나 추천합니다(호출당 정확히 1개). 유저의 기존 카테고리와 유사한 게 있으면 연결하고, 없으면 새 카테고리를 생성해 연결합니다. 오늘 이미 추천된 일정과 겹치지 않는 새 일정은 AI가 직접 판단하며, 더 이상 추천할 게 없으면 errorCode `NO_MORE_RECOMMENDATIONS`와 함께 409를 반환합니다.',
+    }),
+    ApiResponse({
+      status: 201,
+      description: 'AI 일정 추천 생성 성공',
+    }),
+    ApiResponse({
+      status: 409,
+      description:
+        '오늘 작성된 일기가 없음(CONFLICT) 또는 더 이상 추천할 일정이 없음(NO_MORE_RECOMMENDATIONS)',
+    }),
+    ApiResponse({
+      status: 500,
+      description: '서버 내부 오류',
+    }),
+  );
+}
+
+// AI 일정 추천 조회
+export function FindRecommendationsSwagger() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'AI 일정 추천 조회',
+      description:
+        '로그인한 유저의 오늘 일기에 대한 추천 일정 목록을 조회합니다.',
+    }),
+    ApiResponse({
+      status: 200,
+      description: 'AI 일정 추천 조회 성공',
+    }),
+    ApiResponse({
+      status: 409,
+      description: '오늘 작성된 일기가 없음',
+    }),
+    ApiResponse({
+      status: 500,
+      description: '서버 내부 오류',
+    }),
+  );
+}

@@ -56,6 +56,17 @@ export class NotFoundException extends CustomException {
   }
 }
 
+// CONFLICT
+export class ConflictException extends CustomException {
+  constructor(
+    reason = '요청을 처리할 수 없는 상태입니다.',
+    errorCode = 'CONFLICT',
+    data = null,
+  ) {
+    super(409, errorCode, reason, data);
+  }
+}
+
 // INTERNAL_SERVER_ERROR
 export class InternalServerException extends CustomException {
   constructor(

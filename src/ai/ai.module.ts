@@ -4,11 +4,14 @@ import { QuestionEntity } from './entities/ai-question.entity';
 import { AnswerEntity } from './entities/ai-answer.entity';
 import { DiaryQuestionEntity } from './entities/ai-diary-question.entity';
 import { RecommendEntity } from './entities/ai-recommend.entitiy';
+import { DiaryEntity } from '../diaries/entities/diary.entity';
 import { AiController } from './ai.controller';
-import { AiAnswerController } from './ai-answer.controller';
-import { AiService } from './ai.service';
-import { GeminiService } from './gemini.service';
+import { QuestionService } from './services/question.service';
+import { AnswerService } from './services/answer.service';
+import { RecommendService } from './services/recommend.service';
+import { GeminiService } from './services/gemini.service';
 import { DiariesModule } from '../diaries/diary.module';
+import { CategoryModule } from '../categories/category.module';
 
 @Module({
   imports: [
@@ -17,11 +20,13 @@ import { DiariesModule } from '../diaries/diary.module';
       AnswerEntity,
       DiaryQuestionEntity,
       RecommendEntity,
+      DiaryEntity,
     ]),
     DiariesModule,
+    CategoryModule,
   ],
-  controllers: [AiController, AiAnswerController],
-  providers: [AiService, GeminiService],
+  controllers: [AiController],
+  providers: [QuestionService, AnswerService, RecommendService, GeminiService],
   exports: [TypeOrmModule],
 })
 export class AiModule {}

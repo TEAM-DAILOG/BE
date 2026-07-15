@@ -8,27 +8,38 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { AiService } from './ai.service';
+import { QuestionService } from './services/question.service';
+import { AnswerService } from './services/answer.service';
+import { RecommendService } from './services/recommend.service';
 import { LinkDiaryQuestionRequestDTO } from './dto/ai-diary-question.dto';
+import { AccessTokenAuth, CurrentUserId } from '../auth/auth.decorator';
 import {
   FindTodayQuestionSwagger,
   RegenerateTodayQuestionSwagger,
   LinkDiaryQuestionSwagger,
   FindDiaryQuestionSwagger,
+  CreateAnswerSwagger,
+  FindAnswerSwagger,
+  CreateRecommendationsSwagger,
+  FindRecommendationsSwagger,
 } from './ai.swagger';
 
 @ApiTags('AI')
-@Controller('ai/questions')
+@Controller('ai')
 export class AiController {
-  constructor(private readonly aiService: AiService) {}
+  constructor(
+    private readonly questionService: QuestionService,
+    private readonly answerService: AnswerService,
+    private readonly recommendService: RecommendService,
+  ) {}
 
   /**
    * 오늘의 질문 조회
    */
   @FindTodayQuestionSwagger()
-  @Get('today')
+  @Get('questions/today')
   async findTodayQuestion() {
-    const data = await this.aiService.getTodayQuestion();
+    const data = await this.questionService.getTodayQuestion();
 
     return { message: '오늘의 질문 조회 성공', data };
   }
@@ -37,9 +48,9 @@ export class AiController {
    * 오늘의 질문 재생성 (테스트용)
    */
   @RegenerateTodayQuestionSwagger()
-  @Post('today/regenerate')
+  @Post('questions/today/regenerate')
   async regenerateTodayQuestion() {
-    const data = await this.aiService.regenerateTodayQuestion();
+    const data = await this.questionService.regenerateTodayQuestion();
 
     return { message: '오늘의 질문 재생성 성공', data };
   }
@@ -48,9 +59,9 @@ export class AiController {
    * 질문-일기 연결 (테스트용)
    */
   @LinkDiaryQuestionSwagger()
-  @Post('link')
+  @Post('questions/link')
   async linkDiaryQuestion(@Body() dto: LinkDiaryQuestionRequestDTO) {
-    await this.aiService.linkDiaryQuestion(dto.questionId, dto.diaryId);
+    await this.questionService.linkDiaryQuestion(dto.questionId, dto.diaryId);
 
     return { message: '질문-일기 연결 성공' };
   }
@@ -59,10 +70,56 @@ export class AiController {
    * 일기-질문 매핑 조회
    */
   @FindDiaryQuestionSwagger()
-  @Get('link/:diaryId')
+  @Get('questions/link/:diaryId')
   async findDiaryQuestion(@Param('diaryId', ParseIntPipe) diaryId: number) {
-    const data = await this.aiService.getDiaryQuestion(diaryId);
+    const data = await this.questionService.getDiaryQuestion(diaryId);
 
     return { message: '일기-질문 매핑 조회 성공', data };
+  }
+
+  /**
+   * AI 답변 생성
+   */
+  @CreateAnswerSwagger()
+  @Post('answer/:diaryId')
+  async createAnswer(@Param('diaryId', ParseIntPipe) diaryId: number) {
+    const data = await this.answerService.createAnswer(diaryId);
+
+    return { message: 'AI 답변 생성 성공', data };
+  }
+
+  /**
+   * AI 답변 확인
+   */
+  @FindAnswerSwagger()
+  @Get('answer/:diaryId')
+  async findAnswer(@Param('diaryId', ParseIntPipe) diaryId: number) {
+    const data = await this.answerService.getAnswer(diaryId);
+
+    return { message: 'AI 답변 확인 성공', data };
+  }
+
+  /**
+   * AI 일정 추천 생성
+   */
+  @AccessTokenAuth()
+  @CreateRecommendationsSwagger()
+  @Post('schedules')
+  async createRecommendation(@CurrentUserId() userId: number) {
+    const data = await this.recommendService.createRecommendation(userId);
+
+    return { message: 'AI 일정 추천 생성 성공', data };
+  }
+
+  /**
+   * AI 일정 추천 조회
+   */
+  @AccessTokenAuth()
+  @FindRecommendationsSwagger()
+  @Get('schedules')
+  async findRecommendations(@CurrentUserId() userId: number) {
+    const data = await this.recommendService.getTodayRecommendations(userId);
+
+    return { message: 'AI 일정 추천 조회 성공', data };
   }
 }
