@@ -8,7 +8,7 @@ import { NotFoundException } from "../../global/error/custom.exception";
 import { AlarmResponseDto, PushTokenRequestDto, PushTokenResponseDto, ReminderResponseDto, UpdateAlarmDto, UpdateReminderDto } from "../alarms.dto";
 
 @Injectable()
-export class AlarmsService {
+export class AlarmService {
     constructor(
         @InjectRepository(PushTokenEntity)
         private readonly pushTokenRepository: Repository<PushTokenEntity>,

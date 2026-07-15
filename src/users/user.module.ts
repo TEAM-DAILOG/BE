@@ -4,6 +4,7 @@ import { RefreshTokenEntity } from './entities/refresh-token.entity';
 import { UserAgreementEntity } from './entities/user-agreement.entity';
 import { UserEntity } from './entities/user.entity';
 import { UserService } from './user.service';
+import { UsersController } from './users.controller';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { UserService } from './user.service';
       RefreshTokenEntity,
     ]),
   ],
+  controllers: [UsersController],
   providers: [UserService],
   exports: [UserService],
 })

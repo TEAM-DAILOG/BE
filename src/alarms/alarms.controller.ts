@@ -1,15 +1,15 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
-import { AlarmsService } from "./services/alarms.service";
+import { AlarmService } from "./services/alarms.service";
 import { PushTokenRequestDto, UpdateAlarmDto, UpdateReminderDto } from "./alarms.dto";
 import { ApiTags } from "@nestjs/swagger";
 import { DeletePushTokenSwagger, FindOneAlarmSwagger, FindOneReminderSwagger, RegisterPushTokenSwagger, UpdateAlarmSwagger, UpdateReminderSwagger } from "./alarms.swagger";
 
 @ApiTags('alarms')
 @Controller('alarms')
-export class AlarmsController {
+export class AlarmController {
 
     constructor(
-        private readonly alarmsService: AlarmsService
+        private readonly alarmService: AlarmService
     ) {}
 
     // 알람 설정 조회
