@@ -17,7 +17,7 @@ export class BadRequestException extends CustomException {
   constructor(
     reason = '잘못된 요청입니다.',
     errorCode = 'BAD_REQUEST',
-    data = null,
+    data: unknown = null,
   ) {
     super(400, errorCode, reason, data);
   }
@@ -53,6 +53,17 @@ export class NotFoundException extends CustomException {
     data = null,
   ) {
     super(404, errorCode, reason, data);
+  }
+}
+
+// TOO_MANY_REQUESTS
+export class TooManyRequestsException extends CustomException {
+  constructor(
+    reason = '요청이 너무 많습니다.',
+    errorCode = 'TOO_MANY_REQUESTS',
+    data: unknown = null,
+  ) {
+    super(429, errorCode, reason, data);
   }
 }
 
