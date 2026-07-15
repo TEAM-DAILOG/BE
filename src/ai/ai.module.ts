@@ -4,6 +4,9 @@ import { QuestionEntity } from './entities/ai-question.entity';
 import { AnswerEntity } from './entities/ai-answer.entity';
 import { DiaryQuestionEntity } from './entities/ai-diary-question.entity';
 import { RecommendEntity } from './entities/ai-recommend.entitiy';
+import { AiController } from './ai.controller';
+import { AiService } from './ai.service';
+import { GeminiService } from './gemini.service';
 
 @Module({
   imports: [
@@ -14,8 +17,8 @@ import { RecommendEntity } from './entities/ai-recommend.entitiy';
       RecommendEntity,
     ]),
   ],
-  controllers: [],
-  providers: [],
+  controllers: [AiController],
+  providers: [AiService, GeminiService],
   exports: [TypeOrmModule],
 })
 export class AiModule {}
