@@ -3,8 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { CategoryEntity } from '../categories/entities/category.entity';
 import { ScheduleController } from './schedule.controller';
-import { ScheduleEntity } from './schedule.entity';
-import { ScheduleRepeatGroupEntity } from './schedule-repeat-group.entity';
+import { ScheduleEntity } from './entities/schedule.entity';
+import { ScheduleRepeatGroupEntity } from './entities/schedule-repeat-group.entity';
 import { ScheduleService } from './schedule.service';
 
 @Module({

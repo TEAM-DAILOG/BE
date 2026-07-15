@@ -3,7 +3,7 @@ import {
   CategoryColor,
   CategoryEntity,
 } from '../categories/entities/category.entity';
-import { ScheduleEntity as Schedule } from '../schedules/schedule.entity';
+import { ScheduleEntity as Schedule } from '../schedules/entities/schedule.entity';
 import { RecommendDTO } from '../ai/dto/ai-recommend.dto';
 
 export class MostFrequentCategoryDTO {

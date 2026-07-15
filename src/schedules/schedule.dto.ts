@@ -17,7 +17,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
-import { RepeatType } from './schedule-repeat-group.entity';
+import { RepeatType } from './entities/schedule-repeat-group.entity';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SCHEDULE_SCOPES = ['SINGLE', 'ALL'] as const;

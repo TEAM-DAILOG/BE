@@ -17,11 +17,11 @@ import {
   GetSchedulesQueryDto,
   UpdateScheduleDto,
 } from './schedule.dto';
-import { ScheduleEntity } from './schedule.entity';
+import { ScheduleEntity } from './entities/schedule.entity';
 import {
   RepeatType,
   ScheduleRepeatGroupEntity,
-} from './schedule-repeat-group.entity';
+} from './entities/schedule-repeat-group.entity';
 
 const MAX_SCHEDULE_CREATION_COUNT = 365;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
