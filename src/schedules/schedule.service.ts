@@ -125,6 +125,14 @@ export class ScheduleService {
   async getSchedules(userId: number, query: GetSchedulesQueryDto) {
     const { startDate, endDate, categoryId, isCompleted } = query;
 
+    if (startDate) {
+      this.validateDate(startDate, 'startDate');
+    }
+
+    if (endDate) {
+      this.validateDate(endDate, 'endDate');
+    }
+
     if (startDate && endDate && startDate > endDate) {
       throw new CustomBadRequestException(
         '시작일은 종료일보다 늦을 수 없습니다.',
@@ -777,20 +785,27 @@ export class ScheduleService {
     currentGroup: ScheduleRepeatGroupEntity | null,
     currentDates: string[],
   ): ScheduleCreationPlan {
+    const isSameRepeatType = currentGroup?.repeatType === targetType;
     const merged = {
       repeatType: targetType,
       repeatStartDate: this.hasOwn(dto, 'repeatStartDate')
         ? dto.repeatStartDate
-        : currentGroup?.repeatStartDate,
+        : isSameRepeatType
+          ? currentGroup.repeatStartDate
+          : undefined,
       repeatEndDate: this.hasOwn(dto, 'repeatEndDate')
         ? dto.repeatEndDate
-        : currentGroup?.repeatEndDate,
+        : isSameRepeatType
+          ? currentGroup.repeatEndDate
+          : undefined,
       repeatDays: this.hasOwn(dto, 'repeatDays')
         ? dto.repeatDays
-        : currentGroup?.repeatDays,
+        : isSameRepeatType
+          ? currentGroup.repeatDays
+          : undefined,
       repeatDates: this.hasOwn(dto, 'repeatDates')
         ? dto.repeatDates
-        : currentGroup?.repeatType === RepeatType.MULTIPLE
+        : isSameRepeatType && targetType === RepeatType.MULTIPLE
           ? currentDates
           : undefined,
       date: this.hasOwn(dto, 'date') ? dto.date : undefined,
@@ -894,6 +909,8 @@ export class ScheduleService {
       );
     }
 
+    this.assertMaximumCount(dto.repeatDates.length);
+
     this.assertNoRelatedFields([
       {
         name: 'date',
@@ -956,6 +973,9 @@ export class ScheduleService {
     ]);
 
     this.validateDateRange(dto.repeatStartDate, dto.repeatEndDate);
+    this.assertMaximumCount(
+      this.getInclusiveDateCount(dto.repeatStartDate, dto.repeatEndDate),
+    );
 
     return {
       dates: this.generateDateRange(dto.repeatStartDate, dto.repeatEndDate),
@@ -991,10 +1011,11 @@ export class ScheduleService {
       repeatDays.map((repeatDay) => WEEKDAY_NUMBER[repeatDay]),
     );
 
-    const dates = this.generateDateRange(
+    const dates = this.generateWeeklyDates(
       dto.repeatStartDate,
       dto.repeatEndDate,
-    ).filter((date) => allowedWeekdays.has(this.parseDate(date).getUTCDay()));
+      allowedWeekdays,
+    );
 
     if (dates.length === 0) {
       throw new CustomBadRequestException(
@@ -1155,6 +1176,39 @@ export class ScheduleService {
 
     while (currentDate.getTime() <= finalDate.getTime()) {
       dates.push(this.formatDate(currentDate));
+
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+    }
+
+    return dates;
+  }
+
+  private getInclusiveDateCount(startDate: string, endDate: string): number {
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+    return (
+      Math.floor(
+        (this.parseDate(endDate).getTime() -
+          this.parseDate(startDate).getTime()) /
+          millisecondsPerDay,
+      ) + 1
+    );
+  }
+
+  private generateWeeklyDates(
+    startDate: string,
+    endDate: string,
+    allowedWeekdays: Set<number>,
+  ): string[] {
+    const dates: string[] = [];
+    const currentDate = this.parseDate(startDate);
+    const finalDate = this.parseDate(endDate);
+
+    while (currentDate.getTime() <= finalDate.getTime()) {
+      if (allowedWeekdays.has(currentDate.getUTCDay())) {
+        dates.push(this.formatDate(currentDate));
+        this.assertMaximumCount(dates.length);
+      }
 
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
