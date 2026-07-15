@@ -38,6 +38,7 @@ export function UpdateMyProfileSwagger() {
           name: { type: 'string', description: '닉네임', example: '홍길동' },
           email: {
             type: 'string',
+            nullable: true,
             description: '이메일',
             example: 'dailog@naver.com',
           },
