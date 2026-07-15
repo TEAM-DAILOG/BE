@@ -8,7 +8,7 @@ import {
   randomInt,
   timingSafeEqual,
 } from 'crypto';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
   BadRequestException,
   InternalServerException,
@@ -180,6 +180,40 @@ export class EmailVerificationService {
     };
   }
 
+  async consumeSignupVerification(
+    email: string,
+    emailVerificationToken: string,
+    manager: EntityManager,
+  ): Promise<void> {
+    const repository = manager.getRepository(EmailVerificationEntity);
+    const verification = await repository.findOne({
+      where: {
+        email,
+        purpose: EmailVerificationPurpose.SIGNUP,
+      },
+      lock: { mode: 'pessimistic_write' },
+    });
+    const now = new Date();
+
+    if (
+      !verification ||
+      verification.verifiedAt === null ||
+      verification.verificationTokenHash === null ||
+      verification.verificationTokenExpiresAt === null ||
+      verification.verificationTokenExpiresAt.getTime() <= now.getTime() ||
+      verification.consumedAt !== null ||
+      !this.isVerificationTokenMatching(
+        verification.verificationTokenHash,
+        emailVerificationToken,
+      )
+    ) {
+      throw new BadRequestException('이메일 인증 정보가 유효하지 않습니다');
+    }
+
+    verification.consumedAt = now;
+    await repository.save(verification);
+  }
+
   private async issueSignupVerification(
     email: string,
   ): Promise<IssuedVerification> {
@@ -313,6 +347,19 @@ export class EmailVerificationService {
 
   private hashVerificationToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private isVerificationTokenMatching(
+    storedTokenHash: string,
+    token: string,
+  ): boolean {
+    const storedHash = Buffer.from(storedTokenHash, 'hex');
+    const submittedHash = Buffer.from(this.hashVerificationToken(token), 'hex');
+
+    return (
+      storedHash.length === submittedHash.length &&
+      timingSafeEqual(storedHash, submittedHash)
+    );
   }
 
   private isUniqueConstraintViolation(error: unknown): boolean {

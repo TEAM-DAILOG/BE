@@ -97,6 +97,12 @@ export class AuthService {
     );
 
     const user = await this.dataSource.transaction(async (manager) => {
+      await this.emailVerificationService.consumeSignupVerification(
+        email,
+        signupDto.emailVerificationToken,
+        manager,
+      );
+
       const createdUser = await this.userService.createUser(
         {
           email,

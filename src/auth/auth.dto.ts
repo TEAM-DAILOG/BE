@@ -54,6 +54,10 @@ export class SignupDto {
 
   @IsString()
   @IsNotEmpty()
+  emailVerificationToken: string;
+
+  @IsString()
+  @IsNotEmpty()
   password: string;
 
   @IsString()
