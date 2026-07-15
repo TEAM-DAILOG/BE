@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
 
-const QUESTION_MODEL = 'gemini-2.5-flash-lite';
+// ponytail: '-latest' 별칭 사용 — 특정 버전 고정 시 이번처럼 구모델 폐기로 깨질 수 있음
+const QUESTION_MODEL = 'gemini-flash-lite-latest';
 
 @Injectable()
 export class GeminiService {

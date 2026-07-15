@@ -18,7 +18,9 @@ export class AiController {
   @FindTodayQuestionSwagger()
   @Get('today')
   async findTodayQuestion() {
-    return this.aiService.getTodayQuestion();
+    const data = await this.aiService.getTodayQuestion();
+
+    return { message: '오늘의 질문 조회 성공', data };
   }
 
   /**
@@ -27,6 +29,8 @@ export class AiController {
   @RegenerateTodayQuestionSwagger()
   @Post('today/regenerate')
   async regenerateTodayQuestion() {
-    return this.aiService.regenerateTodayQuestion();
+    const data = await this.aiService.regenerateTodayQuestion();
+
+    return { message: '오늘의 질문 재생성 성공', data };
   }
 }
