@@ -9,6 +9,7 @@ import { UserModule } from './users/user.module';
 import { CategoryModule } from './categories/category.module';
 import { DiariesModule } from './diaries/diary.module';
 import { AiModule } from './ai/ai.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AiModule } from './ai/ai.module';
         logging: true,
       }),
     }),
+    AuthModule,
     AlarmsModule,
     ScheduleModule,
     UserModule,
