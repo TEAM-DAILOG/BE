@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { BadRequestException } from '../global/error/custom.exception';
+import { BadRequestException, NotFoundException } from '../global/error/custom.exception';
 import {
   DeviceType,
   RefreshTokenEntity,
@@ -11,6 +11,7 @@ import {
   UserAgreementEntity,
 } from './entities/user-agreement.entity';
 import { UserEntity } from './entities/user.entity';
+import { UpdateUserDto, UserResponseDto } from './users.dto';
 
 const CURRENT_AGREEMENT_VERSION = '1.0';
 const POSTGRES_UNIQUE_VIOLATION_CODE = '23505';
@@ -180,5 +181,30 @@ export class UserService {
       'code' in error &&
       error.code === POSTGRES_UNIQUE_VIOLATION_CODE
     );
+  }
+
+  // 사용자 조회
+  async findOneUserEntity(userId: number): Promise<UserResponseDto> {
+    const foundUser = await this.userRepository.findOne({
+      where: { userId },
+    });
+    if(!foundUser) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+
+    const { userId: id, email, name, profileImageUrl } = foundUser;
+    return { userId: id, email, name, profileImageUrl };
+  }
+
+  // 사용자 정보 수정
+  async updateUserEntity(userId: number, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+    const foundUser = await this.userRepository.findOne({
+      where: { userId },
+    });
+    if(!foundUser) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+
+    Object.assign(foundUser,updateUserDto);
+    const saved = await this.userRepository.save(foundUser);
+
+    const { userId: id, email, name, profileImageUrl } = saved;
+    return { userId: id, email, name, profileImageUrl };
   }
 }
