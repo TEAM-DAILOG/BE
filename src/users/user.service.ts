@@ -202,9 +202,14 @@ export class UserService {
     if(!foundUser) throw new NotFoundException('사용자를 찾을 수 없습니다.');
 
     Object.assign(foundUser,updateUserDto);
-    const saved = await this.userRepository.save(foundUser);
-
-    const { userId: id, email, name, profileImageUrl } = saved;
-    return { userId: id, email, name, profileImageUrl };
+    
+    try {
+      const saved = await this.userRepository.save(foundUser);
+      const { userId: id, email, name, profileImageUrl } = saved;
+      return { userId: id, email, name, profileImageUrl };
+    } catch (error) {
+      if (this.isUniqueConstraintViolation(error)) throw new BadRequestException('이미 사용 중인 이메일입니다.');
+      throw error;
+    }
   }
 }
