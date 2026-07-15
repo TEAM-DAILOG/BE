@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MailModule } from '../global/mail/mail.module';
 import { UserModule } from '../users/user.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { EmailVerificationService } from './email-verification.service';
 import { EmailVerificationEntity } from './entities/email-verification.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
@@ -15,9 +17,10 @@ import { JwtStrategy } from './jwt.strategy';
     PassportModule,
     JwtModule,
     TypeOrmModule.forFeature([EmailVerificationEntity]),
+    MailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard],
+  providers: [AuthService, EmailVerificationService, JwtStrategy, JwtAuthGuard],
   exports: [JwtAuthGuard],
 })
 export class AuthModule {}

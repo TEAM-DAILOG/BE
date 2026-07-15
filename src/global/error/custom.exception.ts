@@ -56,6 +56,17 @@ export class NotFoundException extends CustomException {
   }
 }
 
+// TOO_MANY_REQUESTS
+export class TooManyRequestsException extends CustomException {
+  constructor(
+    reason = '요청이 너무 많습니다.',
+    errorCode = 'TOO_MANY_REQUESTS',
+    data: unknown = null,
+  ) {
+    super(429, errorCode, reason, data);
+  }
+}
+
 // INTERNAL_SERVER_ERROR
 export class InternalServerException extends CustomException {
   constructor(

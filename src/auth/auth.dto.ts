@@ -38,6 +38,8 @@ export class CheckSignupEmailDto {
   email: string;
 }
 
+export class SendSignupEmailVerificationDto extends CheckSignupEmailDto {}
+
 export class SignupDto {
   @IsEmail()
   @IsNotEmpty()

@@ -14,8 +14,10 @@ import {
   CheckSignupEmailDto,
   LoginDto,
   ReissueAccessTokenDto,
+  SendSignupEmailVerificationDto,
   SignupDto,
 } from './auth.dto';
+import { EmailVerificationService } from './email-verification.service';
 
 const BCRYPT_SALT_ROUNDS = 10;
 const ACCESS_TOKEN_EXPIRES_IN = '1h';
@@ -31,6 +33,7 @@ export class AuthService {
     private readonly dataSource: DataSource,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly emailVerificationService: EmailVerificationService,
   ) {}
 
   async checkSignupEmail({ email }: CheckSignupEmailDto) {
@@ -43,6 +46,21 @@ export class AuthService {
       data: {
         isAvailable: true,
       },
+    };
+  }
+
+  async sendSignupEmailVerification({ email }: SendSignupEmailVerificationDto) {
+    const normalizedEmail = this.normalizeEmail(email);
+
+    await this.validateSignupEmail(normalizedEmail);
+    const data =
+      await this.emailVerificationService.sendSignupVerification(
+        normalizedEmail,
+      );
+
+    return {
+      message: '인증번호를 전송했습니다.',
+      data,
     };
   }
 

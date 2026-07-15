@@ -4,6 +4,7 @@ import {
   CheckSignupEmailDto,
   LoginDto,
   ReissueAccessTokenDto,
+  SendSignupEmailVerificationDto,
   SignupDto,
 } from './auth.dto';
 
@@ -15,6 +16,16 @@ export class AuthController {
   @HttpCode(200)
   checkSignupEmail(@Body() checkSignupEmailDto: CheckSignupEmailDto) {
     return this.authService.checkSignupEmail(checkSignupEmailDto);
+  }
+
+  @Post('signup/email/verification/send')
+  @HttpCode(200)
+  sendSignupEmailVerification(
+    @Body() sendSignupEmailVerificationDto: SendSignupEmailVerificationDto,
+  ) {
+    return this.authService.sendSignupEmailVerification(
+      sendSignupEmailVerificationDto,
+    );
   }
 
   @Post('signup')
