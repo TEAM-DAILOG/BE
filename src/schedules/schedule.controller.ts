@@ -3,6 +3,7 @@ import {
   Get,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -12,17 +13,18 @@ import {
 } from '@nestjs/swagger';
 import { Request } from 'express';
 
+import { AuthenticatedUser } from '../auth/auth.interface';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GetSchedulesQueryDto } from './schedule.dto';
 import { ScheduleService } from './schedule.service';
 
 interface AuthenticatedRequest extends Request {
-  user: {
-    userId: number;
-  };
+  user: AuthenticatedUser;
 }
 
 @ApiTags('Schedules')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard)
 @Controller('schedules')
 export class ScheduleController {
   constructor(
@@ -39,23 +41,27 @@ export class ScheduleController {
     name: 'startDate',
     required: false,
     example: '2026-07-01',
+    description: '조회 시작일',
   })
   @ApiQuery({
     name: 'endDate',
     required: false,
     example: '2026-07-31',
+    description: '조회 종료일',
   })
   @ApiQuery({
     name: 'categoryId',
     required: false,
     type: Number,
     example: 2,
+    description: '카테고리 ID',
   })
   @ApiQuery({
     name: 'isCompleted',
     required: false,
     type: Boolean,
     example: false,
+    description: '완료 여부',
   })
   async getSchedules(
     @Req() request: AuthenticatedRequest,
