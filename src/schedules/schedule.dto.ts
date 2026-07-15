@@ -14,11 +14,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import {
-  ApiProperty,
-  ApiPropertyOptional,
-  PartialType,
-} from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 import { RepeatType } from './schedule-repeat-group.entity';
 
@@ -119,26 +115,22 @@ export class CreateScheduleDto {
   @ApiPropertyOptional({
     example: '2026-07-15',
     nullable: true,
-    description:
-      '반복 시작일입니다. PERIOD 또는 WEEKLY인 경우 필수입니다.',
+    description: '반복 시작일입니다. PERIOD 또는 WEEKLY인 경우 필수입니다.',
   })
   @IsOptional()
   @Matches(DATE_PATTERN, {
-    message:
-      'repeatStartDate는 YYYY-MM-DD 형식이어야 합니다.',
+    message: 'repeatStartDate는 YYYY-MM-DD 형식이어야 합니다.',
   })
   repeatStartDate?: string | null;
 
   @ApiPropertyOptional({
     example: '2026-08-31',
     nullable: true,
-    description:
-      '반복 종료일입니다. PERIOD 또는 WEEKLY인 경우 필수입니다.',
+    description: '반복 종료일입니다. PERIOD 또는 WEEKLY인 경우 필수입니다.',
   })
   @IsOptional()
   @Matches(DATE_PATTERN, {
-    message:
-      'repeatEndDate는 YYYY-MM-DD 형식이어야 합니다.',
+    message: 'repeatEndDate는 YYYY-MM-DD 형식이어야 합니다.',
   })
   repeatEndDate?: string | null;
 
@@ -146,8 +138,7 @@ export class CreateScheduleDto {
     example: 'MON,WED,FRI',
     nullable: true,
     maxLength: 50,
-    description:
-      '반복 요일입니다. WEEKLY인 경우 필수이며 쉼표로 구분합니다.',
+    description: '반복 요일입니다. WEEKLY인 경우 필수이며 쉼표로 구분합니다.',
   })
   @IsOptional()
   @IsString()
@@ -155,11 +146,7 @@ export class CreateScheduleDto {
   repeatDays?: string | null;
 
   @ApiPropertyOptional({
-    example: [
-      '2026-07-15',
-      '2026-07-18',
-      '2026-07-22',
-    ],
+    example: ['2026-07-15', '2026-07-18', '2026-07-22'],
     nullable: true,
     type: [String],
     description:
@@ -172,15 +159,12 @@ export class CreateScheduleDto {
   @IsString({ each: true })
   @Matches(DATE_PATTERN, {
     each: true,
-    message:
-      'repeatDates의 각 값은 YYYY-MM-DD 형식이어야 합니다.',
+    message: 'repeatDates의 각 값은 YYYY-MM-DD 형식이어야 합니다.',
   })
   repeatDates?: string[] | null;
 }
 
-export class UpdateScheduleDto extends PartialType(
-  CreateScheduleDto,
-) {}
+export class UpdateScheduleDto extends PartialType(CreateScheduleDto) {}
 
 export class ScheduleScopeQueryDto {
   @ApiProperty({

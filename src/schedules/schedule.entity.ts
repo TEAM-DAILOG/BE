@@ -37,12 +37,9 @@ export class ScheduleEntity {
   })
   groupId: number | null;
 
-  @ManyToOne(
-    () => ScheduleRepeatGroupEntity,
-    {
-      nullable: true,
-    },
-  )
+  @ManyToOne(() => ScheduleRepeatGroupEntity, {
+    nullable: true,
+  })
   @JoinColumn({
     name: 'group_id',
     referencedColumnName: 'groupId',

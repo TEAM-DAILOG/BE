@@ -22,10 +22,7 @@ import { Request } from 'express';
 
 import { AuthenticatedUser } from '../auth/auth.interface';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import {
-  CreateScheduleDto,
-  GetSchedulesQueryDto,
-} from './schedule.dto';
+import { CreateScheduleDto, GetSchedulesQueryDto } from './schedule.dto';
 import { ScheduleService } from './schedule.service';
 
 interface AuthenticatedRequest extends Request {
@@ -38,9 +35,7 @@ interface AuthenticatedRequest extends Request {
 @UseGuards(JwtAuthGuard)
 @Controller('schedules')
 export class ScheduleController {
-  constructor(
-    private readonly scheduleService: ScheduleService,
-  ) {}
+  constructor(private readonly scheduleService: ScheduleService) {}
 
   @Get()
   @ApiOperation({
@@ -80,11 +75,7 @@ export class ScheduleController {
   ) {
     const userId = request.user.userId;
 
-    const schedules =
-      await this.scheduleService.getSchedules(
-        userId,
-        query,
-      );
+    const schedules = await this.scheduleService.getSchedules(userId, query);
 
     return {
       message: '전체 일정 목록 조회에 성공했습니다.',
@@ -100,15 +91,10 @@ export class ScheduleController {
     description:
       '오늘을 포함한 이후의 미완료 일정을 날짜 오름차순으로 최대 3개 조회합니다. 날짜가 같으면 생성일시와 일정 ID 오름차순으로 정렬합니다.',
   })
-  async getUpcomingSchedules(
-    @Req() request: AuthenticatedRequest,
-  ) {
+  async getUpcomingSchedules(@Req() request: AuthenticatedRequest) {
     const userId = request.user.userId;
 
-    const schedules =
-      await this.scheduleService.getUpcomingSchedules(
-        userId,
-      );
+    const schedules = await this.scheduleService.getUpcomingSchedules(userId);
 
     return {
       message: '가까운 일정 조회에 성공했습니다.',
@@ -122,8 +108,7 @@ export class ScheduleController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: '일정 등록',
-    description:
-      '로그인한 사용자의 단일 일정 또는 반복 일정을 등록합니다.',
+    description: '로그인한 사용자의 단일 일정 또는 반복 일정을 등록합니다.',
   })
   @ApiBody({
     schema: {
@@ -147,11 +132,7 @@ export class ScheduleController {
           title: '여러 날짜 일정',
           content: null,
           repeatType: 'MULTIPLE',
-          repeatDates: [
-            '2026-07-17',
-            '2026-07-20',
-            '2026-07-25',
-          ],
+          repeatDates: ['2026-07-17', '2026-07-20', '2026-07-25'],
         },
       },
       period: {
@@ -185,11 +166,7 @@ export class ScheduleController {
   ) {
     const userId = request.user.userId;
 
-    const result =
-      await this.scheduleService.createSchedule(
-        userId,
-        body,
-      );
+    const result = await this.scheduleService.createSchedule(userId, body);
 
     return {
       message: '일정 등록에 성공했습니다.',

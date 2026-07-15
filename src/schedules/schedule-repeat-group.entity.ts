@@ -27,13 +27,13 @@ export class ScheduleRepeatGroupEntity {
   })
   userId: number;
 
-@Column({
-  name: 'repeat_type',
-  type: 'enum',
-  enum: RepeatType,
-  enumName: 'schedule_repeat_group_repeat_type_enum',
-})
-repeatType: RepeatType;
+  @Column({
+    name: 'repeat_type',
+    type: 'enum',
+    enum: RepeatType,
+    enumName: 'schedule_repeat_group_repeat_type_enum',
+  })
+  repeatType: RepeatType;
 
   @Column({
     name: 'repeat_start_date',
