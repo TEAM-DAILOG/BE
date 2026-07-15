@@ -4,6 +4,9 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseIntPipe,
+  Patch,
   Post,
   Query,
   Req,
@@ -14,6 +17,7 @@ import {
   ApiBody,
   ApiExtraModels,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
   getSchemaPath,
@@ -22,7 +26,12 @@ import { Request } from 'express';
 
 import { AuthenticatedUser } from '../auth/auth.interface';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CreateScheduleDto, GetSchedulesQueryDto } from './schedule.dto';
+import {
+  CreateScheduleDto,
+  GetSchedulesQueryDto,
+  ScheduleScopeQueryDto,
+  UpdateScheduleDto,
+} from './schedule.dto';
 import { ScheduleService } from './schedule.service';
 
 interface AuthenticatedRequest extends Request {
@@ -31,7 +40,7 @@ interface AuthenticatedRequest extends Request {
 
 @ApiTags('Schedules')
 @ApiBearerAuth('access-token')
-@ApiExtraModels(CreateScheduleDto)
+@ApiExtraModels(CreateScheduleDto, UpdateScheduleDto)
 @UseGuards(JwtAuthGuard)
 @Controller('schedules')
 export class ScheduleController {
@@ -171,6 +180,73 @@ export class ScheduleController {
     return {
       message: '일정 등록에 성공했습니다.',
       data: result,
+    };
+  }
+
+  @Patch(':scheduleId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '일정 수정' })
+  @ApiParam({
+    name: 'scheduleId',
+    type: Number,
+    example: 1,
+    description: '수정할 일정 ID',
+  })
+  @ApiQuery({
+    name: 'scope',
+    required: true,
+    enum: ['SINGLE', 'ALL'],
+    example: 'SINGLE',
+    description: '선택 일정만 수정하거나 반복 일정 전체를 수정합니다.',
+  })
+  @ApiBody({
+    schema: { $ref: getSchemaPath(UpdateScheduleDto) },
+    examples: {
+      single: {
+        summary: 'SINGLE 수정',
+        value: { title: '수정 제목', content: null, date: '2026-07-16' },
+      },
+      all: {
+        summary: '반복 일정 ALL 수정',
+        value: {
+          title: '매주 회의',
+          repeatType: 'WEEKLY',
+          repeatStartDate: '2026-07-01',
+          repeatEndDate: '2026-08-31',
+          repeatDays: 'MON,WED',
+        },
+      },
+      noneToWeekly: {
+        summary: '단일 일정 NONE → WEEKLY 변경',
+        value: {
+          repeatType: 'WEEKLY',
+          repeatStartDate: '2026-07-01',
+          repeatEndDate: '2026-08-31',
+          repeatDays: 'MON,WED',
+        },
+      },
+      repeatToNone: {
+        summary: '반복 일정 → NONE 변경',
+        value: { repeatType: 'NONE', date: '2026-07-16' },
+      },
+    },
+  })
+  async updateSchedule(
+    @Req() request: AuthenticatedRequest,
+    @Param('scheduleId', ParseIntPipe) scheduleId: number,
+    @Query() query: ScheduleScopeQueryDto,
+    @Body() body: UpdateScheduleDto,
+  ) {
+    const data = await this.scheduleService.updateSchedule(
+      request.user.userId,
+      scheduleId,
+      query.scope,
+      body,
+    );
+
+    return {
+      message: '일정 수정에 성공했습니다.',
+      data,
     };
   }
 }

@@ -1,13 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 
 import { CategoryEntity } from '../categories/entities/category.entity';
 import {
   BadRequestException as CustomBadRequestException,
   NotFoundException as CustomNotFoundException,
 } from '../global/error/custom.exception';
-import { CreateScheduleDto, GetSchedulesQueryDto } from './schedule.dto';
+import {
+  CreateScheduleDto,
+  GetSchedulesQueryDto,
+  UpdateScheduleDto,
+} from './schedule.dto';
 import { ScheduleEntity } from './schedule.entity';
 import {
   RepeatType,
@@ -68,6 +77,28 @@ export interface CreateScheduleResult {
   scheduleId: number | null;
   groupId: number | null;
   createdCount: number;
+}
+
+export interface UpdateScheduleResult {
+  scheduleId: number | null;
+  groupId: number | null;
+  createdCount: number;
+  updatedCount: number;
+  deletedCount: number;
+}
+
+export interface UpdatedSchedule {
+  scheduleId: number;
+  categoryId: number;
+  title: string;
+  content: string | null;
+  date: string;
+  groupId: number | null;
+  isCompleted: boolean;
+  repeatType: RepeatType;
+  repeatStartDate: string | null;
+  repeatEndDate: string | null;
+  repeatDays: string | null;
 }
 
 @Injectable()
@@ -255,6 +286,301 @@ export class ScheduleService {
     });
   }
 
+  async updateSchedule(
+    userId: number,
+    scheduleId: number,
+    scope: 'SINGLE' | 'ALL',
+    dto: UpdateScheduleDto,
+  ): Promise<UpdatedSchedule | UpdateScheduleResult> {
+    this.validateUpdateDto(dto);
+
+    return this.dataSource.transaction(async (manager) => {
+      const scheduleRepository = manager.getRepository(ScheduleEntity);
+      const schedule = await scheduleRepository.findOne({
+        where: { scheduleId, userId },
+        relations: { repeatGroup: true },
+      });
+
+      if (!schedule) {
+        throw new CustomNotFoundException(
+          '일정을 찾을 수 없습니다.',
+          'SCHEDULE_NOT_FOUND',
+        );
+      }
+
+      await this.validateUpdateCategory(manager, userId, dto);
+
+      if (scope === 'SINGLE') {
+        return this.updateSingle(manager, schedule, dto);
+      }
+
+      return this.updateAll(manager, userId, schedule, dto);
+    });
+  }
+
+  private async updateSingle(
+    manager: EntityManager,
+    schedule: ScheduleEntity,
+    dto: UpdateScheduleDto,
+  ): Promise<UpdatedSchedule> {
+    const repeatFields = [
+      'repeatType',
+      'repeatStartDate',
+      'repeatEndDate',
+      'repeatDays',
+      'repeatDates',
+    ] as const;
+    if (repeatFields.some((field) => this.hasOwn(dto, field))) {
+      throw new CustomBadRequestException(
+        'SINGLE 수정에서는 반복 설정 필드를 변경할 수 없습니다.',
+      );
+    }
+
+    this.applyBasicUpdates(schedule, dto, true);
+    const oldGroupId = schedule.groupId;
+    schedule.groupId = null;
+    schedule.repeatGroup = null;
+    await manager.getRepository(ScheduleEntity).save(schedule);
+
+    if (oldGroupId !== null) {
+      const remainingCount = await manager.getRepository(ScheduleEntity).count({
+        where: { groupId: oldGroupId, userId: schedule.userId },
+      });
+      if (remainingCount === 0) {
+        await manager
+          .getRepository(ScheduleRepeatGroupEntity)
+          .delete({ groupId: oldGroupId, userId: schedule.userId });
+      }
+    }
+
+    return this.toUpdatedSchedule(schedule, null);
+  }
+
+  private async updateAll(
+    manager: EntityManager,
+    userId: number,
+    selected: ScheduleEntity,
+    dto: UpdateScheduleDto,
+  ): Promise<UpdateScheduleResult> {
+    if (selected.groupId === null) {
+      return this.updateAllFromSingle(manager, userId, selected, dto);
+    }
+
+    return this.updateAllFromGroup(manager, userId, selected, dto);
+  }
+
+  private async updateAllFromSingle(
+    manager: EntityManager,
+    userId: number,
+    schedule: ScheduleEntity,
+    dto: UpdateScheduleDto,
+  ): Promise<UpdateScheduleResult> {
+    const hasRepeatType = this.hasOwn(dto, 'repeatType');
+    const hasRepeatSettings = this.hasAnyOwn(dto, [
+      'repeatStartDate',
+      'repeatEndDate',
+      'repeatDays',
+      'repeatDates',
+    ]);
+
+    if (!hasRepeatType && hasRepeatSettings) {
+      throw new CustomBadRequestException(
+        '단일 일정을 반복 일정으로 변경하려면 repeatType이 필요합니다.',
+      );
+    }
+
+    if (!hasRepeatType || dto.repeatType === RepeatType.NONE) {
+      this.assertNoneSettings(dto);
+      this.applyBasicUpdates(schedule, dto, true);
+      await manager.getRepository(ScheduleEntity).save(schedule);
+      return {
+        scheduleId: schedule.scheduleId,
+        groupId: null,
+        createdCount: 0,
+        updatedCount: 1,
+        deletedCount: 0,
+      };
+    }
+
+    const plan = this.createUpdatePlan(dto.repeatType!, dto, null, []);
+    this.assertMaximumCount(plan.dates.length);
+    this.applyBasicUpdates(schedule, dto, false);
+    const originalDate = schedule.date;
+    const reusedDate = plan.dates.includes(originalDate)
+      ? originalDate
+      : plan.dates[0];
+    if (reusedDate !== originalDate) schedule.isCompleted = false;
+    schedule.date = reusedDate;
+
+    const groupRepository = manager.getRepository(ScheduleRepeatGroupEntity);
+    const group = await groupRepository.save(
+      groupRepository.create({
+        userId,
+        repeatType: dto.repeatType,
+        repeatStartDate: plan.repeatStartDate,
+        repeatEndDate: plan.repeatEndDate,
+        repeatDays: plan.repeatDays,
+      }),
+    );
+    schedule.groupId = group.groupId;
+    schedule.repeatGroup = group;
+    const scheduleRepository = manager.getRepository(ScheduleEntity);
+    await scheduleRepository.save(schedule);
+
+    const newSchedules = plan.dates
+      .filter((date) => date !== reusedDate)
+      .map((date) =>
+        scheduleRepository.create({
+          userId,
+          categoryId: schedule.categoryId,
+          groupId: group.groupId,
+          repeatGroup: group,
+          title: schedule.title,
+          content: schedule.content,
+          date,
+          isCompleted: false,
+        }),
+      );
+    if (newSchedules.length) await scheduleRepository.save(newSchedules);
+
+    return {
+      scheduleId: null,
+      groupId: group.groupId,
+      createdCount: newSchedules.length,
+      updatedCount: 1,
+      deletedCount: 0,
+    };
+  }
+
+  private async updateAllFromGroup(
+    manager: EntityManager,
+    userId: number,
+    selected: ScheduleEntity,
+    dto: UpdateScheduleDto,
+  ): Promise<UpdateScheduleResult> {
+    const scheduleRepository = manager.getRepository(ScheduleEntity);
+    const groupRepository = manager.getRepository(ScheduleRepeatGroupEntity);
+    const group = await groupRepository.findOne({
+      where: { groupId: selected.groupId!, userId },
+    });
+    if (!group) {
+      throw new CustomNotFoundException(
+        '일정을 찾을 수 없습니다.',
+        'SCHEDULE_NOT_FOUND',
+      );
+    }
+    const schedules = await scheduleRepository.find({
+      where: { groupId: group.groupId, userId },
+      order: { date: 'ASC' },
+    });
+    const hasRuleFields = this.hasAnyOwn(dto, [
+      'repeatType',
+      'repeatStartDate',
+      'repeatEndDate',
+      'repeatDays',
+      'repeatDates',
+    ]);
+
+    if (this.hasOwn(dto, 'date') && dto.repeatType !== RepeatType.NONE) {
+      throw new CustomBadRequestException(
+        '반복 일정의 날짜 한 건만 변경하려면 scope=SINGLE을 사용해야 합니다.',
+      );
+    }
+
+    if (dto.repeatType === RepeatType.NONE) {
+      this.assertNoneSettings(dto);
+      this.applyBasicUpdates(selected, dto, true);
+      selected.groupId = null;
+      selected.repeatGroup = null;
+      const deleted = schedules.filter(
+        (schedule) => schedule.scheduleId !== selected.scheduleId,
+      );
+      if (deleted.length) await scheduleRepository.remove(deleted);
+      await scheduleRepository.save(selected);
+      await groupRepository.remove(group);
+      return {
+        scheduleId: selected.scheduleId,
+        groupId: null,
+        createdCount: 0,
+        updatedCount: 1,
+        deletedCount: deleted.length,
+      };
+    }
+
+    if (!hasRuleFields) {
+      schedules.forEach((schedule) =>
+        this.applyBasicUpdates(schedule, dto, false),
+      );
+      await scheduleRepository.save(schedules);
+      return {
+        scheduleId: null,
+        groupId: group.groupId,
+        createdCount: 0,
+        updatedCount: schedules.length,
+        deletedCount: 0,
+      };
+    }
+
+    const targetType = dto.repeatType ?? group.repeatType;
+    const plan = this.createUpdatePlan(
+      targetType,
+      dto,
+      group,
+      schedules.map(({ date }) => date),
+    );
+    this.assertMaximumCount(plan.dates.length);
+    const byDate = new Map(
+      schedules.map((schedule) => [schedule.date, schedule]),
+    );
+    const kept: ScheduleEntity[] = [];
+    const created: ScheduleEntity[] = [];
+
+    for (const date of plan.dates) {
+      const existing = byDate.get(date);
+      if (existing) {
+        this.applyBasicUpdates(existing, dto, false);
+        kept.push(existing);
+        byDate.delete(date);
+      } else {
+        created.push(
+          scheduleRepository.create({
+            userId,
+            categoryId: this.hasOwn(dto, 'categoryId')
+              ? dto.categoryId!
+              : selected.categoryId,
+            groupId: group.groupId,
+            repeatGroup: group,
+            title: this.hasOwn(dto, 'title')
+              ? dto.title!.trim()
+              : selected.title,
+            content: this.hasOwn(dto, 'content')
+              ? dto.content!
+              : selected.content,
+            date,
+            isCompleted: false,
+          }),
+        );
+      }
+    }
+    const deleted = [...byDate.values()];
+    if (deleted.length) await scheduleRepository.remove(deleted);
+    if (kept.length) await scheduleRepository.save(kept);
+    group.repeatType = targetType;
+    group.repeatStartDate = plan.repeatStartDate;
+    group.repeatEndDate = plan.repeatEndDate;
+    group.repeatDays = plan.repeatDays;
+    await groupRepository.save(group);
+    if (created.length) await scheduleRepository.save(created);
+
+    return {
+      scheduleId: null,
+      groupId: group.groupId,
+      createdCount: created.length,
+      updatedCount: kept.length,
+      deletedCount: deleted.length,
+    };
+  }
+
   private createScheduleCreationPlan(
     dto: CreateScheduleDto,
   ): ScheduleCreationPlan {
@@ -271,6 +597,138 @@ export class ScheduleService {
       case RepeatType.WEEKLY:
         return this.createWeeklyPlan(dto);
     }
+  }
+
+  private validateUpdateDto(dto: UpdateScheduleDto): void {
+    if (Object.keys(dto).length === 0) {
+      throw new CustomBadRequestException(
+        '수정할 정보를 한 개 이상 입력해야 합니다.',
+      );
+    }
+
+    for (const field of [
+      'categoryId',
+      'title',
+      'date',
+      'repeatType',
+    ] as const) {
+      if (this.hasOwn(dto, field) && dto[field] === null) {
+        throw new CustomBadRequestException(`${field}은 null일 수 없습니다.`);
+      }
+    }
+
+    if (this.hasOwn(dto, 'title') && !dto.title!.trim()) {
+      throw new CustomBadRequestException('일정 제목을 입력해주세요.');
+    }
+    if (this.hasOwn(dto, 'date')) this.validateDate(dto.date!, 'date');
+  }
+
+  private async validateUpdateCategory(
+    manager: EntityManager,
+    userId: number,
+    dto: UpdateScheduleDto,
+  ): Promise<void> {
+    if (!this.hasOwn(dto, 'categoryId')) return;
+    const category = await manager.getRepository(CategoryEntity).findOne({
+      where: { categoryId: dto.categoryId!, userId },
+    });
+    if (!category) {
+      throw new CustomNotFoundException(
+        '카테고리를 찾을 수 없습니다.',
+        'CATEGORY_NOT_FOUND',
+      );
+    }
+  }
+
+  private applyBasicUpdates(
+    schedule: ScheduleEntity,
+    dto: UpdateScheduleDto,
+    includeDate: boolean,
+  ): void {
+    if (this.hasOwn(dto, 'categoryId')) schedule.categoryId = dto.categoryId!;
+    if (this.hasOwn(dto, 'title')) schedule.title = dto.title!.trim();
+    if (this.hasOwn(dto, 'content')) schedule.content = dto.content ?? null;
+    if (includeDate && this.hasOwn(dto, 'date')) schedule.date = dto.date!;
+  }
+
+  private createUpdatePlan(
+    targetType: RepeatType,
+    dto: UpdateScheduleDto,
+    currentGroup: ScheduleRepeatGroupEntity | null,
+    currentDates: string[],
+  ): ScheduleCreationPlan {
+    const merged = {
+      repeatType: targetType,
+      repeatStartDate: this.hasOwn(dto, 'repeatStartDate')
+        ? dto.repeatStartDate
+        : currentGroup?.repeatStartDate,
+      repeatEndDate: this.hasOwn(dto, 'repeatEndDate')
+        ? dto.repeatEndDate
+        : currentGroup?.repeatEndDate,
+      repeatDays: this.hasOwn(dto, 'repeatDays')
+        ? dto.repeatDays
+        : currentGroup?.repeatDays,
+      repeatDates: this.hasOwn(dto, 'repeatDates')
+        ? dto.repeatDates
+        : currentGroup?.repeatType === RepeatType.MULTIPLE
+          ? currentDates
+          : undefined,
+      date: this.hasOwn(dto, 'date') ? dto.date : undefined,
+      categoryId: 1,
+      title: 'update',
+      content: null,
+    } as CreateScheduleDto;
+
+    return this.createScheduleCreationPlan(merged);
+  }
+
+  private assertNoneSettings(dto: UpdateScheduleDto): void {
+    const invalid = [
+      'repeatStartDate',
+      'repeatEndDate',
+      'repeatDays',
+      'repeatDates',
+    ].filter((field) => this.hasOwn(dto, field));
+    if (invalid.length) {
+      throw new CustomBadRequestException(
+        `NONE에는 반복 설정 필드를 사용할 수 없습니다: ${invalid.join(', ')}`,
+      );
+    }
+  }
+
+  private assertMaximumCount(count: number): void {
+    if (count > MAX_SCHEDULE_CREATION_COUNT) {
+      throw new CustomBadRequestException(
+        `한 번에 생성할 수 있는 일정은 최대 ${MAX_SCHEDULE_CREATION_COUNT}개입니다.`,
+      );
+    }
+  }
+
+  private toUpdatedSchedule(
+    schedule: ScheduleEntity,
+    group: ScheduleRepeatGroupEntity | null,
+  ): UpdatedSchedule {
+    return {
+      scheduleId: schedule.scheduleId,
+      categoryId: schedule.categoryId,
+      title: schedule.title,
+      content: schedule.content,
+      date: schedule.date,
+      groupId: schedule.groupId,
+      isCompleted: schedule.isCompleted,
+      repeatType: group?.repeatType ?? RepeatType.NONE,
+      repeatStartDate: group?.repeatStartDate ?? null,
+      repeatEndDate: group?.repeatEndDate ?? null,
+      repeatDays: group?.repeatDays ?? null,
+    };
+  }
+
+  private hasOwn(object: object, property: PropertyKey): boolean {
+    return Object.prototype.hasOwnProperty.call(object, property);
+  }
+
+  private hasAnyOwn(object: object, properties: PropertyKey[]): boolean {
+    return properties.some((property) => this.hasOwn(object, property));
   }
 
   private createNonePlan(dto: CreateScheduleDto): ScheduleCreationPlan {
