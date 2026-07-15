@@ -252,6 +252,37 @@ export class ScheduleController {
     };
   }
 
+  @Patch(':scheduleId/complete')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '일정 완료 처리',
+    description:
+      '로그인한 사용자의 미완료 일정 한 건을 완료 상태로 변경합니다.',
+  })
+  @ApiParam({
+    name: 'scheduleId',
+    required: true,
+    type: Number,
+    example: 1,
+    description: '완료 처리할 일정 ID',
+  })
+  async completeSchedule(
+    @Req() request: AuthenticatedRequest,
+    @Param('scheduleId', ParseIntPipe) scheduleId: number,
+  ) {
+    const userId = request.user.userId;
+
+    const result = await this.scheduleService.completeSchedule(
+      userId,
+      scheduleId,
+    );
+
+    return {
+      message: '일정 완료 처리에 성공했습니다.',
+      data: result,
+    };
+  }
+
   @Delete(':scheduleId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

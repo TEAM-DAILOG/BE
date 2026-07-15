@@ -105,6 +105,11 @@ export interface DeleteScheduleResult {
   scheduleId: number;
 }
 
+export interface CompleteScheduleResult {
+  scheduleId: number;
+  isCompleted: true;
+}
+
 @Injectable()
 export class ScheduleService {
   constructor(
@@ -389,6 +394,46 @@ export class ScheduleService {
 
       return {
         scheduleId,
+      };
+    });
+  }
+
+  async completeSchedule(
+    userId: number,
+    scheduleId: number,
+  ): Promise<CompleteScheduleResult> {
+    return this.dataSource.transaction(async (manager) => {
+      const scheduleRepository = manager.getRepository(ScheduleEntity);
+      const schedule = await scheduleRepository.findOne({
+        where: {
+          scheduleId,
+          userId,
+        },
+        lock: {
+          mode: 'pessimistic_write',
+        },
+      });
+
+      if (!schedule) {
+        throw new CustomNotFoundException(
+          '일정을 찾을 수 없습니다.',
+          'SCHEDULE_NOT_FOUND',
+        );
+      }
+
+      if (schedule.isCompleted) {
+        throw new CustomBadRequestException(
+          '이미 완료 처리된 일정입니다.',
+          'SCHEDULE_ALREADY_COMPLETED',
+        );
+      }
+
+      schedule.isCompleted = true;
+      await scheduleRepository.save(schedule);
+
+      return {
+        scheduleId: schedule.scheduleId,
+        isCompleted: true,
       };
     });
   }
