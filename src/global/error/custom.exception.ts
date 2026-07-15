@@ -56,16 +56,17 @@ export class NotFoundException extends CustomException {
   }
 }
 
-<<<<<<< HEAD
 // CONFLICT
 export class ConflictException extends CustomException {
   constructor(
     reason = '요청을 처리할 수 없는 상태입니다.',
     errorCode = 'CONFLICT',
-    data = null,
+    data: unknown = null,
   ) {
     super(409, errorCode, reason, data);
-=======
+  }
+}
+
 // TOO_MANY_REQUESTS
 export class TooManyRequestsException extends CustomException {
   constructor(
@@ -74,7 +75,6 @@ export class TooManyRequestsException extends CustomException {
     data: unknown = null,
   ) {
     super(429, errorCode, reason, data);
->>>>>>> origin/develop
   }
 }
 
