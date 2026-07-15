@@ -1,10 +1,11 @@
 import { Transform } from "class-transformer";
-import { IsArray, IsBoolean, IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsArray, IsBoolean, IsEnum, IsOptional, IsString } from "class-validator";
 import { DeviceType } from "./entities/push-token.entity";
 
 
 // 알람 설정 조회 응답 DTO
 export class AlarmResponseDto {
+    alarmId: number;
     // PUSH 알람 여부 
     isPush: boolean;  
     // 일기 작성 알람 여부
@@ -15,14 +16,11 @@ export class AlarmResponseDto {
 
 // 리마인드 조회 응답 DTO
 export class ReminderResponseDto {
+    // 리마인드 ID
+    reminderId: number;
     // 알람 요일
-    @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
     days: string[] | null;
-
     // 알람 시간
-    @IsOptional()
     time: string | null;
 }
 

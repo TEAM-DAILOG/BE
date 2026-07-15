@@ -44,15 +44,35 @@ export function UpdateAlarmSwagger() {
         ApiResponse({
             status: 200,
             description: '알람 설정 수정 성공',
-            schema: {
-                example: {
-                    resultType: 'SUCCESS',
-                    message: '알람 설정 수정 성공',
-                    data: {
-                        alarmId: 1,
-                        isPush: true,
-                        isDiary: true,
-                        isDiaryReply: false,
+            content: {
+                'application/json': {
+                    examples: {
+                        isPushTrue: {
+                            summary: 'isPush가 true인 경우',
+                            value: {
+                                resultType: 'SUCCESS',
+                                message: '알람 설정 수정 성공',
+                                data: {
+                                    alarmId: 1,
+                                    isPush: true,
+                                    isDiary: false,
+                                    isDiaryReply: true,
+                                },
+                            },
+                        },
+                        isPushFalse: {
+                            summary: 'isPush가 false인 경우 (나머지 알람 자동 OFF)',
+                            value: {
+                                resultType: 'SUCCESS',
+                                message: '알람 설정 수정 성공',
+                                data: {
+                                    alarmId: 1,
+                                    isPush: false,
+                                    isDiary: false,
+                                    isDiaryReply: false,
+                                },
+                            },
+                        },
                     },
                 },
             },
@@ -78,7 +98,7 @@ export function FindOneReminderSwagger() {
                     data: {
                         reminderId: 1,
                         days: ['MON', 'WED', 'FRI'],
-                        time: '21:30',
+                        time: '21:30:00',
                     },
                 },
             },
@@ -103,7 +123,7 @@ export function UpdateReminderSwagger() {
                         description: '알람 요일 배열',
                         example: ['MON', 'WED', 'FRI'],
                     },
-                    time: { type: 'string', description: '알람 시간', example: '21:30' },
+                    time: { type: 'string', description: '알람 시간', example: '21:30:00' },
                 },
             },
         }),
@@ -117,7 +137,7 @@ export function UpdateReminderSwagger() {
                     data: {
                         reminderId: 1,
                         days: ['MON', 'WED', 'FRI'],
-                        time: '21:30',
+                        time: '21:30:00',
                     },
                 },
             },
