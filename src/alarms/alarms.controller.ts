@@ -17,7 +17,8 @@ export class AlarmController {
     @Get()
     async alarmAll() {
         const userId = 1; //나중에 사용자 인증 데코레이터로 교체
-        return this.alarmService.findOneAlarmEntity(userId);
+        const data = await this.alarmsService.findOneAlarmEntity(userId);
+        return { message: '알림 설정 조회 성공', data };
     }
 
     // 알람 설정 수정
@@ -27,7 +28,8 @@ export class AlarmController {
         @Body() updateAlarmDto: UpdateAlarmDto,
     ) {
         const userId = 1; //나중에 사용자 인증 데코레이터로 교체
-        return this.alarmService.updateAlarmEntity(userId, updateAlarmDto);
+        const data = await this.alarmsService.updateAlarmEntity(userId, updateAlarmDto);
+        return { message: '알림 설정 수정 성공', data }
     }
 
     // 리마인드 알람 설정 조회
@@ -35,7 +37,8 @@ export class AlarmController {
     @Get('/reminder')
     async reminderAll() {
         const userId = 1; //나중에 사용자 인증 데코레이터로 교체
-        return this.alarmService.findOneReminderEntity(userId);
+        const data = await this.alarmsService.findOneReminderEntity(userId);
+        return { message: '리마인드 알림 설정 조회 성공', data }
     }
 
     // 리마인드 알람 설정 수정
@@ -45,7 +48,9 @@ export class AlarmController {
         @Body() updateReminderDto: UpdateReminderDto,
     ) {
         const userId = 1; //나중에 사용자 인증 데코레이터로 교체
-        return this.alarmService.updateReminderEntity(userId, updateReminderDto);
+        const data = await this.alarmsService.updateReminderEntity(userId, updateReminderDto);
+        return { message: '리마인드 알림 설정 수정 성공', data }
+
     }
 
     // FCM 토큰 등록 (앱 로그인/실행 시)
@@ -55,7 +60,8 @@ export class AlarmController {
         @Body() pushTokenRequestDto: PushTokenRequestDto,
     ) {
         const userId = 1; //나중에 사용자 인증 데코레이터로 교체
-        return this.alarmService.registerPushToken(userId, pushTokenRequestDto);
+        const data = await this.alarmsService.registerPushToken(userId, pushTokenRequestDto);
+        return { message: 'FCM 토큰 등록 성공', data }
     }
 
     // FCM 토큰 삭제 (앱 로그아웃 시)
@@ -65,6 +71,7 @@ export class AlarmController {
         @Param('tokenId') tokenId: number,
     ) {
         const userId = 1 //나중에 사용자 인증 데코레이터로 교체
-        return this.alarmService.deletePushToken(userId, tokenId);
+        await this.alarmsService.deletePushToken(userId, tokenId);
+        return { message: 'FCM 토큰 삭제 성공', data: null }
     }
 }
