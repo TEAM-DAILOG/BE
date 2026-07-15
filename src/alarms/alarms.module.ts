@@ -12,22 +12,22 @@ import { firebaseAdminProvider } from './firebase-admin.provider';
 import { DiaryEntity } from '../diaries/entities/diary.entity';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            UserAlarmEntity,
-            PushTokenEntity,
-            ReminderEntity,
-            DiaryEntity,
-        ]),
-        ScheduleModule.forRoot(),
-    ],
-    controllers: [AlarmController],
-    providers: [
-        AlarmService,
-        PushNotificationService,
-        AlarmNotificationService,
-        firebaseAdminProvider,
-    ],
-    exports: [TypeOrmModule, AlarmService],
+  imports: [
+    TypeOrmModule.forFeature([
+      UserAlarmEntity,
+      PushTokenEntity,
+      ReminderEntity,
+      DiaryEntity,
+    ]),
+    ScheduleModule.forRoot(),
+  ],
+  controllers: [AlarmController],
+  providers: [
+    AlarmService,
+    PushNotificationService,
+    AlarmNotificationService,
+    firebaseAdminProvider,
+  ],
+  exports: [TypeOrmModule, AlarmService],
 })
 export class AlarmsModule {}
