@@ -1,8 +1,13 @@
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayNotEmpty,
+  ArrayUnique,
+  IsArray,
   IsBoolean,
+  IsEnum,
   IsIn,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
@@ -15,7 +20,9 @@ import {
   PartialType,
 } from '@nestjs/swagger';
 
-const REPEAT_TYPES = ['NONE', 'MULTIPLE', 'PERIOD', 'WEEKLY'] as const;
+import { RepeatType } from './schedule-repeat-group.entity';
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SCHEDULE_SCOPES = ['SINGLE', 'ALL'] as const;
 
 export class GetSchedulesQueryDto {
@@ -24,7 +31,7 @@ export class GetSchedulesQueryDto {
     description: '조회 시작일',
   })
   @IsOptional()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @Matches(DATE_PATTERN)
   startDate?: string;
 
   @ApiPropertyOptional({
@@ -32,7 +39,7 @@ export class GetSchedulesQueryDto {
     description: '조회 종료일',
   })
   @IsOptional()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @Matches(DATE_PATTERN)
   endDate?: string;
 
   @ApiPropertyOptional({
@@ -71,16 +78,17 @@ export class CreateScheduleDto {
   categoryId: number;
 
   @ApiProperty({
-    example: '계절학기 시험 준비',
+    example: '일정제목예시',
     description: '일정 제목',
     maxLength: 50,
   })
   @IsString()
+  @IsNotEmpty()
   @MaxLength(50)
   title: string;
 
   @ApiPropertyOptional({
-    example: '예제 문제 풀기',
+    example: '일정메모예시',
     nullable: true,
     description: '일정 메모',
   })
@@ -88,51 +96,91 @@ export class CreateScheduleDto {
   @IsString()
   content?: string | null;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: '2026-07-15',
-    description: '일정 날짜',
+    nullable: true,
+    description:
+      '단일 일정 날짜입니다. repeatType이 NONE인 경우에만 필수입니다.',
   })
-  @Matches(/^\d{4}-\d{2}-\d{2}$/)
-  date: string;
+  @IsOptional()
+  @Matches(DATE_PATTERN, {
+    message: 'date는 YYYY-MM-DD 형식이어야 합니다.',
+  })
+  date?: string | null;
 
   @ApiProperty({
-    enum: REPEAT_TYPES,
-    example: 'NONE',
+    enum: RepeatType,
+    example: RepeatType.NONE,
     description: '반복 유형',
   })
-  @IsIn(REPEAT_TYPES)
-  repeatType: (typeof REPEAT_TYPES)[number];
+  @IsEnum(RepeatType)
+  repeatType: RepeatType;
 
   @ApiPropertyOptional({
     example: '2026-07-15',
     nullable: true,
-    description: '반복 시작일',
+    description:
+      '반복 시작일입니다. PERIOD 또는 WEEKLY인 경우 필수입니다.',
   })
   @IsOptional()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @Matches(DATE_PATTERN, {
+    message:
+      'repeatStartDate는 YYYY-MM-DD 형식이어야 합니다.',
+  })
   repeatStartDate?: string | null;
 
   @ApiPropertyOptional({
     example: '2026-08-31',
     nullable: true,
-    description: '반복 종료일',
+    description:
+      '반복 종료일입니다. PERIOD 또는 WEEKLY인 경우 필수입니다.',
   })
   @IsOptional()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @Matches(DATE_PATTERN, {
+    message:
+      'repeatEndDate는 YYYY-MM-DD 형식이어야 합니다.',
+  })
   repeatEndDate?: string | null;
 
   @ApiPropertyOptional({
     example: 'MON,WED,FRI',
     nullable: true,
-    description: '반복 요일',
+    maxLength: 50,
+    description:
+      '반복 요일입니다. WEEKLY인 경우 필수이며 쉼표로 구분합니다.',
   })
   @IsOptional()
   @IsString()
-  @MaxLength(20)
+  @MaxLength(50)
   repeatDays?: string | null;
+
+  @ApiPropertyOptional({
+    example: [
+      '2026-07-15',
+      '2026-07-18',
+      '2026-07-22',
+    ],
+    nullable: true,
+    type: [String],
+    description:
+      '직접 선택한 반복 날짜 목록입니다. MULTIPLE인 경우 필수입니다.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  @IsString({ each: true })
+  @Matches(DATE_PATTERN, {
+    each: true,
+    message:
+      'repeatDates의 각 값은 YYYY-MM-DD 형식이어야 합니다.',
+  })
+  repeatDates?: string[] | null;
 }
 
-export class UpdateScheduleDto extends PartialType(CreateScheduleDto) {}
+export class UpdateScheduleDto extends PartialType(
+  CreateScheduleDto,
+) {}
 
 export class ScheduleScopeQueryDto {
   @ApiProperty({
