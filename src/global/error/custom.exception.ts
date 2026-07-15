@@ -17,7 +17,7 @@ export class BadRequestException extends CustomException {
   constructor(
     reason = '잘못된 요청입니다.',
     errorCode = 'BAD_REQUEST',
-    data = null,
+    data: unknown = null,
   ) {
     super(400, errorCode, reason, data);
   }

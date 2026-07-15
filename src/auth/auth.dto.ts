@@ -2,6 +2,7 @@ import {
   IsBoolean,
   IsEmail,
   IsEnum,
+  Matches,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -39,6 +40,12 @@ export class CheckSignupEmailDto {
 }
 
 export class SendSignupEmailVerificationDto extends CheckSignupEmailDto {}
+
+export class VerifySignupEmailDto extends CheckSignupEmailDto {
+  @IsString()
+  @Matches(/^\d{6}$/)
+  code: string;
+}
 
 export class SignupDto {
   @IsEmail()

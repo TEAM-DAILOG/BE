@@ -16,6 +16,7 @@ import {
   ReissueAccessTokenDto,
   SendSignupEmailVerificationDto,
   SignupDto,
+  VerifySignupEmailDto,
 } from './auth.dto';
 import { EmailVerificationService } from './email-verification.service';
 
@@ -60,6 +61,21 @@ export class AuthService {
 
     return {
       message: '인증번호를 전송했습니다.',
+      data,
+    };
+  }
+
+  async verifySignupEmail({ email, code }: VerifySignupEmailDto) {
+    const normalizedEmail = this.normalizeEmail(email);
+
+    await this.validateSignupEmail(normalizedEmail);
+    const data = await this.emailVerificationService.verifySignupCode(
+      normalizedEmail,
+      code,
+    );
+
+    return {
+      message: '이메일 인증에 성공했습니다.',
       data,
     };
   }

@@ -1,9 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { createHmac, randomInt } from 'crypto';
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  randomInt,
+  timingSafeEqual,
+} from 'crypto';
 import { DataSource, Repository } from 'typeorm';
 import {
+  BadRequestException,
   InternalServerException,
   TooManyRequestsException,
 } from '../global/error/custom.exception';
@@ -14,11 +21,18 @@ import {
 } from './entities/email-verification.entity';
 
 const CODE_EXPIRES_IN_SECONDS = 5 * 60;
+const MAX_FAILED_ATTEMPTS = 5;
 const RESEND_COOLDOWN_SECONDS = 60;
+const VERIFICATION_TOKEN_EXPIRES_IN_SECONDS = 30 * 60;
 
 export interface SendVerificationResult {
   expiresInSeconds: number;
   resendAvailableInSeconds: number;
+}
+
+export interface VerifySignupCodeResult {
+  emailVerificationToken: string;
+  expiresInSeconds: number;
 }
 
 interface IssuedVerification {
@@ -26,6 +40,22 @@ interface IssuedVerification {
   code: string;
   codeHash: string;
 }
+
+type VerifyTransactionResult =
+  | {
+      kind: 'success';
+      emailVerificationToken: string;
+    }
+  | {
+      kind: 'bad-request';
+      reason: string;
+      data: unknown;
+    }
+  | {
+      kind: 'too-many-requests';
+      reason: string;
+      data: unknown;
+    };
 
 @Injectable()
 export class EmailVerificationService {
@@ -68,6 +98,85 @@ export class EmailVerificationService {
     return {
       expiresInSeconds: CODE_EXPIRES_IN_SECONDS,
       resendAvailableInSeconds: RESEND_COOLDOWN_SECONDS,
+    };
+  }
+
+  async verifySignupCode(
+    email: string,
+    code: string,
+  ): Promise<VerifySignupCodeResult> {
+    const result = await this.dataSource.transaction(async (manager) => {
+      const repository = manager.getRepository(EmailVerificationEntity);
+      const verification = await repository.findOne({
+        where: {
+          email,
+          purpose: EmailVerificationPurpose.SIGNUP,
+        },
+        lock: { mode: 'pessimistic_write' },
+      });
+      const now = new Date();
+
+      if (!verification) {
+        return this.badRequestResult('인증번호를 먼저 요청해주세요');
+      }
+
+      if (verification.verifiedAt !== null) {
+        return this.badRequestResult('이미 인증이 완료된 이메일입니다');
+      }
+
+      if (verification.codeExpiresAt.getTime() <= now.getTime()) {
+        return this.badRequestResult('인증번호가 만료되었습니다');
+      }
+
+      if (verification.failedAttempts >= MAX_FAILED_ATTEMPTS) {
+        return this.tooManyAttemptsResult();
+      }
+
+      if (!this.isCodeMatching(verification, code)) {
+        verification.failedAttempts += 1;
+        await repository.save(verification);
+
+        if (verification.failedAttempts >= MAX_FAILED_ATTEMPTS) {
+          return this.tooManyAttemptsResult();
+        }
+
+        return this.badRequestResult('인증번호가 올바르지 않습니다', {
+          remainingAttempts: MAX_FAILED_ATTEMPTS - verification.failedAttempts,
+        });
+      }
+
+      const emailVerificationToken = randomBytes(32).toString('base64url');
+
+      verification.verifiedAt = now;
+      verification.verificationTokenHash = this.hashVerificationToken(
+        emailVerificationToken,
+      );
+      verification.verificationTokenExpiresAt = new Date(
+        now.getTime() + VERIFICATION_TOKEN_EXPIRES_IN_SECONDS * 1000,
+      );
+      await repository.save(verification);
+
+      return {
+        kind: 'success',
+        emailVerificationToken,
+      } satisfies VerifyTransactionResult;
+    });
+
+    if (result.kind === 'bad-request') {
+      throw new BadRequestException(result.reason, 'BAD_REQUEST', result.data);
+    }
+
+    if (result.kind === 'too-many-requests') {
+      throw new TooManyRequestsException(
+        result.reason,
+        'TOO_MANY_REQUESTS',
+        result.data,
+      );
+    }
+
+    return {
+      emailVerificationToken: result.emailVerificationToken,
+      expiresInSeconds: VERIFICATION_TOKEN_EXPIRES_IN_SECONDS,
     };
   }
 
@@ -151,6 +260,21 @@ export class EmailVerificationService {
     return Math.max(0, Math.ceil(remainingMilliseconds / 1000));
   }
 
+  private badRequestResult(
+    reason: string,
+    data: unknown = null,
+  ): VerifyTransactionResult {
+    return { kind: 'bad-request', reason, data };
+  }
+
+  private tooManyAttemptsResult(): VerifyTransactionResult {
+    return {
+      kind: 'too-many-requests',
+      reason: '인증 시도 횟수를 초과했습니다. 인증번호를 다시 요청해주세요',
+      data: null,
+    };
+  }
+
   private createCooldownException(
     retryAfterSeconds: number,
   ): TooManyRequestsException {
@@ -169,6 +293,26 @@ export class EmailVerificationService {
     return createHmac('sha256', this.verificationSecret)
       .update(`${purpose}:${email}:${code}`)
       .digest('hex');
+  }
+
+  private isCodeMatching(
+    verification: EmailVerificationEntity,
+    code: string,
+  ): boolean {
+    const storedHash = Buffer.from(verification.codeHash, 'hex');
+    const submittedHash = Buffer.from(
+      this.hashCode(verification.email, verification.purpose, code),
+      'hex',
+    );
+
+    return (
+      storedHash.length === submittedHash.length &&
+      timingSafeEqual(storedHash, submittedHash)
+    );
+  }
+
+  private hashVerificationToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 
   private isUniqueConstraintViolation(error: unknown): boolean {
