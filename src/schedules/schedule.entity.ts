@@ -14,7 +14,7 @@ export enum RepeatType {
 }
 
 @Entity('schedule')
-export class Schedule {
+export class ScheduleEntity {
   @PrimaryGeneratedColumn({ name: 'schedule_id', type: 'int' })
   scheduleId: number;
 
