@@ -5,8 +5,10 @@ import { AnswerEntity } from './entities/ai-answer.entity';
 import { DiaryQuestionEntity } from './entities/ai-diary-question.entity';
 import { RecommendEntity } from './entities/ai-recommend.entitiy';
 import { AiController } from './ai.controller';
+import { AiAnswerController } from './ai-answer.controller';
 import { AiService } from './ai.service';
 import { GeminiService } from './gemini.service';
+import { DiariesModule } from '../diaries/diary.module';
 
 @Module({
   imports: [
@@ -16,8 +18,9 @@ import { GeminiService } from './gemini.service';
       DiaryQuestionEntity,
       RecommendEntity,
     ]),
+    DiariesModule,
   ],
-  controllers: [AiController],
+  controllers: [AiController, AiAnswerController],
   providers: [AiService, GeminiService],
   exports: [TypeOrmModule],
 })
