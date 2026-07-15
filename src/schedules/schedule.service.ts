@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 
-import { CategoryEntity, CategoryColor } from '../categories/entities/category.entity';
+import { CategoryEntity } from '../categories/entities/category.entity';
 import {
   BadRequestException as CustomBadRequestException,
   NotFoundException as CustomNotFoundException,
@@ -10,22 +10,22 @@ import {
 import { GetSchedulesQueryDto } from './schedule.dto';
 import { ScheduleEntity } from './schedule.entity';
 
-interface ScheduleRawResult {
-  scheduleId: number;
-  categoryId: number;
-  categoryName: string;
-  categoryColor: CategoryColor;
-  title: string;
-  content: string | null;
-  date: string;
-  groupId: number | null;
-  isCompleted: boolean;
-  repeatType: string;
-  repeatStartDate: string | null;
-  repeatEndDate: string | null;
-  repeatDays: string | null;
-  createdAt: Date;
-  updatedAt: Date | null;
+interface ScheduleRaw {
+  scheduleId: ScheduleEntity['scheduleId'];
+  categoryId: CategoryEntity['categoryId'];
+  categoryName: CategoryEntity['categoryName'];
+  categoryColor: CategoryEntity['categoryColor'];
+  title: ScheduleEntity['title'];
+  content: ScheduleEntity['content'];
+  date: ScheduleEntity['date'];
+  groupId: ScheduleEntity['groupId'];
+  isCompleted: ScheduleEntity['isCompleted'];
+  repeatType: ScheduleEntity['repeatType'];
+  repeatStartDate: ScheduleEntity['repeatStartDate'];
+  repeatEndDate: ScheduleEntity['repeatEndDate'];
+  repeatDays: ScheduleEntity['repeatDays'];
+  createdAt: ScheduleEntity['createdAt'];
+  updatedAt: ScheduleEntity['updatedAt'];
 }
 
 @Injectable()
@@ -51,8 +51,8 @@ export class ScheduleService {
 
     if (startDate && endDate && startDate > endDate) {
       throw new CustomBadRequestException(
-        'INVALID_DATE_RANGE',
         '시작일은 종료일보다 늦을 수 없습니다.',
+        'INVALID_DATE_RANGE',
       );
     }
 
@@ -66,25 +66,13 @@ export class ScheduleService {
 
       if (!category) {
         throw new CustomNotFoundException(
-          'CATEGORY_NOT_FOUND',
           '카테고리를 찾을 수 없습니다.',
+          'CATEGORY_NOT_FOUND',
         );
       }
     }
 
-    const queryBuilder = this.scheduleRepository
-      .createQueryBuilder('schedule')
-      .innerJoin(
-        CategoryEntity,
-        'category',
-        `
-          category.categoryId = schedule.categoryId
-          AND category.userId = :userId
-          AND category.deletedAt IS NULL
-        `,
-        { userId },
-      )
-      .where('schedule.userId = :userId', { userId });
+    const queryBuilder = this.createScheduleListQuery(userId);
 
     if (startDate) {
       queryBuilder.andWhere('schedule.date >= :startDate', {
@@ -99,9 +87,12 @@ export class ScheduleService {
     }
 
     if (categoryId !== undefined) {
-      queryBuilder.andWhere('schedule.categoryId = :categoryId', {
-        categoryId,
-      });
+      queryBuilder.andWhere(
+        'schedule.categoryId = :categoryId',
+        {
+          categoryId,
+        },
+      );
     }
 
     if (isCompleted !== undefined) {
@@ -114,27 +105,76 @@ export class ScheduleService {
     }
 
     const schedules = await queryBuilder
-      .select('schedule.scheduleId', 'scheduleId')
-      .addSelect('category.categoryId', 'categoryId')
-      .addSelect('category.categoryName', 'categoryName')
-      .addSelect('category.categoryColor', 'categoryColor')
-      .addSelect('schedule.title', 'title')
-      .addSelect('schedule.content', 'content')
-      .addSelect('schedule.date', 'date')
-      .addSelect('schedule.groupId', 'groupId')
-      .addSelect('schedule.isCompleted', 'isCompleted')
-      .addSelect('schedule.repeatType', 'repeatType')
-      .addSelect('schedule.repeatStartDate', 'repeatStartDate')
-      .addSelect('schedule.repeatEndDate', 'repeatEndDate')
-      .addSelect('schedule.repeatDays', 'repeatDays')
-      .addSelect('schedule.createdAt', 'createdAt')
-      .addSelect('schedule.updatedAt', 'updatedAt')
       .orderBy('schedule.date', 'ASC')
       .addOrderBy('schedule.createdAt', 'ASC')
       .addOrderBy('schedule.scheduleId', 'ASC')
-      .getRawMany<ScheduleRawResult>();
+      .getRawMany<ScheduleRaw>();
 
-    return schedules.map((schedule) => ({
+    return schedules.map((schedule) =>
+      this.toScheduleResponse(schedule),
+    );
+  }
+
+  async getUpcomingSchedules(userId: number) {
+    const schedules = await this.createScheduleListQuery(userId)
+      .andWhere('schedule.isCompleted = :isCompleted', {
+        isCompleted: false,
+      })
+      .andWhere(
+        `schedule.date >= (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul')::date`,
+      )
+      .orderBy('schedule.date', 'ASC')
+      .addOrderBy('schedule.createdAt', 'ASC')
+      .addOrderBy('schedule.scheduleId', 'ASC')
+      .take(3)
+      .getRawMany<ScheduleRaw>();
+
+    return schedules.map((schedule) =>
+      this.toScheduleResponse(schedule),
+    );
+  }
+
+  private createScheduleListQuery(
+    userId: number,
+  ): SelectQueryBuilder<ScheduleEntity> {
+    return this.scheduleRepository
+      .createQueryBuilder('schedule')
+      .innerJoin(
+        CategoryEntity,
+        'category',
+        [
+          'category.categoryId = schedule.categoryId',
+          'category.userId = :userId',
+          'category.deletedAt IS NULL',
+        ].join(' AND '),
+        {
+          userId,
+        },
+      )
+      .where('schedule.userId = :userId', {
+        userId,
+      })
+      .select([
+        'schedule.scheduleId AS "scheduleId"',
+        'category.categoryId AS "categoryId"',
+        'category.categoryName AS "categoryName"',
+        'category.categoryColor AS "categoryColor"',
+        'schedule.title AS "title"',
+        'schedule.content AS "content"',
+        'schedule.date AS "date"',
+        'schedule.groupId AS "groupId"',
+        'schedule.isCompleted AS "isCompleted"',
+        'schedule.repeatType AS "repeatType"',
+        'schedule.repeatStartDate AS "repeatStartDate"',
+        'schedule.repeatEndDate AS "repeatEndDate"',
+        'schedule.repeatDays AS "repeatDays"',
+        'schedule.createdAt AS "createdAt"',
+        'schedule.updatedAt AS "updatedAt"',
+      ]);
+  }
+
+  private toScheduleResponse(schedule: ScheduleRaw) {
+    return {
       scheduleId: schedule.scheduleId,
       category: {
         categoryId: schedule.categoryId,
@@ -152,6 +192,6 @@ export class ScheduleService {
       repeatDays: schedule.repeatDays,
       createdAt: schedule.createdAt,
       updatedAt: schedule.updatedAt,
-    }));
+    };
   }
 }

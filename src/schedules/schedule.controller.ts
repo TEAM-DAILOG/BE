@@ -81,4 +81,26 @@ export class ScheduleController {
       },
     };
   }
+
+  @Get('upcoming')
+  @ApiOperation({
+    summary: '가까운 일정 조회',
+    description:
+      '오늘을 포함한 이후의 미완료 일정을 날짜 오름차순으로 최대 3개 조회합니다. 날짜가 같으면 생성일시와 일정 ID 오름차순으로 정렬합니다.',
+  })
+  async getUpcomingSchedules(
+    @Req() request: AuthenticatedRequest,
+  ) {
+    const userId = request.user.userId;
+
+    const schedules =
+      await this.scheduleService.getUpcomingSchedules(userId);
+
+    return {
+      message: '가까운 일정 조회에 성공했습니다.',
+      data: {
+        schedules,
+      },
+    };
+  }
 }
