@@ -57,7 +57,7 @@ export function UpdateMyProfileSwagger() {
                 },
             },
         }),
-        ApiResponse({ status: 400, description: '잘못된 요청' }),
+        ApiResponse({ status: 400, description: '잘못된 요청 (이미 사용 중인 이메일인 경우)' }),
         ApiResponse({ status: 401, description: '토큰이 없거나 유효하지 않음' }),
         ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' }),
         ApiResponse({ status: 500, description: '서버 내부 오류' }),
