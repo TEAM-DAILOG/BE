@@ -110,10 +110,7 @@ export class AiService {
 
   // TODO: 지금은 테스트 엔드포인트에서만 호출됨 — diary.service.ts의 createDiary()에서
   // 질문일기(questionId 있는 경우) 생성 시 이 메소드를 호출해서 실제 연결이 이뤄지도록 해야 함
-  async linkDiaryQuestion(
-    questionId: number,
-    diaryId: number,
-  ): Promise<DiaryQuestionDTO> {
+  async linkDiaryQuestion(questionId: number, diaryId: number): Promise<void> {
     const question = await this.questionRepository.findOne({
       where: { questionId },
     });
@@ -128,7 +125,7 @@ export class AiService {
       where: { diary: { diaryId } },
     });
 
-    const diaryQuestion = await this.diaryQuestionRepository.save(
+    await this.diaryQuestionRepository.save(
       existing
         ? { ...existing, question, diary, isWritten: true }
         : this.diaryQuestionRepository.create({
@@ -137,8 +134,6 @@ export class AiService {
             isWritten: true,
           }),
     );
-
-    return new DiaryQuestionDTO(diaryQuestion);
   }
 
   async getDiaryQuestion(diaryId: number): Promise<DiaryQuestionDTO> {

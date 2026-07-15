@@ -50,12 +50,9 @@ export class AiController {
   @LinkDiaryQuestionSwagger()
   @Post('link')
   async linkDiaryQuestion(@Body() dto: LinkDiaryQuestionRequestDTO) {
-    const data = await this.aiService.linkDiaryQuestion(
-      dto.questionId,
-      dto.diaryId,
-    );
+    await this.aiService.linkDiaryQuestion(dto.questionId, dto.diaryId);
 
-    return { message: '질문-일기 연결 성공', data };
+    return { message: '질문-일기 연결 성공' };
   }
 
   /**
