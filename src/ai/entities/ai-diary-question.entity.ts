@@ -4,9 +4,11 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { QuestionEntity } from './ai-question.entity';
+import { DiaryEntity } from '@/src/diaries/entities/diary.entity';
 
 @Entity('DiaryQuestion')
 export class DiaryQuestionEntity {
@@ -35,4 +37,8 @@ export class DiaryQuestionEntity {
   @ManyToOne(() => QuestionEntity, { nullable: false })
   @JoinColumn({ name: 'question_id' })
   question: QuestionEntity;
+
+  @OneToOne(() => DiaryEntity, { nullable: true })
+  @JoinColumn({ name: 'diary_id' })
+  diary: DiaryEntity;
 }
