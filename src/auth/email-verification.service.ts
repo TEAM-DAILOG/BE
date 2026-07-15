@@ -238,6 +238,12 @@ export class EmailVerificationService {
           if (retryAfterSeconds > 0) {
             throw this.createCooldownException(retryAfterSeconds);
           }
+
+          if (
+            this.hasValidUnconsumedVerificationToken(existingVerification, now)
+          ) {
+            throw new BadRequestException('이미 인증이 완료된 이메일입니다');
+          }
         }
 
         const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
@@ -292,6 +298,19 @@ export class EmailVerificationService {
       sentAt.getTime() + RESEND_COOLDOWN_SECONDS * 1000 - now.getTime();
 
     return Math.max(0, Math.ceil(remainingMilliseconds / 1000));
+  }
+
+  private hasValidUnconsumedVerificationToken(
+    verification: EmailVerificationEntity,
+    now: Date,
+  ): boolean {
+    return (
+      verification.verifiedAt !== null &&
+      verification.verificationTokenHash !== null &&
+      verification.verificationTokenExpiresAt !== null &&
+      verification.verificationTokenExpiresAt.getTime() > now.getTime() &&
+      verification.consumedAt === null
+    );
   }
 
   private badRequestResult(
