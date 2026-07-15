@@ -1,15 +1,15 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
-import { AlarmsService } from "./services/alarms.service";
+import { AlarmService } from "./services/alarms.service";
 import { PushTokenRequestDto, UpdateAlarmDto, UpdateReminderDto } from "./alarms.dto";
 import { ApiTags } from "@nestjs/swagger";
 import { DeletePushTokenSwagger, FindOneAlarmSwagger, FindOneReminderSwagger, RegisterPushTokenSwagger, UpdateAlarmSwagger, UpdateReminderSwagger } from "./alarms.swagger";
 
 @ApiTags('alarms')
 @Controller('alarms')
-export class AlarmsController {
+export class AlarmController {
 
     constructor(
-        private readonly alarmsService: AlarmsService
+        private readonly alarmService: AlarmService
     ) {}
 
     // 알람 설정 조회
@@ -17,7 +17,7 @@ export class AlarmsController {
     @Get()
     async alarmAll() {
         const userId = 1; //나중에 사용자 인증 데코레이터로 교체
-        return this.alarmsService.findOneAlarmEntity(userId);
+        return this.alarmService.findOneAlarmEntity(userId);
     }
 
     // 알람 설정 수정
@@ -27,7 +27,7 @@ export class AlarmsController {
         @Body() updateAlarmDto: UpdateAlarmDto,
     ) {
         const userId = 1; //나중에 사용자 인증 데코레이터로 교체
-        return this.alarmsService.updateAlarmEntity(userId, updateAlarmDto);
+        return this.alarmService.updateAlarmEntity(userId, updateAlarmDto);
     }
 
     // 리마인드 알람 설정 조회
@@ -35,7 +35,7 @@ export class AlarmsController {
     @Get('/reminder')
     async reminderAll() {
         const userId = 1; //나중에 사용자 인증 데코레이터로 교체
-        return this.alarmsService.findOneReminderEntity(userId);
+        return this.alarmService.findOneReminderEntity(userId);
     }
 
     // 리마인드 알람 설정 수정
@@ -45,7 +45,7 @@ export class AlarmsController {
         @Body() updateReminderDto: UpdateReminderDto,
     ) {
         const userId = 1; //나중에 사용자 인증 데코레이터로 교체
-        return this.alarmsService.updateReminderEntity(userId, updateReminderDto);
+        return this.alarmService.updateReminderEntity(userId, updateReminderDto);
     }
 
     // FCM 토큰 등록 (앱 로그인/실행 시)
@@ -55,7 +55,7 @@ export class AlarmsController {
         @Body() pushTokenRequestDto: PushTokenRequestDto,
     ) {
         const userId = 1; //나중에 사용자 인증 데코레이터로 교체
-        return this.alarmsService.registerPushToken(userId, pushTokenRequestDto);
+        return this.alarmService.registerPushToken(userId, pushTokenRequestDto);
     }
 
     // FCM 토큰 삭제 (앱 로그아웃 시)
@@ -65,6 +65,6 @@ export class AlarmsController {
         @Param('tokenId') tokenId: number,
     ) {
         const userId = 1 //나중에 사용자 인증 데코레이터로 교체
-        return this.alarmsService.deletePushToken(userId, tokenId);
+        return this.alarmService.deletePushToken(userId, tokenId);
     }
 }

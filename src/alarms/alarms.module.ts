@@ -4,8 +4,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { UserAlarmEntity } from './entities/user-alarm.entity';
 import { PushTokenEntity } from './entities/push-token.entity';
 import { ReminderEntity } from './entities/reminder.entity';
-import { AlarmsService } from './services/alarms.service';
-import { AlarmsController } from './alarms.controller';
+import { AlarmService } from './services/alarms.service';
+import { AlarmController } from './alarms.controller';
 import { PushNotificationService } from './services/push-notification.service';
 import { AlarmNotificationService } from './services/alarm-notification.service';
 import { firebaseAdminProvider } from './firebase-admin.provider';
@@ -21,13 +21,13 @@ import { DiaryEntity } from '../diaries/entities/diary.entity';
         ]),
         ScheduleModule.forRoot(),
     ],
-    controllers: [AlarmsController],
+    controllers: [AlarmController],
     providers: [
-        AlarmsService,
+        AlarmService,
         PushNotificationService,
         AlarmNotificationService,
         firebaseAdminProvider,
     ],
-    exports: [TypeOrmModule, AlarmsService],
+    exports: [TypeOrmModule, AlarmService],
 })
 export class AlarmsModule {}
