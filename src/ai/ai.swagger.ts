@@ -23,6 +23,7 @@ export function RegenerateTodayQuestionSwagger() {
   return applyDecorators(
     ApiOperation({
       summary: '오늘의 질문 재생성 (테스트용)',
+      description: '오늘의 질문을 재생성합니다. 만들어진 질문을 덮어쓰기합니다',
     }),
     ApiResponse({
       status: 200,
