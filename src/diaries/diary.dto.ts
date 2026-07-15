@@ -56,6 +56,7 @@ export class UpdateDiaryDto {
   })
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(50)
   title?: string;
 
@@ -65,6 +66,7 @@ export class UpdateDiaryDto {
   })
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   content?: string;
 
   @ApiPropertyOptional({

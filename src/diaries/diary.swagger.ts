@@ -62,6 +62,9 @@ export function CreateDiarySwagger() {
     ApiBody({
       schema: {
         type: 'object',
+
+        required: ['title', 'content'],
+
         properties: {
           title: {
             type: 'string',
