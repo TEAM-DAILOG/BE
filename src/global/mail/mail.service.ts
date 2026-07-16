@@ -39,4 +39,22 @@ export class MailService {
       ].join('\n'),
     });
   }
+
+  async sendPasswordResetVerificationCode(
+    to: string,
+    code: string,
+  ): Promise<void> {
+    await this.transporter.sendMail({
+      from: this.from,
+      to,
+      subject: '[Dailog] 비밀번호 재설정 인증번호를 안내드립니다.',
+      text: [
+        'Dailog 비밀번호 재설정 인증번호입니다.',
+        '',
+        code,
+        '',
+        '인증번호는 5분 동안 유효합니다.',
+      ].join('\n'),
+    });
+  }
 }

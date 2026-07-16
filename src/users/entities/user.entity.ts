@@ -70,6 +70,14 @@ export class UserEntity extends BaseEntity {
   })
   isAiSummary: boolean;
 
+  @Column({
+    name: 'credentials_changed_at',
+    type: 'timestamp',
+    nullable: true,
+    comment: '인증 정보 변경일',
+  })
+  credentialsChangedAt: Date | null;
+
   @CreateDateColumn({
     name: 'created_at',
     type: 'timestamp',

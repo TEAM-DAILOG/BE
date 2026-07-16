@@ -14,11 +14,17 @@ import {
   CheckSignupEmailDto,
   LoginDto,
   ReissueAccessTokenDto,
+  ResetPasswordDto,
+  SendPasswordResetEmailVerificationDto,
   SendSignupEmailVerificationDto,
   SignupDto,
+  VerifyPasswordResetEmailDto,
   VerifySignupEmailDto,
 } from './auth.dto';
-import { EmailVerificationService } from './email-verification.service';
+import {
+  EMAIL_VERIFICATION_POLICY,
+  EmailVerificationService,
+} from './email-verification.service';
 
 const BCRYPT_SALT_ROUNDS = 10;
 const ACCESS_TOKEN_EXPIRES_IN = '1h';
@@ -26,6 +32,13 @@ const REFRESH_TOKEN_EXPIRES_IN = '14d';
 const REFRESH_TOKEN_EXPIRES_IN_MS = 14 * 24 * 60 * 60 * 1000;
 const DUMMY_PASSWORD_HASH =
   '$2b$10$MgTW7kAnV06Ef1oI8wAtbenaFF9594ASF7d5.c42.TGHtiOYh/gsm';
+
+interface RefreshTokenPayload {
+  sub: number;
+  email: string | null;
+  jti: string;
+  credentialsChangedAt: number | null;
+}
 
 @Injectable()
 export class AuthService {
@@ -62,6 +75,89 @@ export class AuthService {
     return {
       message: '인증번호를 전송했습니다.',
       data,
+    };
+  }
+
+  async sendPasswordResetEmailVerification({
+    email,
+  }: SendPasswordResetEmailVerificationDto) {
+    const normalizedEmail = this.normalizeEmail(email);
+
+    if (!this.isValidEmail(normalizedEmail)) {
+      throw new BadRequestException('이메일 형식이 올바르지 않습니다');
+    }
+
+    const user = await this.userService.findActiveLocalByEmail(normalizedEmail);
+    this.emailVerificationService.queuePasswordResetVerification(
+      normalizedEmail,
+      user !== null,
+    );
+    const data = {
+      expiresInSeconds: EMAIL_VERIFICATION_POLICY.codeExpiresInSeconds,
+      resendAvailableInSeconds: EMAIL_VERIFICATION_POLICY.resendCooldownSeconds,
+    };
+
+    return {
+      message: '가입된 이메일인 경우 인증번호를 전송했습니다.',
+      data,
+    };
+  }
+
+  async verifyPasswordResetEmail({ email, code }: VerifyPasswordResetEmailDto) {
+    const normalizedEmail = this.normalizeEmail(email);
+    const data = await this.emailVerificationService.verifyPasswordResetCode(
+      normalizedEmail,
+      code,
+    );
+
+    return { message: '이메일 인증에 성공했습니다.', data };
+  }
+
+  async resetPassword({
+    email,
+    passwordResetToken,
+    newPassword,
+  }: ResetPasswordDto) {
+    const normalizedEmail = this.normalizeEmail(email);
+
+    this.validatePassword(newPassword);
+    const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+
+    await this.dataSource.transaction(async (manager) => {
+      await this.emailVerificationService.consumePasswordResetVerification(
+        normalizedEmail,
+        passwordResetToken,
+        manager,
+      );
+
+      const user = await this.userService.findActiveLocalByEmail(
+        normalizedEmail,
+        manager,
+      );
+
+      if (!user) {
+        throw new BadRequestException(
+          '비밀번호 재설정 정보가 유효하지 않습니다.',
+        );
+      }
+
+      const credentialsChangedAt = new Date();
+      await this.userService.updatePassword(
+        user,
+        hashedPassword,
+        credentialsChangedAt,
+        manager,
+      );
+      await this.userService.revokeAllRefreshTokens(
+        user.userId,
+        credentialsChangedAt,
+        manager,
+      );
+    });
+
+    return {
+      message: '비밀번호가 재설정되었습니다.',
+      data: null,
     };
   }
 
@@ -155,13 +251,7 @@ export class AuthService {
     }
 
     const accessToken = await this.signAccessToken(user);
-    const refreshToken = await this.jwtService.signAsync(
-      { sub: user.userId, email: user.email, jti: randomUUID() },
-      {
-        secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
-        expiresIn: REFRESH_TOKEN_EXPIRES_IN,
-      },
-    );
+    const refreshToken = await this.signRefreshToken(user);
 
     await this.userService.createRefreshToken({
       user,
@@ -187,13 +277,20 @@ export class AuthService {
   }
 
   async reissueAccessToken({ refreshToken }: ReissueAccessTokenDto) {
-    await this.verifyRefreshToken(refreshToken);
+    const payload = await this.verifyRefreshToken(refreshToken);
 
     const storedRefreshToken = await this.userService.findRefreshTokenByHash(
       this.hashToken(refreshToken),
     );
 
-    if (!this.isUsableRefreshToken(storedRefreshToken)) {
+    if (
+      !this.isUsableRefreshToken(storedRefreshToken) ||
+      payload.sub !== storedRefreshToken.user.userId ||
+      !this.isRefreshTokenCredentialsMarkerValid(
+        payload,
+        storedRefreshToken.user,
+      )
+    ) {
       throw new UnauthorizedException('인증에 실패했습니다');
     }
 
@@ -286,14 +383,77 @@ export class AuthService {
     );
   }
 
-  private async verifyRefreshToken(refreshToken: string): Promise<void> {
-    try {
-      await this.jwtService.verifyAsync(refreshToken, {
+  private async signRefreshToken(user: {
+    userId: number;
+    email: string | null;
+    credentialsChangedAt: Date | null;
+  }) {
+    return this.jwtService.signAsync(
+      {
+        sub: user.userId,
+        email: user.email,
+        jti: randomUUID(),
+        credentialsChangedAt: this.getCredentialsChangedAtMarker(user),
+      } satisfies RefreshTokenPayload,
+      {
         secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
-      });
+        expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+      },
+    );
+  }
+
+  private async verifyRefreshToken(
+    refreshToken: string,
+  ): Promise<RefreshTokenPayload> {
+    try {
+      const payload = await this.jwtService.verifyAsync<RefreshTokenPayload>(
+        refreshToken,
+        {
+          secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+        },
+      );
+
+      if (!this.isRefreshTokenPayload(payload)) {
+        throw new UnauthorizedException('인증에 실패했습니다');
+      }
+
+      return payload;
     } catch {
       throw new UnauthorizedException('인증에 실패했습니다');
     }
+  }
+
+  private isRefreshTokenPayload(
+    payload: unknown,
+  ): payload is RefreshTokenPayload {
+    return (
+      typeof payload === 'object' &&
+      payload !== null &&
+      'sub' in payload &&
+      'email' in payload &&
+      'jti' in payload &&
+      'credentialsChangedAt' in payload &&
+      typeof payload.sub === 'number' &&
+      (typeof payload.email === 'string' || payload.email === null) &&
+      typeof payload.jti === 'string' &&
+      (typeof payload.credentialsChangedAt === 'number' ||
+        payload.credentialsChangedAt === null)
+    );
+  }
+
+  private isRefreshTokenCredentialsMarkerValid(
+    payload: RefreshTokenPayload,
+    user: { credentialsChangedAt: Date | null },
+  ): boolean {
+    return (
+      payload.credentialsChangedAt === this.getCredentialsChangedAtMarker(user)
+    );
+  }
+
+  private getCredentialsChangedAtMarker(user: {
+    credentialsChangedAt: Date | null;
+  }): number | null {
+    return user.credentialsChangedAt?.getTime() ?? null;
   }
 
   private isUsableRefreshToken(

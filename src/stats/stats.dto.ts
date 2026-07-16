@@ -20,18 +20,21 @@ export class MostFrequentCategoryDTO {
 }
 
 export class StatsMainDTO {
-  @ApiProperty({ description: '가장 많이 사용한 카테고리정보' })
-  mostFrequentCategory: MostFrequentCategoryDTO;
+  @ApiProperty({
+    description:
+      '가장 많이 사용한 카테고리정보 (이번 달 등록된 일정이 없으면 null)',
+    nullable: true,
+  })
+  mostFrequentCategory: MostFrequentCategoryDTO | null;
 
   @ApiProperty({ description: '추천일정 목록 입니다' })
-  //TODO : 추후 ai-recommendDTO 연결
   recommendedSchedules: RecommendDTO[];
 
   @ApiProperty({ description: '스트레스 관련 정보 입니다' })
   stress: string;
 
   constructor(
-    mostFrequentCategory: MostFrequentCategoryDTO,
+    mostFrequentCategory: MostFrequentCategoryDTO | null,
     recommendedSchedules: RecommendDTO[],
     stress: string,
   ) {
@@ -80,14 +83,18 @@ export class CategoryRankInfoDTO {
 }
 
 export class ScheduleDetailDTO {
-  @ApiProperty({ description: '가장 많이 사용된 카테고리 정보입니다' })
-  mostFrequentCategory: MostFrequentCategoryDTO;
+  @ApiProperty({
+    description:
+      '가장 많이 사용된 카테고리 정보입니다 (이번 달 등록된 일정이 없으면 null)',
+    nullable: true,
+  })
+  mostFrequentCategory: MostFrequentCategoryDTO | null;
 
   @ApiProperty({ description: '카테고리별 사용 횟수 정보입니다' })
   categoryRankInfo: CategoryRankInfoDTO[];
 
   constructor(
-    mostFrequentCategory: MostFrequentCategoryDTO,
+    mostFrequentCategory: MostFrequentCategoryDTO | null,
     categoryRankInfo: CategoryRankInfoDTO[],
   ) {
     this.mostFrequentCategory = mostFrequentCategory;

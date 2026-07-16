@@ -20,10 +20,18 @@ import {
   EmailVerificationPurpose,
 } from './entities/email-verification.entity';
 
-const CODE_EXPIRES_IN_SECONDS = 5 * 60;
-const MAX_FAILED_ATTEMPTS = 5;
-const RESEND_COOLDOWN_SECONDS = 60;
-const VERIFICATION_TOKEN_EXPIRES_IN_SECONDS = 30 * 60;
+export const EMAIL_VERIFICATION_POLICY = {
+  codeExpiresInSeconds: 5 * 60,
+  maxFailedAttempts: 5,
+  resendCooldownSeconds: 60,
+  verificationTokenExpiresInSeconds: 30 * 60,
+} as const;
+
+const CODE_EXPIRES_IN_SECONDS = EMAIL_VERIFICATION_POLICY.codeExpiresInSeconds;
+const MAX_FAILED_ATTEMPTS = EMAIL_VERIFICATION_POLICY.maxFailedAttempts;
+const RESEND_COOLDOWN_SECONDS = EMAIL_VERIFICATION_POLICY.resendCooldownSeconds;
+const VERIFICATION_TOKEN_EXPIRES_IN_SECONDS =
+  EMAIL_VERIFICATION_POLICY.verificationTokenExpiresInSeconds;
 
 export interface SendVerificationResult {
   expiresInSeconds: number;
@@ -44,7 +52,7 @@ interface IssuedVerification {
 type VerifyTransactionResult =
   | {
       kind: 'success';
-      emailVerificationToken: string;
+      verificationToken: string;
     }
   | {
       kind: 'bad-request';
@@ -56,6 +64,16 @@ type VerifyTransactionResult =
       reason: string;
       data: unknown;
     };
+
+interface VerifyCodeResult {
+  verificationToken: string;
+  expiresInSeconds: number;
+}
+
+export interface VerifyPasswordResetCodeResult {
+  passwordResetToken: string;
+  expiresInSeconds: number;
+}
 
 @Injectable()
 export class EmailVerificationService {
@@ -74,44 +92,90 @@ export class EmailVerificationService {
   }
 
   async sendSignupVerification(email: string): Promise<SendVerificationResult> {
-    const issuedVerification = await this.issueSignupVerification(email);
-
-    try {
-      await this.mailService.sendSignupVerificationCode(
+    const issuedVerification = await this.issueVerification(
+      email,
+      EmailVerificationPurpose.SIGNUP,
+    );
+    await this.deliverVerificationCode(issuedVerification, () =>
+      this.mailService.sendSignupVerificationCode(
         email,
         issuedVerification.code,
-      );
-    } catch {
-      await this.emailVerificationRepository.update(
-        {
-          emailVerificationId: issuedVerification.emailVerificationId,
-          codeHash: issuedVerification.codeHash,
-        },
-        {
-          codeExpiresAt: new Date(),
-          sentAt: new Date(0),
-        },
-      );
-      throw new InternalServerException();
-    }
+      ),
+    );
 
-    return {
-      expiresInSeconds: CODE_EXPIRES_IN_SECONDS,
-      resendAvailableInSeconds: RESEND_COOLDOWN_SECONDS,
-    };
+    return this.createSendVerificationResult();
+  }
+
+  async sendPasswordResetVerification(
+    email: string,
+  ): Promise<SendVerificationResult> {
+    const issuedVerification = await this.issueVerification(
+      email,
+      EmailVerificationPurpose.PASSWORD_RESET,
+    );
+    await this.deliverVerificationCode(issuedVerification, () =>
+      this.mailService.sendPasswordResetVerificationCode(
+        email,
+        issuedVerification.code,
+      ),
+    );
+
+    return this.createSendVerificationResult();
+  }
+
+  queuePasswordResetVerification(email: string, shouldSend: boolean): void {
+    void Promise.resolve()
+      .then(async () => {
+        if (!shouldSend) {
+          return;
+        }
+
+        await this.sendPasswordResetVerification(email);
+      })
+      .catch(() => undefined);
   }
 
   async verifySignupCode(
     email: string,
     code: string,
   ): Promise<VerifySignupCodeResult> {
+    const result = await this.verifyCode(
+      email,
+      code,
+      EmailVerificationPurpose.SIGNUP,
+    );
+
+    return {
+      emailVerificationToken: result.verificationToken,
+      expiresInSeconds: result.expiresInSeconds,
+    };
+  }
+
+  async verifyPasswordResetCode(
+    email: string,
+    code: string,
+  ): Promise<VerifyPasswordResetCodeResult> {
+    const result = await this.verifyCode(
+      email,
+      code,
+      EmailVerificationPurpose.PASSWORD_RESET,
+    );
+
+    return {
+      passwordResetToken: result.verificationToken,
+      expiresInSeconds: result.expiresInSeconds,
+    };
+  }
+
+  private async verifyCode(
+    email: string,
+    code: string,
+    purpose: EmailVerificationPurpose,
+  ): Promise<VerifyCodeResult> {
     const result = await this.dataSource.transaction(async (manager) => {
       const repository = manager.getRepository(EmailVerificationEntity);
       const verification = await repository.findOne({
-        where: {
-          email,
-          purpose: EmailVerificationPurpose.SIGNUP,
-        },
+        where: { email, purpose },
         lock: { mode: 'pessimistic_write' },
       });
       const now = new Date();
@@ -145,12 +209,11 @@ export class EmailVerificationService {
         });
       }
 
-      const emailVerificationToken = randomBytes(32).toString('base64url');
+      const verificationToken = randomBytes(32).toString('base64url');
 
       verification.verifiedAt = now;
-      verification.verificationTokenHash = this.hashVerificationToken(
-        emailVerificationToken,
-      );
+      verification.verificationTokenHash =
+        this.hashVerificationToken(verificationToken);
       verification.verificationTokenExpiresAt = new Date(
         now.getTime() + VERIFICATION_TOKEN_EXPIRES_IN_SECONDS * 1000,
       );
@@ -158,7 +221,7 @@ export class EmailVerificationService {
 
       return {
         kind: 'success',
-        emailVerificationToken,
+        verificationToken,
       } satisfies VerifyTransactionResult;
     });
 
@@ -175,22 +238,49 @@ export class EmailVerificationService {
     }
 
     return {
-      emailVerificationToken: result.emailVerificationToken,
+      verificationToken: result.verificationToken,
       expiresInSeconds: VERIFICATION_TOKEN_EXPIRES_IN_SECONDS,
     };
   }
 
   async consumeSignupVerification(
     email: string,
-    emailVerificationToken: string,
+    token: string,
+    manager: EntityManager,
+  ): Promise<void> {
+    await this.consumeVerification(
+      email,
+      token,
+      EmailVerificationPurpose.SIGNUP,
+      '이메일 인증 정보가 유효하지 않습니다',
+      manager,
+    );
+  }
+
+  async consumePasswordResetVerification(
+    email: string,
+    token: string,
+    manager: EntityManager,
+  ): Promise<void> {
+    await this.consumeVerification(
+      email,
+      token,
+      EmailVerificationPurpose.PASSWORD_RESET,
+      '비밀번호 재설정 정보가 유효하지 않습니다.',
+      manager,
+    );
+  }
+
+  private async consumeVerification(
+    email: string,
+    token: string,
+    purpose: EmailVerificationPurpose,
+    invalidReason: string,
     manager: EntityManager,
   ): Promise<void> {
     const repository = manager.getRepository(EmailVerificationEntity);
     const verification = await repository.findOne({
-      where: {
-        email,
-        purpose: EmailVerificationPurpose.SIGNUP,
-      },
+      where: { email, purpose },
       lock: { mode: 'pessimistic_write' },
     });
     const now = new Date();
@@ -204,27 +294,53 @@ export class EmailVerificationService {
       verification.consumedAt !== null ||
       !this.isVerificationTokenMatching(
         verification.verificationTokenHash,
-        emailVerificationToken,
+        token,
       )
     ) {
-      throw new BadRequestException('이메일 인증 정보가 유효하지 않습니다');
+      throw new BadRequestException(invalidReason);
     }
 
     verification.consumedAt = now;
     await repository.save(verification);
   }
 
-  private async issueSignupVerification(
+  private createSendVerificationResult(): SendVerificationResult {
+    return {
+      expiresInSeconds: CODE_EXPIRES_IN_SECONDS,
+      resendAvailableInSeconds: RESEND_COOLDOWN_SECONDS,
+    };
+  }
+
+  private async deliverVerificationCode(
+    issuedVerification: IssuedVerification,
+    send: () => Promise<void>,
+  ): Promise<void> {
+    try {
+      await send();
+    } catch {
+      await this.emailVerificationRepository.update(
+        {
+          emailVerificationId: issuedVerification.emailVerificationId,
+          codeHash: issuedVerification.codeHash,
+        },
+        {
+          codeExpiresAt: new Date(),
+          sentAt: new Date(0),
+        },
+      );
+      throw new InternalServerException();
+    }
+  }
+
+  private async issueVerification(
     email: string,
+    purpose: EmailVerificationPurpose,
   ): Promise<IssuedVerification> {
     try {
       return await this.dataSource.transaction(async (manager) => {
         const repository = manager.getRepository(EmailVerificationEntity);
         const existingVerification = await repository.findOne({
-          where: {
-            email,
-            purpose: EmailVerificationPurpose.SIGNUP,
-          },
+          where: { email, purpose },
           lock: { mode: 'pessimistic_write' },
         });
         const now = new Date();
@@ -247,16 +363,12 @@ export class EmailVerificationService {
         }
 
         const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
-        const codeHash = this.hashCode(
-          email,
-          EmailVerificationPurpose.SIGNUP,
-          code,
-        );
+        const codeHash = this.hashCode(email, purpose, code);
         const verification =
           existingVerification ??
           repository.create({
             email,
-            purpose: EmailVerificationPurpose.SIGNUP,
+            purpose,
           });
 
         Object.assign(verification, {
