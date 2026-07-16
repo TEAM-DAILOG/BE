@@ -1,9 +1,10 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Patch, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   CheckSignupEmailDto,
   LoginDto,
   ReissueAccessTokenDto,
+  ResetPasswordDto,
   SendPasswordResetEmailVerificationDto,
   SendSignupEmailVerificationDto,
   SignupDto,
@@ -43,6 +44,12 @@ export class AuthController {
   @HttpCode(200)
   verifyPasswordResetEmail(@Body() dto: VerifyPasswordResetEmailDto) {
     return this.authService.verifyPasswordResetEmail(dto);
+  }
+
+  @Patch('password/reset')
+  @HttpCode(200)
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   @Post('signup/email/verification/verify')

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, IsNull, Repository } from 'typeorm';
 import {
   BadRequestException,
   NotFoundException,
@@ -76,6 +76,29 @@ export class UserService {
     return typeof user?.password === 'string' && user.password.length > 0
       ? user
       : null;
+  }
+
+  async updatePassword(
+    user: UserEntity,
+    passwordHash: string,
+    manager: EntityManager,
+  ): Promise<UserEntity> {
+    const userRepository = manager.getRepository(UserEntity);
+    user.password = passwordHash;
+
+    return userRepository.save(user);
+  }
+
+  async revokeAllRefreshTokens(
+    userId: number,
+    revokedAt: Date,
+    manager: EntityManager,
+  ): Promise<void> {
+    const refreshTokenRepository = manager.getRepository(RefreshTokenEntity);
+    await refreshTokenRepository.update(
+      { user: { userId }, revokedAt: IsNull() },
+      { revokedAt },
+    );
   }
 
   async createUser(

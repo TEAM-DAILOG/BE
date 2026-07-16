@@ -14,6 +14,7 @@ import {
   CheckSignupEmailDto,
   LoginDto,
   ReissueAccessTokenDto,
+  ResetPasswordDto,
   SendPasswordResetEmailVerificationDto,
   SendSignupEmailVerificationDto,
   SignupDto,
@@ -104,6 +105,48 @@ export class AuthService {
     );
 
     return { message: '이메일 인증에 성공했습니다.', data };
+  }
+
+  async resetPassword({
+    email,
+    passwordResetToken,
+    newPassword,
+  }: ResetPasswordDto) {
+    const normalizedEmail = this.normalizeEmail(email);
+
+    this.validatePassword(newPassword);
+    const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+
+    await this.dataSource.transaction(async (manager) => {
+      await this.emailVerificationService.consumePasswordResetVerification(
+        normalizedEmail,
+        passwordResetToken,
+        manager,
+      );
+
+      const user = await this.userService.findActiveLocalByEmail(
+        normalizedEmail,
+        manager,
+      );
+
+      if (!user) {
+        throw new BadRequestException(
+          '비밀번호 재설정 정보가 유효하지 않습니다.',
+        );
+      }
+
+      await this.userService.updatePassword(user, hashedPassword, manager);
+      await this.userService.revokeAllRefreshTokens(
+        user.userId,
+        new Date(),
+        manager,
+      );
+    });
+
+    return {
+      message: '비밀번호가 재설정되었습니다.',
+      data: null,
+    };
   }
 
   async verifySignupEmail({ email, code }: VerifySignupEmailDto) {

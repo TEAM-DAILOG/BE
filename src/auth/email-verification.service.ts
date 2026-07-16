@@ -257,15 +257,42 @@ export class EmailVerificationService {
 
   async consumeSignupVerification(
     email: string,
-    emailVerificationToken: string,
+    token: string,
+    manager: EntityManager,
+  ): Promise<void> {
+    await this.consumeVerification(
+      email,
+      token,
+      EmailVerificationPurpose.SIGNUP,
+      '이메일 인증 정보가 유효하지 않습니다',
+      manager,
+    );
+  }
+
+  async consumePasswordResetVerification(
+    email: string,
+    token: string,
+    manager: EntityManager,
+  ): Promise<void> {
+    await this.consumeVerification(
+      email,
+      token,
+      EmailVerificationPurpose.PASSWORD_RESET,
+      '비밀번호 재설정 정보가 유효하지 않습니다.',
+      manager,
+    );
+  }
+
+  private async consumeVerification(
+    email: string,
+    token: string,
+    purpose: EmailVerificationPurpose,
+    invalidReason: string,
     manager: EntityManager,
   ): Promise<void> {
     const repository = manager.getRepository(EmailVerificationEntity);
     const verification = await repository.findOne({
-      where: {
-        email,
-        purpose: EmailVerificationPurpose.SIGNUP,
-      },
+      where: { email, purpose },
       lock: { mode: 'pessimistic_write' },
     });
     const now = new Date();
@@ -279,10 +306,10 @@ export class EmailVerificationService {
       verification.consumedAt !== null ||
       !this.isVerificationTokenMatching(
         verification.verificationTokenHash,
-        emailVerificationToken,
+        token,
       )
     ) {
-      throw new BadRequestException('이메일 인증 정보가 유효하지 않습니다');
+      throw new BadRequestException(invalidReason);
     }
 
     verification.consumedAt = now;
