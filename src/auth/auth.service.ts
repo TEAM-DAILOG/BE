@@ -81,15 +81,14 @@ export class AuthService {
     }
 
     const user = await this.userService.findActiveLocalByEmail(normalizedEmail);
-    const data = user
-      ? await this.emailVerificationService.sendPasswordResetVerification(
-          normalizedEmail,
-        )
-      : {
-          expiresInSeconds: EMAIL_VERIFICATION_POLICY.codeExpiresInSeconds,
-          resendAvailableInSeconds:
-            EMAIL_VERIFICATION_POLICY.resendCooldownSeconds,
-        };
+    this.emailVerificationService.queuePasswordResetVerification(
+      normalizedEmail,
+      user !== null,
+    );
+    const data = {
+      expiresInSeconds: EMAIL_VERIFICATION_POLICY.codeExpiresInSeconds,
+      resendAvailableInSeconds: EMAIL_VERIFICATION_POLICY.resendCooldownSeconds,
+    };
 
     return {
       message: '가입된 이메일인 경우 인증번호를 전송했습니다.',

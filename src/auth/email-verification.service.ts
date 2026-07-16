@@ -134,6 +134,18 @@ export class EmailVerificationService {
     return this.createSendVerificationResult();
   }
 
+  queuePasswordResetVerification(email: string, shouldSend: boolean): void {
+    void Promise.resolve()
+      .then(async () => {
+        if (!shouldSend) {
+          return;
+        }
+
+        await this.sendPasswordResetVerification(email);
+      })
+      .catch(() => undefined);
+  }
+
   async verifySignupCode(
     email: string,
     code: string,
