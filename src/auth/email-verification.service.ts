@@ -109,27 +109,16 @@ export class EmailVerificationService {
   async sendPasswordResetVerification(
     email: string,
   ): Promise<SendVerificationResult> {
-    try {
-      const issuedVerification = await this.issueVerification(
+    const issuedVerification = await this.issueVerification(
+      email,
+      EmailVerificationPurpose.PASSWORD_RESET,
+    );
+    await this.deliverVerificationCode(issuedVerification, () =>
+      this.mailService.sendPasswordResetVerificationCode(
         email,
-        EmailVerificationPurpose.PASSWORD_RESET,
-      );
-      await this.deliverVerificationCode(issuedVerification, () =>
-        this.mailService.sendPasswordResetVerificationCode(
-          email,
-          issuedVerification.code,
-        ),
-      );
-    } catch (error) {
-      if (
-        error instanceof TooManyRequestsException ||
-        error instanceof BadRequestException
-      ) {
-        return this.createSendVerificationResult();
-      }
-
-      throw error;
-    }
+        issuedVerification.code,
+      ),
+    );
 
     return this.createSendVerificationResult();
   }
@@ -166,29 +155,16 @@ export class EmailVerificationService {
     email: string,
     code: string,
   ): Promise<VerifyPasswordResetCodeResult> {
-    try {
-      const result = await this.verifyCode(
-        email,
-        code,
-        EmailVerificationPurpose.PASSWORD_RESET,
-      );
+    const result = await this.verifyCode(
+      email,
+      code,
+      EmailVerificationPurpose.PASSWORD_RESET,
+    );
 
-      return {
-        passwordResetToken: result.verificationToken,
-        expiresInSeconds: result.expiresInSeconds,
-      };
-    } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof TooManyRequestsException
-      ) {
-        throw new BadRequestException(
-          '인증번호가 올바르지 않거나 만료되었습니다.',
-        );
-      }
-
-      throw error;
-    }
+    return {
+      passwordResetToken: result.verificationToken,
+      expiresInSeconds: result.expiresInSeconds,
+    };
   }
 
   private async verifyCode(
