@@ -61,6 +61,16 @@ export class ResetPasswordDto extends EmailDto {
   newPassword: string;
 }
 
+export class ChangePasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  currentPassword: string;
+
+  @IsString()
+  @IsNotEmpty()
+  newPassword: string;
+}
+
 export class VerifySignupEmailDto extends EmailDto {
   @IsString()
   @Matches(/^\d{6}$/)

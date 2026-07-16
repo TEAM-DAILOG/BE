@@ -78,6 +78,19 @@ export class UserService {
       : null;
   }
 
+  async findActiveLocalById(
+    userId: number,
+    manager?: EntityManager,
+  ): Promise<UserEntity | null> {
+    const userRepository =
+      manager?.getRepository(UserEntity) ?? this.userRepository;
+    const user = await userRepository.findOne({ where: { userId } });
+
+    return typeof user?.password === 'string' && user.password.length > 0
+      ? user
+      : null;
+  }
+
   async updatePassword(
     user: UserEntity,
     passwordHash: string,
