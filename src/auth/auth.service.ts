@@ -14,11 +14,15 @@ import {
   CheckSignupEmailDto,
   LoginDto,
   ReissueAccessTokenDto,
+  SendPasswordResetEmailVerificationDto,
   SendSignupEmailVerificationDto,
   SignupDto,
   VerifySignupEmailDto,
 } from './auth.dto';
-import { EmailVerificationService } from './email-verification.service';
+import {
+  EMAIL_VERIFICATION_POLICY,
+  EmailVerificationService,
+} from './email-verification.service';
 
 const BCRYPT_SALT_ROUNDS = 10;
 const ACCESS_TOKEN_EXPIRES_IN = '1h';
@@ -61,6 +65,32 @@ export class AuthService {
 
     return {
       message: '인증번호를 전송했습니다.',
+      data,
+    };
+  }
+
+  async sendPasswordResetEmailVerification({
+    email,
+  }: SendPasswordResetEmailVerificationDto) {
+    const normalizedEmail = this.normalizeEmail(email);
+
+    if (!this.isValidEmail(normalizedEmail)) {
+      throw new BadRequestException('이메일 형식이 올바르지 않습니다');
+    }
+
+    const user = await this.userService.findActiveLocalByEmail(normalizedEmail);
+    const data = user
+      ? await this.emailVerificationService.sendPasswordResetVerification(
+          normalizedEmail,
+        )
+      : {
+          expiresInSeconds: EMAIL_VERIFICATION_POLICY.codeExpiresInSeconds,
+          resendAvailableInSeconds:
+            EMAIL_VERIFICATION_POLICY.resendCooldownSeconds,
+        };
+
+    return {
+      message: '가입된 이메일인 경우 인증번호를 전송했습니다.',
       data,
     };
   }

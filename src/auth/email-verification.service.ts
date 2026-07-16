@@ -20,10 +20,18 @@ import {
   EmailVerificationPurpose,
 } from './entities/email-verification.entity';
 
-const CODE_EXPIRES_IN_SECONDS = 5 * 60;
-const MAX_FAILED_ATTEMPTS = 5;
-const RESEND_COOLDOWN_SECONDS = 60;
-const VERIFICATION_TOKEN_EXPIRES_IN_SECONDS = 30 * 60;
+export const EMAIL_VERIFICATION_POLICY = {
+  codeExpiresInSeconds: 5 * 60,
+  maxFailedAttempts: 5,
+  resendCooldownSeconds: 60,
+  verificationTokenExpiresInSeconds: 30 * 60,
+} as const;
+
+const CODE_EXPIRES_IN_SECONDS = EMAIL_VERIFICATION_POLICY.codeExpiresInSeconds;
+const MAX_FAILED_ATTEMPTS = EMAIL_VERIFICATION_POLICY.maxFailedAttempts;
+const RESEND_COOLDOWN_SECONDS = EMAIL_VERIFICATION_POLICY.resendCooldownSeconds;
+const VERIFICATION_TOKEN_EXPIRES_IN_SECONDS =
+  EMAIL_VERIFICATION_POLICY.verificationTokenExpiresInSeconds;
 
 export interface SendVerificationResult {
   expiresInSeconds: number;
@@ -74,31 +82,46 @@ export class EmailVerificationService {
   }
 
   async sendSignupVerification(email: string): Promise<SendVerificationResult> {
-    const issuedVerification = await this.issueSignupVerification(email);
-
-    try {
-      await this.mailService.sendSignupVerificationCode(
+    const issuedVerification = await this.issueVerification(
+      email,
+      EmailVerificationPurpose.SIGNUP,
+    );
+    await this.deliverVerificationCode(issuedVerification, () =>
+      this.mailService.sendSignupVerificationCode(
         email,
         issuedVerification.code,
+      ),
+    );
+
+    return this.createSendVerificationResult();
+  }
+
+  async sendPasswordResetVerification(
+    email: string,
+  ): Promise<SendVerificationResult> {
+    try {
+      const issuedVerification = await this.issueVerification(
+        email,
+        EmailVerificationPurpose.PASSWORD_RESET,
       );
-    } catch {
-      await this.emailVerificationRepository.update(
-        {
-          emailVerificationId: issuedVerification.emailVerificationId,
-          codeHash: issuedVerification.codeHash,
-        },
-        {
-          codeExpiresAt: new Date(),
-          sentAt: new Date(0),
-        },
+      await this.deliverVerificationCode(issuedVerification, () =>
+        this.mailService.sendPasswordResetVerificationCode(
+          email,
+          issuedVerification.code,
+        ),
       );
-      throw new InternalServerException();
+    } catch (error) {
+      if (
+        error instanceof TooManyRequestsException ||
+        error instanceof BadRequestException
+      ) {
+        return this.createSendVerificationResult();
+      }
+
+      throw error;
     }
 
-    return {
-      expiresInSeconds: CODE_EXPIRES_IN_SECONDS,
-      resendAvailableInSeconds: RESEND_COOLDOWN_SECONDS,
-    };
+    return this.createSendVerificationResult();
   }
 
   async verifySignupCode(
@@ -214,17 +237,43 @@ export class EmailVerificationService {
     await repository.save(verification);
   }
 
-  private async issueSignupVerification(
+  private createSendVerificationResult(): SendVerificationResult {
+    return {
+      expiresInSeconds: CODE_EXPIRES_IN_SECONDS,
+      resendAvailableInSeconds: RESEND_COOLDOWN_SECONDS,
+    };
+  }
+
+  private async deliverVerificationCode(
+    issuedVerification: IssuedVerification,
+    send: () => Promise<void>,
+  ): Promise<void> {
+    try {
+      await send();
+    } catch {
+      await this.emailVerificationRepository.update(
+        {
+          emailVerificationId: issuedVerification.emailVerificationId,
+          codeHash: issuedVerification.codeHash,
+        },
+        {
+          codeExpiresAt: new Date(),
+          sentAt: new Date(0),
+        },
+      );
+      throw new InternalServerException();
+    }
+  }
+
+  private async issueVerification(
     email: string,
+    purpose: EmailVerificationPurpose,
   ): Promise<IssuedVerification> {
     try {
       return await this.dataSource.transaction(async (manager) => {
         const repository = manager.getRepository(EmailVerificationEntity);
         const existingVerification = await repository.findOne({
-          where: {
-            email,
-            purpose: EmailVerificationPurpose.SIGNUP,
-          },
+          where: { email, purpose },
           lock: { mode: 'pessimistic_write' },
         });
         const now = new Date();
@@ -247,16 +296,12 @@ export class EmailVerificationService {
         }
 
         const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
-        const codeHash = this.hashCode(
-          email,
-          EmailVerificationPurpose.SIGNUP,
-          code,
-        );
+        const codeHash = this.hashCode(email, purpose, code);
         const verification =
           existingVerification ??
           repository.create({
             email,
-            purpose: EmailVerificationPurpose.SIGNUP,
+            purpose,
           });
 
         Object.assign(verification, {

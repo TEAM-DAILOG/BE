@@ -33,15 +33,19 @@ export class ReissueAccessTokenDto {
   refreshToken: string;
 }
 
-export class CheckSignupEmailDto {
+class EmailDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
 }
 
-export class SendSignupEmailVerificationDto extends CheckSignupEmailDto {}
+export class CheckSignupEmailDto extends EmailDto {}
 
-export class VerifySignupEmailDto extends CheckSignupEmailDto {
+export class SendSignupEmailVerificationDto extends EmailDto {}
+
+export class SendPasswordResetEmailVerificationDto extends EmailDto {}
+
+export class VerifySignupEmailDto extends EmailDto {
   @IsString()
   @Matches(/^\d{6}$/)
   code: string;

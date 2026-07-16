@@ -65,6 +65,19 @@ export class UserService {
     });
   }
 
+  async findActiveLocalByEmail(
+    email: string,
+    manager?: EntityManager,
+  ): Promise<UserEntity | null> {
+    const userRepository =
+      manager?.getRepository(UserEntity) ?? this.userRepository;
+    const user = await userRepository.findOne({ where: { email } });
+
+    return typeof user?.password === 'string' && user.password.length > 0
+      ? user
+      : null;
+  }
+
   async createUser(
     { email, password, name, profileImageUrl }: CreateUserParams,
     manager?: EntityManager,
