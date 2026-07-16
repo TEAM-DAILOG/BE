@@ -45,6 +45,12 @@ export class SendSignupEmailVerificationDto extends EmailDto {}
 
 export class SendPasswordResetEmailVerificationDto extends EmailDto {}
 
+export class VerifyPasswordResetEmailDto extends EmailDto {
+  @IsString()
+  @Matches(/^\d{6}$/)
+  code: string;
+}
+
 export class VerifySignupEmailDto extends EmailDto {
   @IsString()
   @Matches(/^\d{6}$/)

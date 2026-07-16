@@ -7,6 +7,7 @@ import {
   SendPasswordResetEmailVerificationDto,
   SendSignupEmailVerificationDto,
   SignupDto,
+  VerifyPasswordResetEmailDto,
   VerifySignupEmailDto,
 } from './auth.dto';
 
@@ -36,6 +37,12 @@ export class AuthController {
     @Body() dto: SendPasswordResetEmailVerificationDto,
   ) {
     return this.authService.sendPasswordResetEmailVerification(dto);
+  }
+
+  @Post('password/reset/email/verification/verify')
+  @HttpCode(200)
+  verifyPasswordResetEmail(@Body() dto: VerifyPasswordResetEmailDto) {
+    return this.authService.verifyPasswordResetEmail(dto);
   }
 
   @Post('signup/email/verification/verify')

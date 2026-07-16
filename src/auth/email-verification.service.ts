@@ -52,7 +52,7 @@ interface IssuedVerification {
 type VerifyTransactionResult =
   | {
       kind: 'success';
-      emailVerificationToken: string;
+      verificationToken: string;
     }
   | {
       kind: 'bad-request';
@@ -64,6 +64,16 @@ type VerifyTransactionResult =
       reason: string;
       data: unknown;
     };
+
+interface VerifyCodeResult {
+  verificationToken: string;
+  expiresInSeconds: number;
+}
+
+export interface VerifyPasswordResetCodeResult {
+  passwordResetToken: string;
+  expiresInSeconds: number;
+}
 
 @Injectable()
 export class EmailVerificationService {
@@ -128,13 +138,56 @@ export class EmailVerificationService {
     email: string,
     code: string,
   ): Promise<VerifySignupCodeResult> {
+    const result = await this.verifyCode(
+      email,
+      code,
+      EmailVerificationPurpose.SIGNUP,
+    );
+
+    return {
+      emailVerificationToken: result.verificationToken,
+      expiresInSeconds: result.expiresInSeconds,
+    };
+  }
+
+  async verifyPasswordResetCode(
+    email: string,
+    code: string,
+  ): Promise<VerifyPasswordResetCodeResult> {
+    try {
+      const result = await this.verifyCode(
+        email,
+        code,
+        EmailVerificationPurpose.PASSWORD_RESET,
+      );
+
+      return {
+        passwordResetToken: result.verificationToken,
+        expiresInSeconds: result.expiresInSeconds,
+      };
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof TooManyRequestsException
+      ) {
+        throw new BadRequestException(
+          '인증번호가 올바르지 않거나 만료되었습니다.',
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  private async verifyCode(
+    email: string,
+    code: string,
+    purpose: EmailVerificationPurpose,
+  ): Promise<VerifyCodeResult> {
     const result = await this.dataSource.transaction(async (manager) => {
       const repository = manager.getRepository(EmailVerificationEntity);
       const verification = await repository.findOne({
-        where: {
-          email,
-          purpose: EmailVerificationPurpose.SIGNUP,
-        },
+        where: { email, purpose },
         lock: { mode: 'pessimistic_write' },
       });
       const now = new Date();
@@ -168,12 +221,11 @@ export class EmailVerificationService {
         });
       }
 
-      const emailVerificationToken = randomBytes(32).toString('base64url');
+      const verificationToken = randomBytes(32).toString('base64url');
 
       verification.verifiedAt = now;
-      verification.verificationTokenHash = this.hashVerificationToken(
-        emailVerificationToken,
-      );
+      verification.verificationTokenHash =
+        this.hashVerificationToken(verificationToken);
       verification.verificationTokenExpiresAt = new Date(
         now.getTime() + VERIFICATION_TOKEN_EXPIRES_IN_SECONDS * 1000,
       );
@@ -181,7 +233,7 @@ export class EmailVerificationService {
 
       return {
         kind: 'success',
-        emailVerificationToken,
+        verificationToken,
       } satisfies VerifyTransactionResult;
     });
 
@@ -198,7 +250,7 @@ export class EmailVerificationService {
     }
 
     return {
-      emailVerificationToken: result.emailVerificationToken,
+      verificationToken: result.verificationToken,
       expiresInSeconds: VERIFICATION_TOKEN_EXPIRES_IN_SECONDS,
     };
   }
