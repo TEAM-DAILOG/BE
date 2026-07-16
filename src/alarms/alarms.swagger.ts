@@ -187,7 +187,7 @@ export function RegisterPushTokenSwagger() {
           },
           deviceType: {
             type: 'string',
-            description: '디바이스 종류',
+            description: '디바이스 종류\n- IOS: 애플\n- ANDROID: 안드로이드',
             enum: ['IOS', 'ANDROID'],
             example: 'IOS',
           },

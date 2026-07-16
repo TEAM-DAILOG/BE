@@ -29,20 +29,9 @@ export class AlarmService {
 
   // 사용자 정보 포함 내부 단건 알람 조회
   async findOneAlarmEntity(userId: number): Promise<AlarmResponseDto> {
-    const foundAlarm = await this.userAlarmRepository.findOne({
-      where: { user: { userId } },
-    });
-    if (!foundAlarm)
-      throw new NotFoundException('해당 사용자 알람을 찾을 수 없습니다.');
-
-    const { alarmId, isPush, isDiary, isDiaryReply } = foundAlarm;
-    const response: AlarmResponseDto = {
-      alarmId,
-      isPush,
-      isDiary,
-      isDiaryReply,
-    };
-    return response;
+    const { alarmId, isPush, isDiary, isDiaryReply } =
+      await this.findAlarmByUserId(userId);
+    return { alarmId, isPush, isDiary, isDiaryReply };
   }
 
   // 컨트롤러에서 호출하는 리마인드 조회용 API
@@ -59,6 +48,16 @@ export class AlarmService {
     if (!foundReminder)
       throw new NotFoundException('해당 리마인드를 찾을 수 없습니다.');
     return foundReminder;
+  }
+
+  // 내부용 알람 조회
+  private async findAlarmByUserId(userId: number): Promise<UserAlarmEntity> {
+    const foundAlarm = await this.userAlarmRepository.findOne({
+      where: { user: { userId } },
+    });
+    if (!foundAlarm)
+      throw new NotFoundException('해당 사용자 알람을 찾을 수 없습니다.');
+    return foundAlarm;
   }
 
   // 리마인드 수정
@@ -78,8 +77,8 @@ export class AlarmService {
   async updateAlarmEntity(
     userId: number,
     updateAlarmDto: UpdateAlarmDto,
-  ): Promise<UserAlarmEntity> {
-    const foundAlarm = await this.findOneAlarmEntity(userId);
+  ): Promise<AlarmResponseDto> {
+    const foundAlarm = await this.findAlarmByUserId(userId);
 
     // isPush가 false로 변경시 나머지 알람도 OFF
     if (updateAlarmDto.isPush === false) {
@@ -89,7 +88,9 @@ export class AlarmService {
 
     // 변경값 적용
     Object.assign(foundAlarm, updateAlarmDto);
-    return await this.userAlarmRepository.save(foundAlarm);
+    const saved = await this.userAlarmRepository.save(foundAlarm);
+    const { alarmId, isPush, isDiary, isDiaryReply } = saved;
+    return { alarmId, isPush, isDiary, isDiaryReply };
   }
 
   // 토큰 저장
