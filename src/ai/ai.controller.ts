@@ -8,9 +8,9 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { QuestionService } from './services/question.service';
-import { AnswerService } from './services/answer.service';
-import { RecommendService } from './services/recommend.service';
+import { QuestionService } from './services/ai-question.service';
+import { AnswerService } from './services/ai-answer.service';
+import { RecommendService } from './services/ai-recommend.service';
 import { LinkDiaryQuestionRequestDTO } from './dto/ai-diary-question.dto';
 import { AccessTokenAuth, CurrentUserId } from '../auth/auth.decorator';
 import {

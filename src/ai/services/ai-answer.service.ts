@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 
 import { AnswerEntity } from '../entities/ai-answer.entity';
 import { AIanswercreateResponseDTO, AIAnswerDTO } from '../dto/ai-answer.dto';
-import { GeminiService } from './gemini.service';
+import { GeminiService } from './ai-gemini.service';
 import { DiaryService } from '../../diaries/diary.service';
 import { NotFoundException } from '../../global/error/custom.exception';
 

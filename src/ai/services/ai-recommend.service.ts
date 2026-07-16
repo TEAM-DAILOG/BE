@@ -7,7 +7,7 @@ import {
   RecommendCreateResponseDTO,
   RecommendListDTO,
 } from '../dto/ai-recommend.dto';
-import { GeminiService, RecommendationItem } from './gemini.service';
+import { GeminiService, RecommendationItem } from './ai-gemini.service';
 import { DiaryEntity } from '../../diaries/entities/diary.entity';
 import {
   CategoryColor,
