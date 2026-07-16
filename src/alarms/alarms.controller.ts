@@ -22,6 +22,7 @@ import {
   UpdateAlarmSwagger,
   UpdateReminderSwagger,
 } from './alarms.swagger';
+import { AccessTokenAuth, CurrentUserId } from '../auth/auth.decorator';
 
 @ApiTags('alarms')
 @Controller('alarms')
@@ -30,18 +31,21 @@ export class AlarmController {
 
   // 알람 설정 조회
   @FindOneAlarmSwagger()
+  @AccessTokenAuth()
   @Get()
-  async alarmAll() {
-    const userId = 1; //나중에 사용자 인증 데코레이터로 교체
+  async alarmAll(@CurrentUserId() userId: number) {
     const data = await this.alarmService.findOneAlarmEntity(userId);
     return { message: '알림 설정 조회 성공', data };
   }
 
   // 알람 설정 수정
   @UpdateAlarmSwagger()
+  @AccessTokenAuth()
   @Patch()
-  async alarmUpdate(@Body() updateAlarmDto: UpdateAlarmDto) {
-    const userId = 1; //나중에 사용자 인증 데코레이터로 교체
+  async alarmUpdate(
+    @Body() updateAlarmDto: UpdateAlarmDto,
+    @CurrentUserId() userId: number,
+  ) {
     const data = await this.alarmService.updateAlarmEntity(
       userId,
       updateAlarmDto,
@@ -51,18 +55,21 @@ export class AlarmController {
 
   // 리마인드 알람 설정 조회
   @FindOneReminderSwagger()
+  @AccessTokenAuth()
   @Get('/reminder')
-  async reminderAll() {
-    const userId = 1; //나중에 사용자 인증 데코레이터로 교체
+  async reminderAll(@CurrentUserId() userId: number) {
     const data = await this.alarmService.findOneReminderEntity(userId);
     return { message: '리마인드 알림 설정 조회 성공', data };
   }
 
   // 리마인드 알람 설정 수정
   @UpdateReminderSwagger()
+  @AccessTokenAuth()
   @Patch('/reminder')
-  async reminderUpdate(@Body() updateReminderDto: UpdateReminderDto) {
-    const userId = 1; //나중에 사용자 인증 데코레이터로 교체
+  async reminderUpdate(
+    @Body() updateReminderDto: UpdateReminderDto,
+    @CurrentUserId() userId: number,
+  ) {
     const data = await this.alarmService.updateReminderEntity(
       userId,
       updateReminderDto,
@@ -72,9 +79,12 @@ export class AlarmController {
 
   // FCM 토큰 등록 (앱 로그인/실행 시)
   @RegisterPushTokenSwagger()
+  @AccessTokenAuth()
   @Post('/push-token')
-  async registerPushToken(@Body() pushTokenRequestDto: PushTokenRequestDto) {
-    const userId = 1; //나중에 사용자 인증 데코레이터로 교체
+  async registerPushToken(
+    @Body() pushTokenRequestDto: PushTokenRequestDto,
+    @CurrentUserId() userId: number,
+  ) {
     const data = await this.alarmService.registerPushToken(
       userId,
       pushTokenRequestDto,
@@ -84,9 +94,12 @@ export class AlarmController {
 
   // FCM 토큰 삭제 (앱 로그아웃 시)
   @DeletePushTokenSwagger()
+  @AccessTokenAuth()
   @Delete('/push-token/:tokenId')
-  async deletePushToken(@Param('tokenId') tokenId: number) {
-    const userId = 1; //나중에 사용자 인증 데코레이터로 교체
+  async deletePushToken(
+    @Param('tokenId') tokenId: number,
+    @CurrentUserId() userId: number,
+  ) {
     await this.alarmService.deletePushToken(userId, tokenId);
     return { message: 'FCM 토큰 삭제 성공', data: null };
   }

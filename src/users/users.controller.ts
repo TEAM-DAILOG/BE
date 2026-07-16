@@ -3,6 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './users.dto';
 import { GetMyProfileSwagger, UpdateMyProfileSwagger } from './users.swagger';
+import { AccessTokenAuth, CurrentUserId } from '../auth/auth.decorator';
 
 @ApiTags('users')
 @Controller('users')
@@ -11,18 +12,21 @@ export class UsersController {
 
   // 사용자 정보 조회
   @GetMyProfileSwagger()
+  @AccessTokenAuth()
   @Get('/me')
-  async getMyProfile() {
-    const userId = 1; //나중에 사용자 인증 데코레이터로 교체
+  async getMyProfile(@CurrentUserId() userId: number) {
     const data = await this.userService.findOneUserEntity(userId);
     return { message: '사용자 정보 조회 성공', data };
   }
 
   // 사용자 정보 수정
   @UpdateMyProfileSwagger()
+  @AccessTokenAuth()
   @Patch('/me')
-  async userUpdate(@Body() updateUserDto: UpdateUserDto) {
-    const userId = 1; //나중에 사용자 인증 데코레이터로 교체
+  async userUpdate(
+    @Body() updateUserDto: UpdateUserDto,
+    @CurrentUserId() userId: number,
+  ) {
     const data = await this.userService.updateUserEntity(userId, updateUserDto);
 
     return { message: '사용자 정보 수정 성공', data };
