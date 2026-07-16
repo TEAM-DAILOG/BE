@@ -46,3 +46,6 @@ jobs:
 
       - name: 마이그레이션 적용 확인 (빈 DB)
         run: npm run migration:run
+
+      - name: 엔티티-마이그레이션 동기화 확인 (누락된 마이그레이션 검출)
+        run: npm run typeorm -- migration:generate src/migrations/CiCheck --check
