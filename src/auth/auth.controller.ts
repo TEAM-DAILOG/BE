@@ -1,6 +1,7 @@
 import { Body, Controller, HttpCode, Patch, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
+  ChangePasswordDto,
   CheckSignupEmailDto,
   LoginDto,
   ReissueAccessTokenDto,
@@ -11,6 +12,7 @@ import {
   VerifyPasswordResetEmailDto,
   VerifySignupEmailDto,
 } from './auth.dto';
+import { AccessTokenAuth, CurrentUserId } from './auth.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -50,6 +52,16 @@ export class AuthController {
   @HttpCode(200)
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
+  }
+
+  @Patch('password')
+  @AccessTokenAuth()
+  @HttpCode(200)
+  changePassword(
+    @CurrentUserId() userId: number,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(userId, dto);
   }
 
   @Post('signup/email/verification/verify')

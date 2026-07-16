@@ -11,6 +11,7 @@ import {
 import { RefreshTokenEntity } from '../users/entities/refresh-token.entity';
 import { UserService } from '../users/user.service';
 import {
+  ChangePasswordDto,
   CheckSignupEmailDto,
   LoginDto,
   ReissueAccessTokenDto,
@@ -157,6 +158,53 @@ export class AuthService {
 
     return {
       message: '비밀번호가 재설정되었습니다.',
+      data: null,
+    };
+  }
+
+  async changePassword(
+    userId: number,
+    { currentPassword, newPassword }: ChangePasswordDto,
+  ) {
+    this.validatePassword(newPassword);
+    const user = await this.userService.findActiveLocalById(userId);
+
+    if (
+      !user ||
+      typeof user.password !== 'string' ||
+      user.password.length === 0
+    ) {
+      throw new UnauthorizedException('인증에 실패했습니다');
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('인증에 실패했습니다');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+    const credentialsChangedAt = new Date();
+
+    await this.dataSource.transaction(async (manager) => {
+      await this.userService.updatePassword(
+        user,
+        hashedPassword,
+        credentialsChangedAt,
+        manager,
+      );
+      await this.userService.revokeAllRefreshTokens(
+        user.userId,
+        credentialsChangedAt,
+        manager,
+      );
+    });
+
+    return {
+      message: '비밀번호가 변경되었습니다.',
       data: null,
     };
   }
