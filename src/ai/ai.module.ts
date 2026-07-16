@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { QuestionEntity } from './entities/ai-question.entity';
 import { AnswerEntity } from './entities/ai-answer.entity';
@@ -22,11 +22,11 @@ import { CategoryModule } from '../categories/category.module';
       RecommendEntity,
       DiaryEntity,
     ]),
-    DiariesModule,
+    forwardRef(() => DiariesModule),
     CategoryModule,
   ],
   controllers: [AiController],
   providers: [QuestionService, AnswerService, RecommendService, GeminiService],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, QuestionService,],
 })
 export class AiModule {}

@@ -1,0 +1,73 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+
+import { BadRequestException } from '../global/error/custom.exception';
+
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+
+import { randomUUID } from 'crypto';
+
+@Injectable()
+export class S3Service {
+  private readonly s3Client: S3Client;
+
+  private readonly bucket: string;
+
+  private readonly region: string;
+
+  constructor(private readonly configService: ConfigService) {
+    this.bucket = this.configService.get<string>('S3_BUCKET_NAME')!;
+
+    this.region = this.configService.get<string>('AWS_REGION')!;
+
+    this.s3Client = new S3Client({
+      region: this.region,
+
+      credentials: {
+        accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY')!,
+
+        secretAccessKey: this.configService.get<string>(
+          'AWS_SECRET_ACCESS_KEY',
+        )!,
+      },
+    });
+  }
+
+  async uploadImages(files: Express.Multer.File[]): Promise<string[]> {
+    const imageUrls: string[] = [];
+
+    for (const file of files) {
+      if (!file.mimetype.startsWith('image/')) {
+        throw new BadRequestException('이미지 파일만 업로드 가능합니다.');
+      }
+
+      if (files.length === 0) {
+        throw new BadRequestException('이미지를 선택해주세요.', 'EMPTY_IMAGE');
+      }
+
+      if (files.length > 3) {
+        throw new BadRequestException(
+          '이미지는 최대 3장까지 업로드 가능합니다.',
+          'IMAGE_LIMIT_EXCEEDED',
+        );
+      }
+
+      const fileName = `${randomUUID()}-${file.originalname}`;
+
+      await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: fileName,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+        }),
+      );
+
+      imageUrls.push(
+        `https://${this.bucket}.s3.${this.region}.amazonaws.com/${fileName}`,
+      );
+    }
+
+    return imageUrls;
+  }
+}
