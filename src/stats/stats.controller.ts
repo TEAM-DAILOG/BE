@@ -66,7 +66,7 @@ export class StatsController {
    */
   @AccessTokenAuth()
   @GetCompletedStatsSwagger()
-  @Get('schedules/comleted')
+  @Get('schedules/completed')
   async getCompletedStats(@CurrentUserId() userId: number) {
     const data = await this.statsService.getCompletedStats(userId);
 
