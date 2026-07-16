@@ -1,4 +1,5 @@
-import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Logger, OnApplicationBootstrap } from '@nestjs/common';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cron } from '@nestjs/schedule';
 import { Repository } from 'typeorm';
@@ -46,6 +47,7 @@ export class QuestionService implements OnApplicationBootstrap {
     private readonly diaryQuestionRepository: Repository<DiaryQuestionEntity>,
 
     private readonly geminiService: GeminiService,
+    @Inject(forwardRef(() => DiaryService))
     private readonly diaryService: DiaryService,
   ) {}
 

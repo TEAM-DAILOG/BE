@@ -20,11 +20,20 @@ import {
   UpdateDiarySwagger,
 } from './diary.swagger';
 
+import { UploadedFiles, UseInterceptors } from '@nestjs/common';
+
+import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
+
+import { FilesInterceptor } from '@nestjs/platform-express';
+
+import { S3Service } from './s3.service';
+
 @ApiTags('Diary')
 @Controller('diaries')
 export class DiaryController {
   constructor(
     private readonly diaryService: DiaryService,
+    private readonly s3Service: S3Service,
   ) {}
 
   /**
@@ -56,16 +65,42 @@ export class DiaryController {
    */
   @CreateDiarySwagger()
   @Post()
-  async createDiary(
-    @Body() dto: CreateDiaryDto,
-  ) {
+  async createDiary(@Body() dto: CreateDiaryDto) {
     // TODO : JWT 적용 후 수정
     const userId = 1;
 
-    return this.diaryService.createDiary(
-      userId,
-      dto,
-    );
+    return this.diaryService.createDiary(userId, dto);
+  }
+
+  @ApiOperation({
+    summary: '일기 이미지 업로드',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        images: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+        },
+      },
+    },
+  })
+  @Post('images')
+  @UseInterceptors(FilesInterceptor('images', 3))
+  async uploadImages(
+    @UploadedFiles()
+    files: Express.Multer.File[],
+  ) {
+    const imageUrls = await this.s3Service.uploadImages(files);
+
+    return {
+      imageUrls,
+    };
   }
 
   /**
@@ -80,10 +115,7 @@ export class DiaryController {
     @Body()
     dto: UpdateDiaryDto,
   ) {
-    return this.diaryService.updateDiary(
-      diaryId,
-      dto,
-    );
+    return this.diaryService.updateDiary(diaryId, dto);
   }
 
   /**
@@ -95,8 +127,6 @@ export class DiaryController {
     @Param('diaryId', ParseIntPipe)
     diaryId: number,
   ) {
-    return this.diaryService.deleteDiary(
-      diaryId,
-    );
+    return this.diaryService.deleteDiary(diaryId);
   }
 }
