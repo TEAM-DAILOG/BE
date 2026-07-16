@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
-=======
-import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
->>>>>>> 81c70dc44defbdd9369492ca8e0e77495f6756a8
+import { Injectable, Inject, forwardRef, Logger, OnApplicationBootstrap } from '@nestjs/common';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cron } from '@nestjs/schedule';
 import { Repository } from 'typeorm';

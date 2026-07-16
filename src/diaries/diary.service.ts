@@ -20,7 +20,7 @@ export class DiaryService {
     private readonly diaryImageRepository: Repository<DiaryImageEntity>,
 
     @Inject(forwardRef(() => QuestionService))
-    @Inject(forwardRef(() => QuestionService))
+    
     private readonly questionService: QuestionService,
   ) {}
 

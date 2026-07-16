@@ -36,10 +36,6 @@ export class S3Service {
   async uploadImages(files: Express.Multer.File[]): Promise<string[]> {
     const imageUrls: string[] = [];
 
-    for (const file of files) {
-      if (!file.mimetype.startsWith('image/')) {
-        throw new BadRequestException('이미지 파일만 업로드 가능합니다.');
-      }
 
       if (files.length === 0) {
         throw new BadRequestException('이미지를 선택해주세요.', 'EMPTY_IMAGE');
@@ -51,6 +47,13 @@ export class S3Service {
           'IMAGE_LIMIT_EXCEEDED',
         );
       }
+
+    for (const file of files) {
+      if (!file.mimetype.startsWith('image/')) {
+        throw new BadRequestException('이미지 파일만 업로드 가능합니다.');
+      }
+
+    
 
       const fileName = `${randomUUID()}-${file.originalname}`;
 
