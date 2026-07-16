@@ -167,29 +167,29 @@ export class AuthService {
     { currentPassword, newPassword }: ChangePasswordDto,
   ) {
     this.validatePassword(newPassword);
+    const user = await this.userService.findActiveLocalById(userId);
+
+    if (
+      !user ||
+      typeof user.password !== 'string' ||
+      user.password.length === 0
+    ) {
+      throw new UnauthorizedException('인증에 실패했습니다');
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('인증에 실패했습니다');
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+    const credentialsChangedAt = new Date();
 
     await this.dataSource.transaction(async (manager) => {
-      const user = await this.userService.findActiveLocalById(userId, manager);
-
-      if (
-        !user ||
-        typeof user.password !== 'string' ||
-        user.password.length === 0
-      ) {
-        throw new UnauthorizedException('인증에 실패했습니다');
-      }
-
-      const isCurrentPasswordValid = await bcrypt.compare(
-        currentPassword,
-        user.password,
-      );
-
-      if (!isCurrentPasswordValid) {
-        throw new UnauthorizedException('인증에 실패했습니다');
-      }
-
-      const credentialsChangedAt = new Date();
       await this.userService.updatePassword(
         user,
         hashedPassword,
