@@ -55,7 +55,9 @@ export class StatsService {
   ) {}
 
   // 이번 달(targetMonth) 고정 — 다른 달 조회는 아직 지원하지 않음
-  private async getThisMonthSchedules(userId: number): Promise<ScheduleEntity[]> {
+  private async getThisMonthSchedules(
+    userId: number,
+  ): Promise<ScheduleEntity[]> {
     const { startDate, endDate } = getCurrentMonthRange();
 
     return this.scheduleRepository.find({
@@ -159,6 +161,7 @@ export class StatsService {
             (schedule): CategoryRankScheduleDTO => ({
               scheduleId: schedule.scheduleId,
               title: schedule.title,
+              date: schedule.date,
             }),
           ),
         );

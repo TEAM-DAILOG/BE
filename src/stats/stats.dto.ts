@@ -13,9 +13,16 @@ export class MostFrequentCategoryDTO {
   @ApiProperty({ description: '가장 많이 사용한 카테고리 이름입니다' })
   categoryName: string;
 
+  @ApiProperty({
+    description: '가장 많이 사용한 카테고리의 색깔입니다',
+    enum: CategoryColor,
+  })
+  categoryColor: CategoryColor;
+
   constructor(category: CategoryEntity) {
     this.categoryId = category.categoryId;
     this.categoryName = category.categoryName;
+    this.categoryColor = category.categoryColor;
   }
 }
 
@@ -51,6 +58,9 @@ export class CategoryRankScheduleDTO {
 
   @ApiProperty({ description: '스케쥴 제목입니다' })
   title: string;
+
+  @ApiProperty({ description: '스케쥴 날짜입니다' })
+  date: string;
 }
 
 export class CategoryRankInfoDTO {
