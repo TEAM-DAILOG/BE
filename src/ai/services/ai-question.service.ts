@@ -9,7 +9,10 @@ import { AIQuestionDTO } from '../dto/ai-question.dto';
 import { DiaryQuestionDTO } from '../dto/ai-diary-question.dto';
 import { GeminiService } from './ai-gemini.service';
 import { DiaryService } from '../../diaries/diary.service';
-import { NotFoundException } from '../../global/error/custom.exception';
+import {
+  InternalServerException,
+  NotFoundException,
+} from '../../global/error/custom.exception';
 
 const POSTGRES_UNIQUE_VIOLATION = '23505';
 
@@ -92,7 +95,7 @@ export class QuestionService implements OnApplicationBootstrap {
       // cron/부팅 캐치업/유저 요청이 동시에 겹쳐도 target_date unique 제약으로
       // 하나만 저장되고 나머지는 여기로 떨어짐 — 이미 만들어진 걸 그대로 반환
       if (!isUniqueViolation(error)) {
-        throw error;
+        throw new InternalServerException();
       }
 
       const created = await this.questionRepository.findOneBy({
@@ -100,7 +103,7 @@ export class QuestionService implements OnApplicationBootstrap {
       });
 
       if (!created) {
-        throw error;
+        throw new InternalServerException();
       }
 
       return new AIQuestionDTO(created);
