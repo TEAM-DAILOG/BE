@@ -81,10 +81,12 @@ export class UserService {
   async updatePassword(
     user: UserEntity,
     passwordHash: string,
+    credentialsChangedAt: Date,
     manager: EntityManager,
   ): Promise<UserEntity> {
     const userRepository = manager.getRepository(UserEntity);
     user.password = passwordHash;
+    user.credentialsChangedAt = credentialsChangedAt;
 
     return userRepository.save(user);
   }
