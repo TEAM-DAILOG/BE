@@ -44,7 +44,6 @@ export class RecommendEntity {
   })
   createdAt: Date;
 
-  //TODO: 카테고리 연결
   @ManyToOne(() => DiaryEntity, { nullable: false })
   @JoinColumn({ name: 'diary_id' })
   diary: DiaryEntity;
