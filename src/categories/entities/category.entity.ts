@@ -48,6 +48,14 @@ export class CategoryEntity extends BaseEntity {
   })
   userId: number;
 
+  @Column({
+    name: 'category_order',
+    type: 'int',
+    nullable: false,
+    comment: '카테고리 순서',
+  })
+  categoryOrder: number;
+
   @CreateDateColumn({
     name: 'created_at',
     type: 'timestamp',
