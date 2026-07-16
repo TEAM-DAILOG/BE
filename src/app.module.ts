@@ -10,6 +10,7 @@ import { CategoryModule } from './categories/category.module';
 import { DiariesModule } from './diaries/diary.module';
 import { AiModule } from './ai/ai.module';
 import { AuthModule } from './auth/auth.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AuthModule } from './auth/auth.module';
     CategoryModule,
     DiariesModule,
     AiModule,
+    StatsModule,
   ],
   controllers: [AppController],
   providers: [],
