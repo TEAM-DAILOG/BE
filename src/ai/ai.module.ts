@@ -27,6 +27,10 @@ import { CategoryModule } from '../categories/category.module';
   ],
   controllers: [AiController],
   providers: [QuestionService, AnswerService, RecommendService, GeminiService],
+<<<<<<< HEAD
   exports: [TypeOrmModule, QuestionService,],
+=======
+  exports: [TypeOrmModule, RecommendService, GeminiService],
+>>>>>>> 81c70dc44defbdd9369492ca8e0e77495f6756a8
 })
 export class AiModule {}
