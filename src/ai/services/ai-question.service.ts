@@ -6,7 +6,7 @@ import { QuestionEntity } from '../entities/ai-question.entity';
 import { DiaryQuestionEntity } from '../entities/ai-diary-question.entity';
 import { AIQuestionDTO } from '../dto/ai-question.dto';
 import { DiaryQuestionDTO } from '../dto/ai-diary-question.dto';
-import { GeminiService } from './gemini.service';
+import { GeminiService } from './ai-gemini.service';
 import { DiaryService } from '../../diaries/diary.service';
 import { NotFoundException } from '../../global/error/custom.exception';
 
