@@ -1,6 +1,5 @@
 import { Transform, Type } from 'class-transformer';
 import {
-  Allow,
   ArrayNotEmpty,
   ArrayUnique,
   IsArray,
@@ -54,7 +53,7 @@ export class GetSchedulesQueryDto {
     description: '일정 완료 여부',
   })
   @IsOptional()
-  @Transform(({ value }) => {
+  @Transform(({ value }: { value: unknown }): unknown => {
     if (value === 'true') return true;
     if (value === 'false') return false;
 
@@ -179,11 +178,10 @@ export class ScheduleScopeQueryDto {
 
 export class DeleteScheduleScopeQueryDto {
   @ApiProperty({
-    enum: ['SINGLE', 'ALL'],
+    enum: SCHEDULE_SCOPES,
     example: 'SINGLE',
     description: '삭제 범위',
-    type: String,
   })
-  @Allow()
-  scope: unknown;
+  @IsIn(SCHEDULE_SCOPES)
+  scope: (typeof SCHEDULE_SCOPES)[number];
 }

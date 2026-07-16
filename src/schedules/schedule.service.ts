@@ -38,6 +38,13 @@ const VALID_REPEAT_DAYS = [
 
 type RepeatDay = (typeof VALID_REPEAT_DAYS)[number];
 
+class ScheduleLockStateChangedError extends Error {
+  constructor() {
+    super('일정의 반복 그룹 상태가 잠금 대기 중 변경되었습니다.');
+    this.name = ScheduleLockStateChangedError.name;
+  }
+}
+
 const WEEKDAY_NUMBER: Record<RepeatDay, number> = {
   SUN: 0,
   MON: 1,
@@ -311,19 +318,12 @@ export class ScheduleService {
   ): Promise<UpdatedSchedule | UpdateScheduleResult> {
     this.validateUpdateDto(dto);
 
-    return this.dataSource.transaction(async (manager) => {
-      const scheduleRepository = manager.getRepository(ScheduleEntity);
-      const schedule = await scheduleRepository.findOne({
-        where: { scheduleId, userId },
-        relations: { repeatGroup: true },
-      });
-
-      if (!schedule) {
-        throw new CustomNotFoundException(
-          '일정을 찾을 수 없습니다.',
-          'SCHEDULE_NOT_FOUND',
-        );
-      }
+    return this.executeScheduleMutationWithRetry(async (manager) => {
+      const schedule = await this.findScheduleWithWriteLock(
+        manager,
+        userId,
+        scheduleId,
+      );
 
       await this.validateUpdateCategory(manager, userId, dto);
 
@@ -338,35 +338,32 @@ export class ScheduleService {
   async deleteSchedule(
     userId: number,
     scheduleId: number,
-    scope: unknown,
+    scope: 'SINGLE' | 'ALL',
   ): Promise<DeleteScheduleResult> {
-    if (scope !== 'SINGLE' && scope !== 'ALL') {
-      throw new CustomBadRequestException(
-        '삭제 범위가 올바르지 않습니다.',
-        'INVALID_SCOPE',
-      );
-    }
-
-    return this.dataSource.transaction(async (manager) => {
+    return this.executeScheduleMutationWithRetry(async (manager) => {
       const scheduleRepository = manager.getRepository(ScheduleEntity);
       const repeatGroupRepository = manager.getRepository(
         ScheduleRepeatGroupEntity,
       );
-      const schedule = await scheduleRepository.findOne({
-        where: {
-          scheduleId,
-          userId,
-        },
-      });
-
-      if (!schedule) {
-        throw new CustomNotFoundException(
-          '일정을 찾을 수 없습니다.',
-          'SCHEDULE_NOT_FOUND',
-        );
-      }
+      const schedule = await this.findScheduleWithWriteLock(
+        manager,
+        userId,
+        scheduleId,
+      );
 
       if (scope === 'ALL' && schedule.groupId !== null) {
+        await scheduleRepository
+          .createQueryBuilder('schedule')
+          .setLock('pessimistic_write')
+          .where('schedule.groupId = :groupId', {
+            groupId: schedule.groupId,
+          })
+          .andWhere('schedule.userId = :userId', {
+            userId,
+          })
+          .orderBy('schedule.scheduleId', 'ASC')
+          .getMany();
+
         await scheduleRepository.delete({
           groupId: schedule.groupId,
           userId,
@@ -404,6 +401,80 @@ export class ScheduleService {
         scheduleId,
       };
     });
+  }
+
+  private async executeScheduleMutationWithRetry<T>(
+    operation: (manager: EntityManager) => Promise<T>,
+  ): Promise<T> {
+    const maxAttempts = 3;
+
+    for (let attempt = 1; attempt < maxAttempts; attempt += 1) {
+      try {
+        return await this.dataSource.transaction(operation);
+      } catch (error: unknown) {
+        if (!(error instanceof ScheduleLockStateChangedError)) {
+          throw error;
+        }
+      }
+    }
+
+    return this.dataSource.transaction(operation);
+  }
+
+  private async findScheduleWithWriteLock(
+    manager: EntityManager,
+    userId: number,
+    scheduleId: number,
+  ): Promise<ScheduleEntity> {
+    const scheduleRepository = manager.getRepository(ScheduleEntity);
+    const schedule = await scheduleRepository.findOne({
+      where: {
+        scheduleId,
+        userId,
+      },
+    });
+
+    if (!schedule) {
+      throw new CustomNotFoundException(
+        '일정을 찾을 수 없습니다.',
+        'SCHEDULE_NOT_FOUND',
+      );
+    }
+
+    if (schedule.groupId !== null) {
+      await manager.getRepository(ScheduleRepeatGroupEntity).findOne({
+        where: {
+          groupId: schedule.groupId,
+          userId,
+        },
+        lock: {
+          mode: 'pessimistic_write',
+        },
+      });
+    }
+
+    const lockedSchedule = await scheduleRepository.findOne({
+      where: {
+        scheduleId,
+        userId,
+      },
+      lock: {
+        mode: 'pessimistic_write',
+      },
+    });
+
+    if (!lockedSchedule) {
+      throw new CustomNotFoundException(
+        '일정을 찾을 수 없습니다.',
+        'SCHEDULE_NOT_FOUND',
+      );
+    }
+
+    if (lockedSchedule.groupId !== schedule.groupId) {
+      throw new ScheduleLockStateChangedError();
+    }
+
+    return lockedSchedule;
   }
 
   async completeSchedule(
@@ -590,6 +661,9 @@ export class ScheduleService {
     const groupRepository = manager.getRepository(ScheduleRepeatGroupEntity);
     const group = await groupRepository.findOne({
       where: { groupId: selected.groupId!, userId },
+      lock: {
+        mode: 'pessimistic_write',
+      },
     });
     if (!group) {
       throw new CustomNotFoundException(
@@ -597,10 +671,18 @@ export class ScheduleService {
         'SCHEDULE_NOT_FOUND',
       );
     }
-    const schedules = await scheduleRepository.find({
-      where: { groupId: group.groupId, userId },
-      order: { date: 'ASC' },
-    });
+    const schedules = await scheduleRepository
+      .createQueryBuilder('schedule')
+      .setLock('pessimistic_write')
+      .where('schedule.groupId = :groupId', {
+        groupId: group.groupId,
+      })
+      .andWhere('schedule.userId = :userId', {
+        userId,
+      })
+      .orderBy('schedule.date', 'ASC')
+      .addOrderBy('schedule.scheduleId', 'ASC')
+      .getMany();
     const hasRuleFields = this.hasAnyOwn(dto, [
       'repeatType',
       'repeatStartDate',
@@ -859,7 +941,7 @@ export class ScheduleService {
   }
 
   private hasOwn(object: object, property: PropertyKey): boolean {
-    return Object.prototype.hasOwnProperty.call(object, property);
+    return Object.prototype.hasOwnProperty.call(object, property) === true;
   }
 
   private hasAnyOwn(object: object, properties: PropertyKey[]): boolean {

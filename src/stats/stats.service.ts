@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 
-import { Schedule } from '../schedules/entities/schedule.entity';
+import { ScheduleEntity } from '../schedules/entities/schedule.entity';
 import { CategoryEntity } from '../categories/entities/category.entity';
 import { DiaryEntity } from '../diaries/entities/diary.entity';
 import { RecommendService } from '../ai/services/ai-recommend.service';
@@ -41,8 +41,8 @@ function getCurrentMonthRange(): {
 @Injectable()
 export class StatsService {
   constructor(
-    @InjectRepository(Schedule)
-    private readonly scheduleRepository: Repository<Schedule>,
+    @InjectRepository(ScheduleEntity)
+    private readonly scheduleRepository: Repository<ScheduleEntity>,
 
     @InjectRepository(CategoryEntity)
     private readonly categoryRepository: Repository<CategoryEntity>,
@@ -55,7 +55,7 @@ export class StatsService {
   ) {}
 
   // 이번 달(targetMonth) 고정 — 다른 달 조회는 아직 지원하지 않음
-  private async getThisMonthSchedules(userId: number): Promise<Schedule[]> {
+  private async getThisMonthSchedules(userId: number): Promise<ScheduleEntity[]> {
     const { startDate, endDate } = getCurrentMonthRange();
 
     return this.scheduleRepository.find({
@@ -76,7 +76,7 @@ export class StatsService {
   }
 
   private async findMostFrequentCategory(
-    schedules: Schedule[],
+    schedules: ScheduleEntity[],
   ): Promise<MostFrequentCategoryDTO | null> {
     if (schedules.length === 0) {
       return null;
@@ -203,7 +203,7 @@ export class StatsService {
   }
 
   private async toScheduleStatsDTOs(
-    schedules: Schedule[],
+    schedules: ScheduleEntity[],
     userId: number,
   ): Promise<ScheduleStatsDTO[]> {
     const categories = await this.categoryRepository.find({

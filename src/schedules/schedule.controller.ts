@@ -14,14 +14,21 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiCreatedResponse,
   ApiExtraModels,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
   getSchemaPath,
+  type ApiResponseSchemaHost,
 } from '@nestjs/swagger';
 import { Request } from 'express';
 
@@ -40,9 +47,246 @@ interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
 }
 
+type SwaggerSchema = ApiResponseSchemaHost['schema'];
+
+const scheduleItemSchema: SwaggerSchema = {
+  type: 'object',
+  required: [
+    'scheduleId',
+    'category',
+    'title',
+    'content',
+    'date',
+    'groupId',
+    'isCompleted',
+    'repeatType',
+    'repeatStartDate',
+    'repeatEndDate',
+    'repeatDays',
+    'createdAt',
+    'updatedAt',
+  ],
+  properties: {
+    scheduleId: { type: 'integer', example: 1 },
+    category: {
+      type: 'object',
+      required: ['categoryId', 'categoryName', 'categoryColor'],
+      properties: {
+        categoryId: { type: 'integer', example: 1 },
+        categoryName: { type: 'string', example: '일상' },
+        categoryColor: {
+          type: 'string',
+          enum: ['BLUE', 'BROWN', 'GREEN', 'PURPLE', 'PINK'],
+          example: 'BLUE',
+        },
+      },
+    },
+    title: { type: 'string', example: '일정 제목' },
+    content: { type: 'string', nullable: true, example: '일정 내용' },
+    date: { type: 'string', format: 'date', example: '2026-07-20' },
+    groupId: { type: 'integer', nullable: true, example: null },
+    isCompleted: { type: 'boolean', example: false },
+    repeatType: {
+      type: 'string',
+      enum: ['NONE', 'MULTIPLE', 'PERIOD', 'WEEKLY'],
+      example: 'NONE',
+    },
+    repeatStartDate: {
+      type: 'string',
+      format: 'date',
+      nullable: true,
+      example: null,
+    },
+    repeatEndDate: {
+      type: 'string',
+      format: 'date',
+      nullable: true,
+      example: null,
+    },
+    repeatDays: { type: 'string', nullable: true, example: null },
+    createdAt: {
+      type: 'string',
+      format: 'date-time',
+      example: '2026-07-16T00:00:00.000Z',
+    },
+    updatedAt: {
+      type: 'string',
+      format: 'date-time',
+      nullable: true,
+      example: null,
+    },
+  },
+};
+
+const scheduleListDataSchema: SwaggerSchema = {
+  type: 'object',
+  required: ['schedules'],
+  properties: {
+    schedules: {
+      type: 'array',
+      items: scheduleItemSchema,
+    },
+  },
+};
+
+const createScheduleDataSchema: SwaggerSchema = {
+  type: 'object',
+  required: ['scheduleId', 'groupId', 'createdCount'],
+  properties: {
+    scheduleId: { type: 'integer', nullable: true, example: 1 },
+    groupId: { type: 'integer', nullable: true, example: null },
+    createdCount: { type: 'integer', example: 1 },
+  },
+};
+
+const updateSingleScheduleDataSchema: SwaggerSchema = {
+  type: 'object',
+  required: [
+    'scheduleId',
+    'categoryId',
+    'title',
+    'content',
+    'date',
+    'groupId',
+    'isCompleted',
+    'repeatType',
+    'repeatStartDate',
+    'repeatEndDate',
+    'repeatDays',
+  ],
+  properties: {
+    scheduleId: { type: 'integer', example: 1 },
+    categoryId: { type: 'integer', example: 1 },
+    title: { type: 'string', example: '수정 제목' },
+    content: { type: 'string', nullable: true, example: null },
+    date: { type: 'string', format: 'date', example: '2026-07-20' },
+    groupId: { type: 'integer', nullable: true, example: null },
+    isCompleted: { type: 'boolean', example: false },
+    repeatType: {
+      type: 'string',
+      enum: ['NONE', 'MULTIPLE', 'PERIOD', 'WEEKLY'],
+      example: 'NONE',
+    },
+    repeatStartDate: {
+      type: 'string',
+      format: 'date',
+      nullable: true,
+      example: null,
+    },
+    repeatEndDate: {
+      type: 'string',
+      format: 'date',
+      nullable: true,
+      example: null,
+    },
+    repeatDays: { type: 'string', nullable: true, example: null },
+  },
+};
+
+const updateAllSchedulesDataSchema: SwaggerSchema = {
+  type: 'object',
+  required: [
+    'scheduleId',
+    'groupId',
+    'createdCount',
+    'updatedCount',
+    'deletedCount',
+  ],
+  properties: {
+    scheduleId: { type: 'integer', nullable: true, example: null },
+    groupId: { type: 'integer', nullable: true, example: 1 },
+    createdCount: { type: 'integer', example: 1 },
+    updatedCount: { type: 'integer', example: 2 },
+    deletedCount: { type: 'integer', example: 1 },
+  },
+};
+
+const updateScheduleDataSchema: SwaggerSchema = {
+  oneOf: [updateSingleScheduleDataSchema, updateAllSchedulesDataSchema],
+};
+
+const completeScheduleDataSchema: SwaggerSchema = {
+  type: 'object',
+  required: ['scheduleId', 'isCompleted'],
+  properties: {
+    scheduleId: { type: 'integer', example: 1 },
+    isCompleted: { type: 'boolean', example: true },
+  },
+};
+
+const deleteScheduleDataSchema: SwaggerSchema = {
+  type: 'object',
+  required: ['scheduleId'],
+  properties: {
+    scheduleId: { type: 'integer', example: 1 },
+  },
+};
+
+const createSuccessResponseSchema = (
+  message: string,
+  dataSchema: SwaggerSchema,
+): SwaggerSchema => ({
+  type: 'object',
+  required: ['resultType', 'message', 'data'],
+  properties: {
+    resultType: {
+      type: 'string',
+      enum: ['SUCCESS'],
+      example: 'SUCCESS',
+    },
+    message: { type: 'string', example: message },
+    data: dataSchema,
+  },
+});
+
+const createErrorResponseSchema = (
+  code: number,
+  errorCode: string,
+  reason: string,
+): SwaggerSchema => ({
+  type: 'object',
+  required: ['resultType', 'code', 'errorCode', 'reason', 'data'],
+  properties: {
+    resultType: { type: 'string', enum: ['FAIL'], example: 'FAIL' },
+    code: { type: 'integer', example: code },
+    errorCode: { type: 'string', example: errorCode },
+    reason: { type: 'string', example: reason },
+    data: { type: 'object', nullable: true, example: null },
+  },
+});
+
+const unauthorizedResponseSchema = createErrorResponseSchema(
+  401,
+  'UNAUTHORIZED',
+  '인증에 실패했습니다',
+);
+const internalServerErrorResponseSchema = createErrorResponseSchema(
+  500,
+  'INTERNAL_SERVER_ERROR',
+  '서버 내부에 오류가 발생했습니다.',
+);
+const categoryNotFoundResponseSchema = createErrorResponseSchema(
+  404,
+  'CATEGORY_NOT_FOUND',
+  '카테고리를 찾을 수 없습니다.',
+);
+const scheduleNotFoundResponseSchema = createErrorResponseSchema(
+  404,
+  'SCHEDULE_NOT_FOUND',
+  '일정을 찾을 수 없습니다.',
+);
+
 @ApiTags('Schedules')
 @ApiBearerAuth('access-token')
 @ApiExtraModels(CreateScheduleDto, UpdateScheduleDto)
+@ApiUnauthorizedResponse({
+  description: '인증 실패',
+  schema: unauthorizedResponseSchema,
+})
+@ApiInternalServerErrorResponse({
+  description: '서버 내부 오류',
+  schema: internalServerErrorResponseSchema,
+})
 @UseGuards(JwtAuthGuard)
 @Controller('schedules')
 export class ScheduleController {
@@ -53,6 +297,25 @@ export class ScheduleController {
     summary: '전체 일정 목록 조회',
     description:
       '로그인한 사용자의 일정을 날짜 범위, 카테고리, 완료 여부로 필터링하여 조회합니다.',
+  })
+  @ApiOkResponse({
+    description: '전체 일정 목록 조회 성공',
+    schema: createSuccessResponseSchema(
+      '전체 일정 목록 조회에 성공했습니다.',
+      scheduleListDataSchema,
+    ),
+  })
+  @ApiBadRequestResponse({
+    description: '잘못된 날짜 또는 날짜 범위',
+    schema: createErrorResponseSchema(
+      400,
+      'INVALID_DATE_RANGE',
+      '시작일은 종료일보다 늦을 수 없습니다.',
+    ),
+  })
+  @ApiNotFoundResponse({
+    description: '카테고리를 찾을 수 없음',
+    schema: categoryNotFoundResponseSchema,
   })
   @ApiQuery({
     name: 'startDate',
@@ -102,6 +365,13 @@ export class ScheduleController {
     description:
       '오늘을 포함한 이후의 미완료 일정을 날짜 오름차순으로 최대 3개 조회합니다. 날짜가 같으면 생성일시와 일정 ID 오름차순으로 정렬합니다.',
   })
+  @ApiOkResponse({
+    description: '가까운 일정 조회 성공',
+    schema: createSuccessResponseSchema(
+      '가까운 일정 조회에 성공했습니다.',
+      scheduleListDataSchema,
+    ),
+  })
   async getUpcomingSchedules(@Req() request: AuthenticatedRequest) {
     const userId = request.user.userId;
 
@@ -120,6 +390,21 @@ export class ScheduleController {
   @ApiOperation({
     summary: '일정 등록',
     description: '로그인한 사용자의 단일 일정 또는 반복 일정을 등록합니다.',
+  })
+  @ApiCreatedResponse({
+    description: '일정 등록 성공',
+    schema: createSuccessResponseSchema(
+      '일정 등록에 성공했습니다.',
+      createScheduleDataSchema,
+    ),
+  })
+  @ApiBadRequestResponse({
+    description: '잘못된 요청, 반복 설정 오류, 날짜 오류 또는 365개 초과',
+    schema: createErrorResponseSchema(400, 'BAD_REQUEST', '잘못된 요청입니다.'),
+  })
+  @ApiNotFoundResponse({
+    description: '카테고리를 찾을 수 없음',
+    schema: categoryNotFoundResponseSchema,
   })
   @ApiBody({
     schema: {
@@ -188,6 +473,27 @@ export class ScheduleController {
   @Patch(':scheduleId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '일정 수정' })
+  @ApiOkResponse({
+    description: '일정 수정 성공',
+    schema: createSuccessResponseSchema(
+      '일정 수정에 성공했습니다.',
+      updateScheduleDataSchema,
+    ),
+  })
+  @ApiBadRequestResponse({
+    description: '빈 요청, 잘못된 scope 또는 날짜·반복 설정 오류',
+    schema: createErrorResponseSchema(
+      400,
+      'BAD_REQUEST',
+      '수정할 정보를 한 개 이상 입력해야 합니다.',
+    ),
+  })
+  @ApiNotFoundResponse({
+    description: '일정 또는 카테고리를 찾을 수 없음',
+    schema: {
+      oneOf: [scheduleNotFoundResponseSchema, categoryNotFoundResponseSchema],
+    },
+  })
   @ApiParam({
     name: 'scheduleId',
     type: Number,
@@ -259,6 +565,25 @@ export class ScheduleController {
     description:
       '로그인한 사용자의 미완료 일정 한 건을 완료 상태로 변경합니다.',
   })
+  @ApiOkResponse({
+    description: '일정 완료 처리 성공',
+    schema: createSuccessResponseSchema(
+      '일정 완료 처리에 성공했습니다.',
+      completeScheduleDataSchema,
+    ),
+  })
+  @ApiBadRequestResponse({
+    description: '이미 완료된 일정',
+    schema: createErrorResponseSchema(
+      400,
+      'SCHEDULE_ALREADY_COMPLETED',
+      '이미 완료 처리된 일정입니다.',
+    ),
+  })
+  @ApiNotFoundResponse({
+    description: '일정을 찾을 수 없음',
+    schema: scheduleNotFoundResponseSchema,
+  })
   @ApiParam({
     name: 'scheduleId',
     required: true,
@@ -289,6 +614,25 @@ export class ScheduleController {
     summary: '일정 삭제',
     description:
       '로그인한 사용자의 일정을 삭제합니다. 반복 일정은 선택한 일정만 삭제하거나 동일한 반복 그룹 전체를 삭제할 수 있습니다.',
+  })
+  @ApiOkResponse({
+    description: '일정 삭제 성공',
+    schema: createSuccessResponseSchema(
+      '일정 삭제에 성공했습니다.',
+      deleteScheduleDataSchema,
+    ),
+  })
+  @ApiBadRequestResponse({
+    description: '삭제 scope DTO validation 실패',
+    schema: createErrorResponseSchema(
+      400,
+      'BAD_REQUEST',
+      'scope must be one of the following values: SINGLE, ALL',
+    ),
+  })
+  @ApiNotFoundResponse({
+    description: '일정을 찾을 수 없음',
+    schema: scheduleNotFoundResponseSchema,
   })
   @ApiParam({
     name: 'scheduleId',
