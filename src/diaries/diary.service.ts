@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -8,6 +8,7 @@ import { DiaryType } from './enums/diary-type.enum';
 import { CreateDiaryDto, UpdateDiaryDto } from './diary.dto';
 
 import { NotFoundException } from '../global/error/custom.exception';
+import { QuestionService } from '../ai/services/ai-question.service';
 
 @Injectable()
 export class DiaryService {
@@ -17,11 +18,13 @@ export class DiaryService {
 
     @InjectRepository(DiaryImageEntity)
     private readonly diaryImageRepository: Repository<DiaryImageEntity>,
+
+    @Inject(forwardRef(() => QuestionService))
+    
+    private readonly questionService: QuestionService,
   ) {}
 
-  private async findOneDiaryEntity(
-    diaryId: number,
-  ): Promise<DiaryEntity> {
+  private async findOneDiaryEntity(diaryId: number): Promise<DiaryEntity> {
     const diary = await this.diaryRepository.findOne({
       where: { diaryId },
     });
@@ -33,21 +36,22 @@ export class DiaryService {
     return diary;
   }
 
-  async createDiary(
-    userId: number,
-    dto: CreateDiaryDto,
-  ): Promise<DiaryEntity> {
+  async createDiary(userId: number, dto: CreateDiaryDto): Promise<DiaryEntity> {
     const diary = this.diaryRepository.create({
       userId,
       diaryTitle: dto.title,
       content: dto.content,
-      diaryType:
-        dto.questionId == null
-          ? DiaryType.FREE
-          : DiaryType.QUESTION,
+      diaryType: dto.questionId == null ? DiaryType.FREE : DiaryType.QUESTION,
     });
 
     const savedDiary = await this.diaryRepository.save(diary);
+
+    if (dto.questionId) {
+      await this.questionService.linkDiaryQuestion(
+        dto.questionId,
+        savedDiary.diaryId,
+      );
+    }
 
     const images = dto.images ?? [];
 
@@ -65,9 +69,7 @@ export class DiaryService {
     return savedDiary;
   }
 
-  async findAllDiary(
-    userId: number,
-  ): Promise<DiaryEntity[]> {
+  async findAllDiary(userId: number): Promise<DiaryEntity[]> {
     return this.diaryRepository.find({
       where: { userId },
       order: {
@@ -76,9 +78,7 @@ export class DiaryService {
     });
   }
 
-  async findOneDiary(
-    diaryId: number,
-  ): Promise<DiaryEntity> {
+  async findOneDiary(diaryId: number): Promise<DiaryEntity> {
     return this.findOneDiaryEntity(diaryId);
   }
 
@@ -94,9 +94,7 @@ export class DiaryService {
     return this.diaryRepository.save(diary);
   }
 
-  async deleteDiary(
-    diaryId: number,
-  ) {
+  async deleteDiary(diaryId: number) {
     await this.findOneDiaryEntity(diaryId);
 
     await this.diaryImageRepository.softDelete({

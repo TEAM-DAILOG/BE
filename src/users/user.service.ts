@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, IsNull, Repository } from 'typeorm';
 import {
   BadRequestException,
   NotFoundException,
@@ -63,6 +63,44 @@ export class UserService {
     return this.userRepository.findOne({
       where: { email },
     });
+  }
+
+  async findActiveLocalByEmail(
+    email: string,
+    manager?: EntityManager,
+  ): Promise<UserEntity | null> {
+    const userRepository =
+      manager?.getRepository(UserEntity) ?? this.userRepository;
+    const user = await userRepository.findOne({ where: { email } });
+
+    return typeof user?.password === 'string' && user.password.length > 0
+      ? user
+      : null;
+  }
+
+  async updatePassword(
+    user: UserEntity,
+    passwordHash: string,
+    credentialsChangedAt: Date,
+    manager: EntityManager,
+  ): Promise<UserEntity> {
+    const userRepository = manager.getRepository(UserEntity);
+    user.password = passwordHash;
+    user.credentialsChangedAt = credentialsChangedAt;
+
+    return userRepository.save(user);
+  }
+
+  async revokeAllRefreshTokens(
+    userId: number,
+    revokedAt: Date,
+    manager: EntityManager,
+  ): Promise<void> {
+    const refreshTokenRepository = manager.getRepository(RefreshTokenEntity);
+    await refreshTokenRepository.update(
+      { user: { userId }, revokedAt: IsNull() },
+      { revokedAt },
+    );
   }
 
   async createUser(

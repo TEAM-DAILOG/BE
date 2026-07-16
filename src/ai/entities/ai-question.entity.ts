@@ -21,6 +21,7 @@ export class QuestionEntity {
     name: 'target_date',
     type: 'date',
     nullable: false,
+    unique: true,
     comment: '질문 날짜',
   })
   targetDate: string;
