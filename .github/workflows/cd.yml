@@ -36,6 +36,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           command_timeout: 30m
           script: |
+            set -e
             cd ${{ env.EC2_APP_DIR }}
             cat > .env <<'ENVEOF'
             ${{ secrets.PROD_ENV_FILE }}
@@ -43,7 +44,7 @@ jobs:
             set -a
             source .env
             set +a
-            npm ci
+            npm ci --include=dev
             npm run build
             bash scripts/backup-db.sh
             npm run migration:run
