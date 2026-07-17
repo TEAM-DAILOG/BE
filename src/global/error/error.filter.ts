@@ -36,13 +36,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
   private resolveException(
     exception: unknown,
-    request: Request
+    request: Request,
   ): ErrorResponse {
-    if (exception instanceof CustomException){
+    if (exception instanceof CustomException) {
       return this.handleCustomException(exception, request);
     }
 
-    if (exception instanceof HttpException){
+    if (exception instanceof HttpException) {
       return this.handleHttpException(exception, request);
     }
 
@@ -53,8 +53,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   private handleCustomException(
     exception: CustomException,
     request: Request,
-  ): ErrorResponse{
-    this.logger.warn(`[${exception.errorCode}] ${exception.reason} - ${request.method} ${request.url}`,);
+  ): ErrorResponse {
+    this.logger.warn(
+      `[${exception.errorCode}] ${exception.reason} - ${request.method} ${request.url}`,
+    );
     return {
       resultType: 'FAIL',
       code: exception.statusCode,
@@ -68,12 +70,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   private handleHttpException(
     exception: HttpException,
     request: Request,
-  ): ErrorResponse{
+  ): ErrorResponse {
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse();
 
     const reason = this.extractReason(exceptionResponse, exception.message);
-    this.logger.warn( `[HTTP_EXCEPTION] ${reason} - ${request.method} ${request.url}`,);
+    this.logger.warn(
+      `[HTTP_EXCEPTION] ${reason} - ${request.method} ${request.url}`,
+    );
 
     return {
       resultType: 'FAIL',
@@ -88,13 +92,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   private handleUnknownException(
     exception: unknown,
     request: Request,
-  ): ErrorResponse{
+  ): ErrorResponse {
     this.logger.error(
       `[UNHANDLED] ${request.method} ${request.url}`,
       exception instanceof Error ? exception.stack : String(exception),
     );
 
-    return{
+    return {
       resultType: 'FAIL',
       code: 500,
       errorCode: 'INTERNAL_SERVER_ERROR',
@@ -108,10 +112,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     exceptionResponse: string | object,
     fallback: string,
   ): string {
-    if (typeof exceptionResponse === 'object' && 'message' in exceptionResponse) {
+    if (
+      typeof exceptionResponse === 'object' &&
+      'message' in exceptionResponse
+    ) {
       const message = (exceptionResponse as any).message;
       return Array.isArray(message) ? message.join(', ') : message;
     }
     return fallback;
-  };
+  }
 }

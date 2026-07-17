@@ -3,6 +3,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { AppController } from './app.controller';
+import { AlarmsModule } from './alarms/alarms.module';
+import { SchedulesModule } from './schedules/schedule.module';
+import { UserModule } from './users/user.module';
+import { CategoryModule } from './categories/category.module';
+import { DiariesModule } from './diaries/diary.module';
+import { AiModule } from './ai/ai.module';
+import { AuthModule } from './auth/auth.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -23,6 +31,14 @@ import { AppController } from './app.controller';
         logging: true,
       }),
     }),
+    AuthModule,
+    AlarmsModule,
+    SchedulesModule,
+    UserModule,
+    CategoryModule,
+    DiariesModule,
+    AiModule,
+    StatsModule,
   ],
   controllers: [AppController],
   providers: [],

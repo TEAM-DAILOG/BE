@@ -1,11 +1,13 @@
 import { Controller, Get } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 
-@Controller()
+@ApiTags('health')
+@Controller('health')
 export class AppController {
   @Get()
-  getHello() {
+  getHealth() {
     return {
-      data: '서버 실행 확인 성공'
+      message: '서버 실행 확인 성공',
     };
   }
 }
