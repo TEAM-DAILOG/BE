@@ -7,8 +7,6 @@ import { GlobalExceptionFilter } from './global/error/error.filter';
 import { ResponseInterceptor } from './global/common/response.interceptor';
 
 async function bootstrap() {
-  // const isProd = process.env.NODE_ENV === 'production';
-
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.useGlobalFilters(new GlobalExceptionFilter());
@@ -22,13 +20,15 @@ async function bootstrap() {
   app.set('trust proxy', 1);
 
   app.enableCors({
-    origin: ['http://localhost:8000', 'http://localhost:3000'], //배포 URL 추후 설정
+    origin: [
+      'http://localhost:8000',
+      'http://localhost:3000',
+      'http://dailog.kro.kr',
+      'https://dailog.kro.kr',
+    ],
   });
 
   app.setGlobalPrefix('api/v1');
-
-  const local = `http://localhost:${process.env.BACKEND_PORT}`;
-  // const prod = ''; // 배포 URL 추후 설정
 
   const config = new DocumentBuilder()
     .setTitle('API')
@@ -43,9 +43,6 @@ async function bootstrap() {
       },
       'access-token',
     )
-    .addServer(local)
-    // .addServer(isProd ? prod : local)
-    // .addServer(isProd ? local : prod)
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
