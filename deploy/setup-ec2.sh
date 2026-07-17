@@ -8,6 +8,15 @@ DB_PASSWORD="${DB_PASSWORD:?DB_PASSWORD 환경변수를 지정해주세요 (운�
 sudo apt-get update
 sudo apt-get install -y nginx postgresql awscli rsync
 
+# 스왑 추가 — RAM이 작은 인스턴스에서 npm ci --include=dev / 빌드 중 OOM killer에 죽는 것 방지
+if [ ! -f /swapfile ]; then
+  sudo fallocate -l 2G /swapfile
+  sudo chmod 600 /swapfile
+  sudo mkswap /swapfile
+  sudo swapon /swapfile
+  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+fi
+
 # 운영 DB는 이 EC2에 직접 설치 (DB_HOST=localhost) — 기본 설정상 외부 접속 불가, 보안그룹에도 5432 안 열어둠
 sudo systemctl enable --now postgresql
 sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='${DB_USERNAME}'" | grep -q 1 \
