@@ -50,40 +50,6 @@ export class AuthController {
     );
   }
 
-  @SendPasswordResetEmailVerificationSwagger()
-  @Post('password/reset/email/verification/send')
-  @HttpCode(200)
-  sendPasswordResetEmailVerification(
-    @Body() dto: SendPasswordResetEmailVerificationDto,
-  ) {
-    return this.authService.sendPasswordResetEmailVerification(dto);
-  }
-
-  @VerifyPasswordResetEmailSwagger()
-  @Post('password/reset/email/verification/verify')
-  @HttpCode(200)
-  verifyPasswordResetEmail(@Body() dto: VerifyPasswordResetEmailDto) {
-    return this.authService.verifyPasswordResetEmail(dto);
-  }
-
-  @ResetPasswordSwagger()
-  @Patch('password/reset')
-  @HttpCode(200)
-  resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto);
-  }
-
-  @ChangePasswordSwagger()
-  @Patch('password')
-  @AccessTokenAuth()
-  @HttpCode(200)
-  changePassword(
-    @CurrentUserId() userId: number,
-    @Body() dto: ChangePasswordDto,
-  ) {
-    return this.authService.changePassword(userId, dto);
-  }
-
   @VerifySignupEmailSwagger()
   @Post('signup/email/verification/verify')
   @HttpCode(200)
@@ -110,5 +76,39 @@ export class AuthController {
   @HttpCode(200)
   reissueAccessToken(@Body() reissueAccessTokenDto: ReissueAccessTokenDto) {
     return this.authService.reissueAccessToken(reissueAccessTokenDto);
+  }
+
+  @ChangePasswordSwagger()
+  @Patch('password')
+  @AccessTokenAuth()
+  @HttpCode(200)
+  changePassword(
+    @CurrentUserId() userId: number,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(userId, dto);
+  }
+
+  @SendPasswordResetEmailVerificationSwagger()
+  @Post('password/reset/email/verification/send')
+  @HttpCode(200)
+  sendPasswordResetEmailVerification(
+    @Body() dto: SendPasswordResetEmailVerificationDto,
+  ) {
+    return this.authService.sendPasswordResetEmailVerification(dto);
+  }
+
+  @VerifyPasswordResetEmailSwagger()
+  @Post('password/reset/email/verification/verify')
+  @HttpCode(200)
+  verifyPasswordResetEmail(@Body() dto: VerifyPasswordResetEmailDto) {
+    return this.authService.verifyPasswordResetEmail(dto);
+  }
+
+  @ResetPasswordSwagger()
+  @Patch('password/reset')
+  @HttpCode(200)
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 }
