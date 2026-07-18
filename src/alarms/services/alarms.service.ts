@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PushTokenEntity } from '../entities/push-token.entity';
 import { ReminderEntity } from '../entities/reminder.entity';
 import { UserAlarmEntity } from '../entities/user-alarm.entity';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { NotFoundException } from '../../global/error/custom.exception';
 import {
   AlarmResponseDto,
@@ -13,6 +13,7 @@ import {
   UpdateAlarmDto,
   UpdateReminderDto,
 } from '../alarms.dto';
+import { UserEntity } from '@/src/users/entities/user.entity';
 
 @Injectable()
 export class AlarmService {
@@ -26,6 +27,23 @@ export class AlarmService {
     @InjectRepository(ReminderEntity)
     private readonly reminderRepository: Repository<ReminderEntity>,
   ) {}
+
+  async createDefaultAlarm(
+    user: UserEntity,
+    isPush: boolean,
+    manager?: EntityManager,
+  ): Promise<UserAlarmEntity> {
+    const userAlarmRepository =
+      manager?.getRepository(UserAlarmEntity) ?? this.userAlarmRepository;
+    const userAlarm = userAlarmRepository.create({
+      user,
+      isPush,
+      isDiary: false,
+      isDiaryReply: false,
+    });
+
+    return userAlarmRepository.save(userAlarm);
+  }
 
   // 사용자 정보 포함 내부 단건 알람 조회
   async findOneAlarmEntity(userId: number): Promise<AlarmResponseDto> {

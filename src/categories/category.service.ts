@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
-import { CategoryEntity } from './entities/category.entity';
+import { CategoryColor, CategoryEntity } from './entities/category.entity';
 import {
   CreateCategoryDto,
   UpdateCategoryDto,
@@ -11,12 +11,31 @@ import {
 
 import { NotFoundException } from '../global/error/custom.exception';
 
+const DEFAULT_CATEGORY_NAME = '할 일';
+const DEFAULT_CATEGORY_ORDER = 1;
+
 @Injectable()
 export class CategoryService {
   constructor(
     @InjectRepository(CategoryEntity)
     private readonly categoryRepository: Repository<CategoryEntity>,
   ) {}
+
+  async createDefaultCategory(
+    userId: number,
+    manager?: EntityManager,
+  ): Promise<CategoryEntity> {
+    const categoryRepository =
+      manager?.getRepository(CategoryEntity) ?? this.categoryRepository;
+    const category = categoryRepository.create({
+      userId,
+      categoryName: DEFAULT_CATEGORY_NAME,
+      categoryColor: CategoryColor.BLUE,
+      categoryOrder: DEFAULT_CATEGORY_ORDER,
+    });
+
+    return categoryRepository.save(category);
+  }
 
   // 내부 카테고리 조회
   private async findOneCategoryEntity(
