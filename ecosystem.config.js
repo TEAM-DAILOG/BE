@@ -7,6 +7,7 @@ module.exports = {
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
+        TZ: 'Asia/Seoul',
       },
     },
   ],
