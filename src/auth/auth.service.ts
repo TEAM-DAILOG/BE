@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { createHash, randomUUID } from 'crypto';
 import { DataSource } from 'typeorm';
 import { AlarmService } from '../alarms/services/alarms.service';
+import { CategoryService } from '../categories/category.service';
 import {
   BadRequestException,
   UnauthorizedException,
@@ -51,6 +52,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly emailVerificationService: EmailVerificationService,
     private readonly alarmService: AlarmService,
+    private readonly categoryService: CategoryService,
   ) {}
 
   async checkSignupEmail({ email }: CheckSignupEmailDto) {
@@ -271,6 +273,11 @@ export class AuthService {
       await this.alarmService.createDefaultAlarm(
         createdUser,
         signupDto.pushNotificationAgreed === true,
+        manager,
+      );
+
+      await this.categoryService.createDefaultCategory(
+        createdUser.userId,
         manager,
       );
 
