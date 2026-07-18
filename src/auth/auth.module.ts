@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AlarmsModule } from '../alarms/alarms.module';
 import { MailModule } from '../global/mail/mail.module';
 import { UserModule } from '../users/user.module';
 import { AuthController } from './auth.controller';
@@ -14,6 +15,7 @@ import { JwtStrategy } from './jwt.strategy';
 @Module({
   imports: [
     UserModule,
+    AlarmsModule,
     PassportModule,
     JwtModule,
     TypeOrmModule.forFeature([EmailVerificationEntity]),

@@ -106,5 +106,5 @@ export class SignupDto {
 
   @IsOptional()
   @IsBoolean()
-  marketingAgreed?: boolean | null;
+  pushNotificationAgreed?: boolean | null;
 }

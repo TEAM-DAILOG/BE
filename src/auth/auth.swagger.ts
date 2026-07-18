@@ -176,10 +176,10 @@ export function SignupSwagger() {
             description: '개인정보 처리방침 동의 여부',
             example: true,
           },
-          marketingAgreed: {
+          pushNotificationAgreed: {
             type: 'boolean',
             nullable: true,
-            description: '마케팅 수신 동의 여부',
+            description: 'PUSH 알림 동의 여부',
             example: false,
           },
         },
