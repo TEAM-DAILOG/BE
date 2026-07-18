@@ -19,6 +19,7 @@ import {
   CompletedScheduleStatsDTO,
 } from './stats.dto';
 import { RecommendDTO } from '../ai/dto/ai-recommend.dto';
+import { getKstTodayRange } from '../global/kst-date.util';
 
 function getCurrentMonthRange(): {
   targetMonth: string;
@@ -66,14 +67,10 @@ export class StatsService {
   }
 
   private async findTodayDiary(userId: number): Promise<DiaryEntity | null> {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    const { start, end } = getKstTodayRange();
 
     return this.diaryRepository.findOne({
-      where: { userId, createdAt: Between(startOfDay, endOfDay) },
+      where: { userId, createdAt: Between(start, end) },
     });
   }
 
