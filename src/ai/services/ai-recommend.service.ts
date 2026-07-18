@@ -4,7 +4,7 @@ import { Between, Repository } from 'typeorm';
 
 import { getKstTodayRange } from '../../global/kst-date.util';
 
-import { RecommendEntity } from '../entities/ai-recommend.entitiy';
+import { RecommendEntity } from '../entities/ai-recommend.entity';
 import {
   RecommendCreateResponseDTO,
   RecommendListDTO,

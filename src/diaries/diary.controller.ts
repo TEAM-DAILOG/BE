@@ -45,7 +45,11 @@ export class DiaryController {
     // TODO : JWT 적용 후 수정
     const userId = 1;
 
-    return this.diaryService.findAllDiary(userId);
+    const diaries = await this.diaryService.findAllDiary(userId);
+
+    return {
+      data: diaries,
+    };
   }
 
   /**
@@ -57,7 +61,11 @@ export class DiaryController {
     @Param('diaryId', ParseIntPipe)
     diaryId: number,
   ) {
-    return this.diaryService.findOneDiary(diaryId);
+    const diary = await this.diaryService.findDiaryDetail(diaryId);
+
+    return {
+      data: diary,
+    };
   }
 
   /**
@@ -69,7 +77,11 @@ export class DiaryController {
     // TODO : JWT 적용 후 수정
     const userId = 1;
 
-    return this.diaryService.createDiary(userId, dto);
+    const diary = await this.diaryService.createDiary(userId, dto);
+
+    return {
+      data: diary,
+    };
   }
 
   @ApiOperation({
@@ -99,7 +111,9 @@ export class DiaryController {
     const imageUrls = await this.s3Service.uploadImages(files);
 
     return {
-      imageUrls,
+      data: {
+        imageUrls,
+      },
     };
   }
 
@@ -115,7 +129,11 @@ export class DiaryController {
     @Body()
     dto: UpdateDiaryDto,
   ) {
-    return this.diaryService.updateDiary(diaryId, dto);
+    const diary = await this.diaryService.updateDiary(diaryId, dto);
+
+    return {
+      data: diary,
+    };
   }
 
   /**
@@ -127,6 +145,10 @@ export class DiaryController {
     @Param('diaryId', ParseIntPipe)
     diaryId: number,
   ) {
-    return this.diaryService.deleteDiary(diaryId);
+    const result = await this.diaryService.deleteDiary(diaryId);
+
+    return {
+      data: result,
+    };
   }
 }

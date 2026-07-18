@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { QuestionEntity } from './entities/ai-question.entity';
 import { AnswerEntity } from './entities/ai-answer.entity';
 import { DiaryQuestionEntity } from './entities/ai-diary-question.entity';
-import { RecommendEntity } from './entities/ai-recommend.entitiy';
+import { RecommendEntity } from './entities/ai-recommend.entity';
 import { DiaryEntity } from '../diaries/entities/diary.entity';
 import { AiController } from './ai.controller';
 import { QuestionService } from './services/ai-question.service';
@@ -28,6 +28,5 @@ import { CategoryModule } from '../categories/category.module';
   controllers: [AiController],
   providers: [QuestionService, AnswerService, RecommendService, GeminiService],
   exports: [TypeOrmModule, QuestionService, RecommendService, GeminiService],
-  
 })
 export class AiModule {}

@@ -82,6 +82,39 @@ export class DiaryService {
     return this.findOneDiaryEntity(diaryId);
   }
 
+
+  async findDiaryDetail(diaryId: number) {
+  const diary = await this.findOneDiaryEntity(diaryId);
+
+  const images = await this.diaryImageRepository.find({
+    where: { diaryId },
+  });
+
+  let questionContent: string | null = null;
+
+  if (diary.diaryType === DiaryType.QUESTION) {
+    const diaryQuestion =
+      await this.questionService.getDiaryQuestion(diaryId);
+
+    questionContent = diaryQuestion.questionContent;
+  }
+
+  return {
+    diaryId: diary.diaryId,
+    userId: diary.userId,
+    diaryType: diary.diaryType,
+    diaryTitle: diary.diaryTitle,
+    content: diary.content,
+    aiSummary: diary.aiSummary,
+    createdAt: diary.createdAt,
+    updatedAt: diary.updatedAt,
+
+    questionContent,
+
+    images: images.map((image) => image.imageUrl),
+  };
+}
+
   async updateDiary(
     diaryId: number,
     dto: UpdateDiaryDto,
@@ -104,3 +137,5 @@ export class DiaryService {
     return this.diaryRepository.softDelete(diaryId);
   }
 }
+
+
