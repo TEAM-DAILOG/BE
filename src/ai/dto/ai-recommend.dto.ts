@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { CategoryColor } from '@/src/categories/entities/category.entity';
-import { RecommendEntity } from '../entities/ai-recommend.entitiy';
+import { RecommendEntity } from '../entities/ai-recommend.entity';
 
 // 생성은 DTO없이 사용자의 오늘 일기를 service에서 읽어서 처리한다
 export class RecommendCreateResponseDTO {
