@@ -72,7 +72,7 @@ export function CreateDiarySwagger() {
           questionId: {
             type: 'number',
             nullable: true,
-            example: 3,
+            example: 1,
           },
           images: {
             type: 'array',
