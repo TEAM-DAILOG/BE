@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Patch, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Patch, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import {
@@ -26,11 +26,13 @@ import {
   VerifyPasswordResetEmailSwagger,
   VerifySignupEmailSwagger,
 } from './auth.swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { S3Service } from '../global/s3/s3.service';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService, private readonly s3Service: S3Service) {}
 
   @CheckSignupEmailSwagger()
   @Post('signup/email/check')
@@ -60,8 +62,13 @@ export class AuthController {
   @SignupSwagger()
   @Post('signup')
   @HttpCode(201)
-  signup(@Body() signupDto: SignupDto) {
-    return this.authService.signup(signupDto);
+  @UseInterceptors(FileInterceptor('profileImage'))
+  async signup(@Body() signupDto: SignupDto, @UploadedFile() file?: Express.Multer.File,) {
+    let profileImageUrl: string | null = null;
+    if (file) {
+        profileImageUrl = await this.s3Service.uploadProfileImage(file);
+    }
+    return this.authService.signup({ ...signupDto, profileImageUrl });
   }
 
   @LoginSwagger()
