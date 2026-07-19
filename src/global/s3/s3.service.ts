@@ -11,25 +11,20 @@ import { BadRequestException } from '../error/custom.exception';
 @Injectable()
 export class S3Service {
   private readonly s3Client: S3Client;
-
   private readonly bucket: string;
-
   private readonly region: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.bucket = this.configService.get<string>('S3_BUCKET_NAME')!;
-
-    this.region = this.configService.get<string>('AWS_REGION')!;
+    this.bucket = this.configService.getOrThrow<string>('S3_BUCKET_NAME');
+    this.region = this.configService.getOrThrow<string>('AWS_REGION');
 
     this.s3Client = new S3Client({
       region: this.region,
-
       credentials: {
-        accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY')!,
-
-        secretAccessKey: this.configService.get<string>(
+        accessKeyId: this.configService.getOrThrow<string>('AWS_ACCESS_KEY'),
+        secretAccessKey: this.configService.getOrThrow<string>(
           'AWS_SECRET_ACCESS_KEY',
-        )!,
+        ),
       },
     });
   }
