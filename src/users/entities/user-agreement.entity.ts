@@ -12,6 +12,7 @@ import { UserEntity } from './user.entity';
 export enum AgreementType {
   TERMS_OF_SERVICE = 'TERMS_OF_SERVICE',
   PRIVACY_POLICY = 'PRIVACY_POLICY',
+  PUSH_NOTIFICATION = 'PUSH_NOTIFICATION',
 }
 
 @Entity('user_agreements')

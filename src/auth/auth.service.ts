@@ -266,15 +266,12 @@ export class AuthService {
           user: createdUser,
           termsOfServiceAgreed: signupDto.termsOfServiceAgreed,
           privacyPolicyAgreed: signupDto.privacyPolicyAgreed,
+          pushNotificationAgreed: signupDto.pushNotificationAgreed ?? null,
         },
         manager,
       );
 
-      await this.alarmService.createDefaultAlarm(
-        createdUser,
-        signupDto.pushNotificationAgreed === true,
-        manager,
-      );
+      await this.alarmService.createDefaultAlarm(createdUser, manager);
 
       await this.categoryService.createDefaultCategory(
         createdUser.userId,
