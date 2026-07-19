@@ -24,12 +24,13 @@ export class CategoryService {
     private readonly categoryRepository: Repository<CategoryEntity>,
   ) {}
 
-  // 내부 카테고리 조회
+  // 내부 카테고리 조회 (소유권 검증 포함)
   private async findOneCategoryEntity(
     categoryId: number,
+    userId: number,
   ): Promise<CategoryEntity> {
     const category = await this.categoryRepository.findOne({
-      where: { categoryId },
+      where: { categoryId, userId },
     });
 
     if (!category) {
@@ -98,13 +99,14 @@ export class CategoryService {
   // 카테고리 수정
   async updateCategory(
     categoryId: number,
+    userId: number,
     dto: UpdateCategoryDto,
   ): Promise<CategoryEntity> {
-    const category = await this.findOneCategoryEntity(categoryId);
+    const category = await this.findOneCategoryEntity(categoryId, userId);
 
     if (dto.categoryColor && dto.categoryColor !== category.categoryColor) {
       const duplicateColor = await this.categoryRepository.findOne({
-        where: { userId: category.userId, categoryColor: dto.categoryColor },
+        where: { userId, categoryColor: dto.categoryColor },
       });
 
       if (duplicateColor) {
@@ -119,18 +121,22 @@ export class CategoryService {
   }
 
   // 카테고리 삭제
-  async deleteCategory(categoryId: number) {
-    await this.findOneCategoryEntity(categoryId);
+  async deleteCategory(categoryId: number, userId: number) {
+    await this.findOneCategoryEntity(categoryId, userId);
     return this.categoryRepository.softDelete(categoryId);
   }
 
   // 카테고리 순서 변경
-  async reorderCategory(dto: ReorderCategoryDto): Promise<CategoryEntity[]> {
+  async reorderCategory(
+    userId: number,
+    dto: ReorderCategoryDto,
+  ): Promise<CategoryEntity[]> {
     const updatedCategories: CategoryEntity[] = [];
 
     for (const category of dto.categories) {
       const foundCategory = await this.findOneCategoryEntity(
         category.categoryId,
+        userId,
       );
 
       foundCategory.categoryOrder = category.categoryOrder;
