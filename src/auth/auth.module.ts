@@ -12,6 +12,7 @@ import { EmailVerificationService } from './email-verification.service';
 import { EmailVerificationEntity } from './entities/email-verification.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
+import { S3Module } from '../global/s3/s3.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { JwtStrategy } from './jwt.strategy';
     JwtModule,
     TypeOrmModule.forFeature([EmailVerificationEntity]),
     MailModule,
+    S3Module,
   ],
   controllers: [AuthController],
   providers: [AuthService, EmailVerificationService, JwtStrategy, JwtAuthGuard],

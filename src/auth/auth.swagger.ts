@@ -1,5 +1,5 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 export function CheckSignupEmailSwagger() {
   return applyDecorators(
@@ -127,6 +127,7 @@ export function VerifySignupEmailSwagger() {
 export function SignupSwagger() {
   return applyDecorators(
     ApiOperation({ summary: '자체 회원가입' }),
+    ApiConsumes('multipart/form-data'),
     ApiBody({
       schema: {
         type: 'object',
@@ -160,11 +161,11 @@ export function SignupSwagger() {
             description: '닉네임',
             example: '홍길동',
           },
-          profileImageUrl: {
+          profileImage: {
             type: 'string',
+            format: 'binary',
             nullable: true,
-            description: '프로필 이미지 URL',
-            example: 'https://s3.amazonaws.com/profile.png',
+            description: '프로필 이미지 파일 (선택)',
           },
           termsOfServiceAgreed: {
             type: 'boolean',

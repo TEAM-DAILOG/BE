@@ -8,6 +8,7 @@ import {
   IsString,
 } from 'class-validator';
 import { DeviceType } from '../users/entities/refresh-token.entity';
+import { Transform } from 'class-transformer';
 
 export class LoginDto {
   @IsEmail()
@@ -98,12 +99,15 @@ export class SignupDto {
   @IsString()
   profileImageUrl?: string | null;
 
+  @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   termsOfServiceAgreed: boolean;
 
+  @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   privacyPolicyAgreed: boolean;
 
+  @Transform(({ value }) => value === true || value === 'true')
   @IsOptional()
   @IsBoolean()
   pushNotificationAgreed?: boolean | null;
