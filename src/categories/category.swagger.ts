@@ -166,6 +166,7 @@ export function DeleteCategorySwagger() {
 }
 
 // 카테고리 순서 변경
+// 카테고리 순서 변경
 export function ReorderCategorySwagger() {
   return applyDecorators(
     ApiOperation({ summary: '카테고리 순서 변경' }),
@@ -199,7 +200,20 @@ export function ReorderCategorySwagger() {
         example: {
           resultType: 'SUCCESS',
           message: '카테고리 순서 변경 성공',
-          data: null,
+          data: [
+            {
+              categoryId: 1,
+              categoryName: '운동',
+              categoryColor: 'BLUE',
+              categoryOrder: 2,
+            },
+            {
+              categoryId: 2,
+              categoryName: '공부',
+              categoryColor: 'GREEN',
+              categoryOrder: 1,
+            },
+          ],
         },
       },
     }),
