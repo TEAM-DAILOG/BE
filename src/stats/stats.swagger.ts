@@ -12,6 +12,31 @@ export function GetMainStatsSwagger() {
     ApiResponse({
       status: 200,
       description: '통계 메인 조회 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: '통계 메인 조회 성공',
+          data: {
+            mostFrequentCategory: {
+              categoryId: 3,
+              categoryName: '운동',
+              categoryColor: 'BLUE',
+            },
+            recommendedSchedules: [
+              {
+                recommendId: 1,
+                categoryId: 3,
+                categoryTitle: '운동',
+                categoryColor: 'BLUE',
+                scheduleTitle: '저녁 러닝 30분',
+                isAdded: false,
+              },
+            ],
+            stress:
+              '최근 일정이 많아 피로가 쌓여 있을 수 있어요. 짧은 산책으로 기분 전환해보세요.',
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 500,
@@ -31,6 +56,44 @@ export function GetScheduleDetailSwagger() {
     ApiResponse({
       status: 200,
       description: '일정 통계 상세 조회 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: '일정 통계 상세 조회 성공',
+          data: {
+            mostFrequentCategory: {
+              categoryId: 3,
+              categoryName: '운동',
+              categoryColor: 'BLUE',
+            },
+            categoryRankInfo: [
+              {
+                categoryId: 3,
+                categoryName: '운동',
+                count: 5,
+                categoryColor: 'BLUE',
+                schedules: [
+                  { scheduleId: 1, title: '아침 러닝', date: '2026-07-18' },
+                  { scheduleId: 2, title: '헬스장 등록', date: '2026-07-16' },
+                ],
+              },
+              {
+                categoryId: 4,
+                categoryName: '공부',
+                count: 2,
+                categoryColor: 'GREEN',
+                schedules: [
+                  {
+                    scheduleId: 3,
+                    title: 'TypeScript 스터디',
+                    date: '2026-07-18',
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 500,
@@ -50,6 +113,27 @@ export function GetPendingStatsSwagger() {
     ApiResponse({
       status: 200,
       description: '미완료 일정 조회 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: '미완료 일정 조회 성공',
+          data: {
+            incompletedScheduleCount: 3,
+            incompletedScheduleRate: 42.9,
+            targetMonth: '2026-07',
+            incompletedSchedules: [
+              {
+                scheduleId: 4,
+                title: '알고리즘 문제풀이',
+                date: '2026-07-19',
+                categoryId: 4,
+                categoryName: '공부',
+                categoryColor: 'GREEN',
+              },
+            ],
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 500,
@@ -68,6 +152,25 @@ export function GetCompletedStatsSwagger() {
     ApiResponse({
       status: 200,
       description: '완료된 일정 조회 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: '완료된 일정 조회 성공',
+          data: {
+            completedScheduleCount: 4,
+            completedSchedules: [
+              {
+                scheduleId: 2,
+                title: '헬스장 등록',
+                date: '2026-07-16',
+                categoryId: 3,
+                categoryName: '운동',
+                categoryColor: 'BLUE',
+              },
+            ],
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 500,
