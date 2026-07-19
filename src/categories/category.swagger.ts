@@ -166,7 +166,6 @@ export function DeleteCategorySwagger() {
 }
 
 // 카테고리 순서 변경
-// 카테고리 순서 변경
 export function ReorderCategorySwagger() {
   return applyDecorators(
     ApiOperation({ summary: '카테고리 순서 변경' }),
@@ -176,6 +175,10 @@ export function ReorderCategorySwagger() {
         properties: {
           categories: {
             type: 'array',
+            example: [
+              { categoryId: 1, categoryOrder: 2 },
+              { categoryId: 2, categoryOrder: 1 },
+            ],
             items: {
               type: 'object',
               properties: {
