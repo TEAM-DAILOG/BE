@@ -43,14 +43,22 @@ export class UsersController {
   ) {
     if (file) {
       const currentUser = await this.userService.findOneUserEntity(userId);
-      if (currentUser.profileImageUrl) {
-        await this.s3Service.deleteImage(currentUser.profileImageUrl);
-      }
+      const oldImageUrl = currentUser.profileImageUrl;
+
       updateUserDto.profileImageUrl =
         await this.s3Service.uploadProfileImage(file);
+      const data = await this.userService.updateUserEntity(
+        userId,
+        updateUserDto,
+      );
+
+      if (oldImageUrl) {
+        await this.s3Service.deleteImage(oldImageUrl);
+      }
+
+      return { message: '사용자 정보 수정 성공', data };
     }
     const data = await this.userService.updateUserEntity(userId, updateUserDto);
-
     return { message: '사용자 정보 수정 성공', data };
   }
 }
