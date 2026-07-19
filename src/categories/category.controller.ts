@@ -57,6 +57,23 @@ export class CategoryController {
     return { message: '카테고리 생성 성공', data };
   }
 
+
+  
+  /**
+   * 카테고리 순서 변경
+   */
+
+  @AccessTokenAuth()
+  @ReorderCategorySwagger()
+  @Patch('/order')
+  async reorderCategory(
+    @CurrentUserId() userId: number,
+    @Body() dto: ReorderCategoryDto,
+  ) {
+    const data = await this.categoryService.reorderCategory(userId, dto);
+    return { message: '카테고리 순서 변경 성공', data };
+  }
+  
   /**
    * 카테고리 수정
    */
@@ -90,18 +107,4 @@ export class CategoryController {
     return { message: '카테고리 삭제 성공', data: null };
   }
 
-  /**
-   * 카테고리 순서 변경
-   */
-
-  @AccessTokenAuth()
-  @ReorderCategorySwagger()
-  @Patch('/order')
-  async reorderCategory(
-    @CurrentUserId() userId: number,
-    @Body() dto: ReorderCategoryDto,
-  ) {
-    const data = await this.categoryService.reorderCategory(userId, dto);
-    return { message: '카테고리 순서 변경 성공', data };
-  }
 }
