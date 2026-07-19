@@ -10,6 +10,17 @@ export function FindTodayQuestionSwagger() {
     ApiResponse({
       status: 200,
       description: '오늘의 질문 조회 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: '오늘의 질문 조회 성공',
+          data: {
+            questionId: 1,
+            content: '오늘 가장 기억에 남는 순간은 무엇인가요?',
+            targetDate: '2026-07-19',
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 500,
@@ -28,6 +39,17 @@ export function RegenerateTodayQuestionSwagger() {
     ApiResponse({
       status: 200,
       description: '오늘의 질문 재생성 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: '오늘의 질문 재생성 성공',
+          data: {
+            questionId: 1,
+            content: '오늘 나를 웃게 만든 일이 있었나요?',
+            targetDate: '2026-07-19',
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 500,
@@ -52,6 +74,19 @@ export function CreateAnswerSwagger() {
     ApiResponse({
       status: 201,
       description: 'AI 답변 생성 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: 'AI 답변 생성 성공',
+          data: {
+            answerId: 1,
+            diaryId: 5,
+            answer:
+              '오늘 하루도 고생 많으셨어요. 맛있는 저녁까지 챙기셨다니 다행이에요.',
+            createdAt: '2026-07-19T09:00:00.000Z',
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 404,
@@ -78,6 +113,17 @@ export function FindAnswerSwagger() {
     ApiResponse({
       status: 200,
       description: 'AI 답변 조회 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: 'AI 답변 확인 성공',
+          data: {
+            answerId: 1,
+            answer:
+              '오늘 하루도 고생 많으셨어요. 맛있는 저녁까지 챙기셨다니 다행이에요.',
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 404,
@@ -111,6 +157,13 @@ export function LinkDiaryQuestionSwagger() {
     ApiResponse({
       status: 201,
       description: '질문-일기 연결 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: '질문-일기 연결 성공',
+          data: null,
+        },
+      },
     }),
     ApiResponse({
       status: 404,
@@ -139,6 +192,19 @@ export function FindDiaryQuestionSwagger() {
     ApiResponse({
       status: 200,
       description: '일기-질문 매핑 조회 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: '일기-질문 매핑 조회 성공',
+          data: {
+            diaryQuestionId: 1,
+            questionId: 1,
+            questionContent: '오늘 가장 기억에 남는 순간은 무엇인가요?',
+            diaryId: 5,
+            isWritten: true,
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 404,
@@ -162,6 +228,18 @@ export function CreateRecommendationsSwagger() {
     ApiResponse({
       status: 201,
       description: 'AI 일정 추천 생성 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: 'AI 일정 추천 생성 성공',
+          data: {
+            recommendId: 1,
+            categoryId: 3,
+            categoryTitle: '운동',
+            scheduleTitle: '저녁 러닝 30분',
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 409,
@@ -186,6 +264,33 @@ export function FindRecommendationsSwagger() {
     ApiResponse({
       status: 200,
       description: 'AI 일정 추천 조회 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: 'AI 일정 추천 조회 성공',
+          data: {
+            recommendedScheduleCount: 2,
+            recommendedSchedules: [
+              {
+                recommendId: 1,
+                categoryId: 3,
+                categoryTitle: '운동',
+                categoryColor: 'BLUE',
+                scheduleTitle: '저녁 러닝 30분',
+                isAdded: false,
+              },
+              {
+                recommendId: 2,
+                categoryId: 4,
+                categoryTitle: '공부',
+                categoryColor: 'GREEN',
+                scheduleTitle: 'TypeScript 강의 1시간',
+                isAdded: true,
+              },
+            ],
+          },
+        },
+      },
     }),
     ApiResponse({
       status: 409,
