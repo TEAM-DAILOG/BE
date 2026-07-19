@@ -35,19 +35,20 @@ export class AlarmService {
   ): Promise<UserAlarmEntity> {
     const userAlarmRepository =
       manager?.getRepository(UserAlarmEntity) ?? this.userAlarmRepository;
-    const reminderRepository = manager?.getRepository(ReminderEntity) ?? this.reminderRepository;
-    
+    const reminderRepository =
+      manager?.getRepository(ReminderEntity) ?? this.reminderRepository;
+
     const userAlarm = userAlarmRepository.create({
       user,
       isPush,
       isDiary: isPush,
       isDiaryReply: isPush,
     });
-    
+
     const savedAlarm = await userAlarmRepository.save(userAlarm);
-    
+
     const reminder = reminderRepository.create({
-        userAlarm: savedAlarm,
+      userAlarm: savedAlarm,
     });
     await reminderRepository.save(reminder);
 
