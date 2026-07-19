@@ -1,5 +1,10 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 
 // 사용자 정보 조회
 export function GetMyProfileSwagger() {
@@ -31,6 +36,7 @@ export function GetMyProfileSwagger() {
 export function UpdateMyProfileSwagger() {
   return applyDecorators(
     ApiOperation({ summary: '사용자 정보 수정' }),
+    ApiConsumes('multipart/form-data'),
     ApiBody({
       schema: {
         type: 'object',
@@ -42,11 +48,11 @@ export function UpdateMyProfileSwagger() {
             description: '이메일',
             example: 'dailog@naver.com',
           },
-          profileImageUrl: {
+          profileImage: {
             type: 'string',
+            format: 'binary',
             nullable: true,
-            description: '프로필 이미지 URL',
-            example: 'https://s3.amazonaws.com/...',
+            description: '프로필 이미지 파일 (선택)',
           },
         },
       },

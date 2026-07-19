@@ -25,8 +25,9 @@ import { UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
 
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { S3Service } from '../global/s3/s3.service';
 
-import { S3Service } from './s3.service';
+
 
 @ApiTags('Diary')
 @Controller('diaries')
@@ -108,7 +109,7 @@ export class DiaryController {
     @UploadedFiles()
     files: Express.Multer.File[],
   ) {
-    const imageUrls = await this.s3Service.uploadImages(files);
+    const imageUrls = await this.s3Service.uploadDiaryImages(files);
 
     return {
       data: {
