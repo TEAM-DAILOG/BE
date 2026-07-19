@@ -30,7 +30,6 @@ export class AlarmService {
 
   async createDefaultAlarm(
     user: UserEntity,
-    isPush: boolean,
     manager?: EntityManager,
   ): Promise<UserAlarmEntity> {
     const userAlarmRepository =
@@ -40,9 +39,9 @@ export class AlarmService {
 
     const userAlarm = userAlarmRepository.create({
       user,
-      isPush,
-      isDiary: isPush,
-      isDiaryReply: isPush,
+      isPush: false,
+      isDiary: false,
+      isDiaryReply: false,
     });
 
     const savedAlarm = await userAlarmRepository.save(userAlarm);

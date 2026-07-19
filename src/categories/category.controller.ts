@@ -25,6 +25,8 @@ import {
   UpdateCategorySwagger,
 } from './category.swagger';
 
+import { AccessTokenAuth, CurrentUserId } from '../auth/auth.decorator';
+
 @ApiTags('Category')
 @Controller('categories')
 export class CategoryController {
@@ -33,63 +35,59 @@ export class CategoryController {
   /**
    * 카테고리 목록 조회
    */
+  @AccessTokenAuth()
   @FindAllCategorySwagger()
   @Get()
-  async findAllCategory() {
-    // TODO : JWT 적용 후 수정
-    const userId = 1;
-
-    return this.categoryService.findAllCategory(userId);
+  async findAllCategory(@CurrentUserId() userId: number) {
+    const data = await this.categoryService.findAllCategory(userId);
+    return { message: '카테고리 목록 조회 성공', data };
   }
 
   /**
    * 카테고리 생성
    */
+  @AccessTokenAuth()
   @CreateCategorySwagger()
   @Post()
-  async createCategory(@Body() dto: CreateCategoryDto) {
-    // TODO : JWT 적용 후 수정
-    const userId = 1;
-
-    return this.categoryService.createCategory(userId, dto);
+  async createCategory(
+    @CurrentUserId() userId: number,
+    @Body() dto: CreateCategoryDto,
+  ) {
+    const data = await this.categoryService.createCategory(userId, dto);
+    return { message: '카테고리 생성 성공', data };
   }
-
-  /**
-   * 카테고리 수정
-   */
+//순서변경 
+  @AccessTokenAuth()
   @UpdateCategorySwagger()
   @Patch(':categoryId')
   async updateCategory(
-    @Param('categoryId', ParseIntPipe)
-    categoryId: number,
-
-    @Body()
-    dto: UpdateCategoryDto,
+    @CurrentUserId() userId: number,
+    @Param('categoryId', ParseIntPipe) categoryId: number,
+    @Body() dto: UpdateCategoryDto,
   ) {
-    return this.categoryService.updateCategory(categoryId, dto);
+    const data = await this.categoryService.updateCategory(categoryId, userId, dto);
+    return { message: '카테고리 수정 성공', data };
   }
-
-  /**
-   * 카테고리 삭제
-   */
+ //삭제 
+  @AccessTokenAuth()
   @DeleteCategorySwagger()
   @Delete(':categoryId')
   async deleteCategory(
-    @Param('categoryId', ParseIntPipe)
-    categoryId: number,
+    @CurrentUserId() userId: number,
+    @Param('categoryId', ParseIntPipe) categoryId: number,
   ) {
-    return this.categoryService.deleteCategory(categoryId);
+    const data = await this.categoryService.deleteCategory(categoryId, userId);
+    return { message: '카테고리 삭제 성공', data };
   }
-
-  /**
-   * 카테고리 순서 변경
-   */
+//수정 
+  @AccessTokenAuth()
   @ReorderCategorySwagger()
   @Patch('/order')
   async reorderCategory(
-    @Body()
-    dto: ReorderCategoryDto,
+    @CurrentUserId() userId: number,
+    @Body() dto: ReorderCategoryDto,
   ) {
-    return this.categoryService.reorderCategory(dto);
+    const data = await this.categoryService.reorderCategory(userId, dto);
+    return { message: '카테고리 순서 변경 성공', data };
   }
 }
