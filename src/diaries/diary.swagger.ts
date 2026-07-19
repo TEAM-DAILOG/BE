@@ -12,14 +12,21 @@ export function FindAllDiarySwagger() {
       description: '일기 목록 조회 성공',
       schema: {
         example: {
+          resultType: 'SUCCESS',
           message: '일기 목록 조회 성공',
           data: [
             {
-              diaryId: 1,
+              createdAt: '2026-07-19T17:53:56.937Z',
+              updatedAt: '2026-07-19T17:53:56.937Z',
+              deletedAt: null,
+              diaryId: 27,
+              userId: 1,
+              diaryType: 'QUESTION',
               diaryTitle: '오늘 하루',
-              createdAt: '2026-07-20T10:00:00',
-          },
-      ],
+              content: '오늘 친구와 산책했다.',
+              aiSummary: null,
+           },
+        ],
     },
   },
 }),
@@ -50,15 +57,21 @@ export function FindDiarySwagger() {
       description: '일기 상세 조회 성공',
       schema: {
        example: {
-        message: '일기 상세 조회 성공',
-        data: {
-          diaryId: 1,
-          diaryTitle: '오늘 하루',
-         content: '오늘 친구와 산책했다.',
-          questionContent: '오늘 가장 행복했던 순간은?',
-          images: [],
-      },
-    },
+  resultType: 'SUCCESS',
+  message: '일기 상세 조회 성공',
+  data: {
+    diaryId: 27,
+    userId: 1,
+    diaryType: 'QUESTION',
+    diaryTitle: '오늘 하루',
+    content: '오늘 친구와 산책했다.',
+    aiSummary: null,
+    createdAt: '2026-07-19T17:53:56.937Z',
+    updatedAt: '2026-07-19T17:53:56.937Z',
+    questionContent: '오늘 당신의 마음을 가장 잘 대변해주는 날씨나 풍경은 어떤 모습인가요?',
+    images: [],
+  },
+},
   },
 }),
 
@@ -123,13 +136,20 @@ export function CreateDiarySwagger() {
       description: '일기 작성 성공',
       schema: {
         example: {
-          message: '일기 작성 성공',
-          data: {
-            diaryId: 1,
-            diaryTitle: '오늘 하루',
-            diaryType: 'FREE',
-      },
-    },
+  resultType: 'SUCCESS',
+  message: '일기 작성 성공',
+  data: {
+    createdAt: '2026-07-19T17:58:11.931Z',
+    updatedAt: '2026-07-19T17:58:11.931Z',
+    deletedAt: null,
+    diaryId: 29,
+    userId: 1,
+    diaryType: 'QUESTION',
+    diaryTitle: '오늘 하루',
+    content: '오늘 친구와 산책했다.',
+    aiSummary: null,
+  },
+},
   },
 }),
     ApiResponse({
@@ -176,9 +196,26 @@ export function UpdateDiarySwagger() {
       },
     }),
     ApiResponse({
-      status: 200,
-      description: '일기 수정 성공',
-    }),
+  status: 200,
+  description: '일기 수정 성공',
+  schema: {
+    example: {
+      resultType: 'SUCCESS',
+      message: '일기 수정 성공',
+      data: {
+        createdAt: '2026-07-18T15:45:02.114Z',
+        updatedAt: '2026-07-19T18:10:47.031Z',
+        deletedAt: null,
+        diaryId: 5,
+        userId: 1,
+        diaryType: 'QUESTION',
+        diaryTitle: '수정된 제목',
+        content: '수정된 내용',
+        aiSummary: null,
+      },
+    },
+  },
+}),
 
        ApiResponse({
       status: 401,
@@ -207,9 +244,20 @@ export function DeleteDiarySwagger() {
       type: Number,
     }),
     ApiResponse({
-      status: 200,
-      description: '일기 삭제 성공',
-    }),
+  status: 200,
+  description: '일기 삭제 성공',
+  schema: {
+    example: {
+      resultType: 'SUCCESS',
+      message: '일기 삭제 성공',
+      data: {
+        generatedMaps: [],
+        raw: [],
+        affected: 1,
+      },
+    },
+  },
+}),
 
        ApiResponse({
       status: 401,
