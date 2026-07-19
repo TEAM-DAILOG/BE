@@ -56,30 +56,13 @@ export class CategoryController {
     const data = await this.categoryService.createCategory(userId, dto);
     return { message: '카테고리 생성 성공', data };
   }
-//순서변경 
-  @AccessTokenAuth()
-  @UpdateCategorySwagger()
-  @Patch(':categoryId')
-  async updateCategory(
-    @CurrentUserId() userId: number,
-    @Param('categoryId', ParseIntPipe) categoryId: number,
-    @Body() dto: UpdateCategoryDto,
-  ) {
-    const data = await this.categoryService.updateCategory(categoryId, userId, dto);
-    return { message: '카테고리 수정 성공', data };
-  }
- //삭제 
-  @AccessTokenAuth()
-  @DeleteCategorySwagger()
-  @Delete(':categoryId')
-  async deleteCategory(
-    @CurrentUserId() userId: number,
-    @Param('categoryId', ParseIntPipe) categoryId: number,
-  ) {
-    const data = await this.categoryService.deleteCategory(categoryId, userId);
-    return { message: '카테고리 삭제 성공', data };
-  }
-//수정 
+
+
+  
+  /**
+   * 카테고리 순서 변경
+   */
+
   @AccessTokenAuth()
   @ReorderCategorySwagger()
   @Patch('/order')
@@ -90,4 +73,38 @@ export class CategoryController {
     const data = await this.categoryService.reorderCategory(userId, dto);
     return { message: '카테고리 순서 변경 성공', data };
   }
+  
+  /**
+   * 카테고리 수정
+   */
+  @AccessTokenAuth()
+  @UpdateCategorySwagger()
+  @Patch(':categoryId')
+  async updateCategory(
+    @CurrentUserId() userId: number,
+    @Param('categoryId', ParseIntPipe) categoryId: number,
+    @Body() dto: UpdateCategoryDto,
+  ) {
+    const data = await this.categoryService.updateCategory(
+      categoryId,
+      userId,
+      dto,
+    );
+    return { message: '카테고리 수정 성공', data };
+  }
+
+  /**
+   * 카테고리 삭제
+   */
+  @AccessTokenAuth()
+  @DeleteCategorySwagger()
+  @Delete(':categoryId')
+  async deleteCategory(
+    @CurrentUserId() userId: number,
+    @Param('categoryId', ParseIntPipe) categoryId: number,
+  ) {
+    await this.categoryService.deleteCategory(categoryId, userId);
+    return { message: '카테고리 삭제 성공', data: null };
+  }
+
 }
