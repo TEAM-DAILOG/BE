@@ -5,6 +5,7 @@ import { UserAgreementEntity } from './entities/user-agreement.entity';
 import { UserEntity } from './entities/user.entity';
 import { UserService } from './user.service';
 import { UsersController } from './users.controller';
+import { S3Module } from '../global/s3/s3.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { UsersController } from './users.controller';
       UserAgreementEntity,
       RefreshTokenEntity,
     ]),
+    S3Module,
   ],
   controllers: [UsersController],
   providers: [UserService],
