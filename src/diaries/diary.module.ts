@@ -7,7 +7,8 @@ import { DiaryImageEntity } from './entities/diary-image.entity';
 import { DiaryController } from './diary.controller';
 import { DiaryService } from './diary.service';
 import { AiModule } from '../ai/ai.module';
-import { S3Service } from './s3.service';
+import { S3Service } from '../global/s3/s3.service';
+
 
 @Module({
   imports: [
