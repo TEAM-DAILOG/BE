@@ -35,14 +35,24 @@ export class AlarmService {
   ): Promise<UserAlarmEntity> {
     const userAlarmRepository =
       manager?.getRepository(UserAlarmEntity) ?? this.userAlarmRepository;
+    const reminderRepository =
+      manager?.getRepository(ReminderEntity) ?? this.reminderRepository;
+
     const userAlarm = userAlarmRepository.create({
       user,
       isPush,
-      isDiary: false,
-      isDiaryReply: false,
+      isDiary: isPush,
+      isDiaryReply: isPush,
     });
 
-    return userAlarmRepository.save(userAlarm);
+    const savedAlarm = await userAlarmRepository.save(userAlarm);
+
+    const reminder = reminderRepository.create({
+      userAlarm: savedAlarm,
+    });
+    await reminderRepository.save(reminder);
+
+    return savedAlarm;
   }
 
   // 사용자 정보 포함 내부 단건 알람 조회
