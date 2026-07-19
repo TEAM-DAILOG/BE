@@ -56,7 +56,10 @@ export class CategoryController {
     const data = await this.categoryService.createCategory(userId, dto);
     return { message: '카테고리 생성 성공', data };
   }
-//순서변경 
+
+  /**
+   * 카테고리 수정
+   */
   @AccessTokenAuth()
   @UpdateCategorySwagger()
   @Patch(':categoryId')
@@ -65,10 +68,17 @@ export class CategoryController {
     @Param('categoryId', ParseIntPipe) categoryId: number,
     @Body() dto: UpdateCategoryDto,
   ) {
-    const data = await this.categoryService.updateCategory(categoryId, userId, dto);
+    const data = await this.categoryService.updateCategory(
+      categoryId,
+      userId,
+      dto,
+    );
     return { message: '카테고리 수정 성공', data };
   }
- //삭제 
+
+  /**
+   * 카테고리 삭제
+   */
   @AccessTokenAuth()
   @DeleteCategorySwagger()
   @Delete(':categoryId')
@@ -76,10 +86,14 @@ export class CategoryController {
     @CurrentUserId() userId: number,
     @Param('categoryId', ParseIntPipe) categoryId: number,
   ) {
-    const data = await this.categoryService.deleteCategory(categoryId, userId);
-    return { message: '카테고리 삭제 성공', data };
+    await this.categoryService.deleteCategory(categoryId, userId);
+    return { message: '카테고리 삭제 성공', data: null };
   }
-//수정 
+
+  /**
+   * 카테고리 순서 변경
+   */
+
   @AccessTokenAuth()
   @ReorderCategorySwagger()
   @Patch('/order')
