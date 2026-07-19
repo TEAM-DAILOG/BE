@@ -61,11 +61,20 @@ export class RecommendService {
       return matched;
     }
 
+    // category.service.ts와 동일한 규칙: 유저의 마지막 순서 다음으로 이어붙임
+    const nextOrder =
+      ownedCategories.length > 0
+        ? Math.max(
+            ...ownedCategories.map((category) => category.categoryOrder),
+          ) + 1
+        : 1;
+
     return this.categoryRepository.save(
       this.categoryRepository.create({
         userId,
         categoryName: item.newCategoryName ?? '기타',
         categoryColor: CategoryColor.BLUE,
+        categoryOrder: nextOrder,
       }),
     );
   }
