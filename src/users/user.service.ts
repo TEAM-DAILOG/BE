@@ -30,7 +30,6 @@ type CreateSignupAgreementsParams = {
   user: UserEntity;
   termsOfServiceAgreed: boolean;
   privacyPolicyAgreed: boolean;
-  marketingAgreed?: boolean | null;
 };
 
 type CreateRefreshTokenParams = {
@@ -146,12 +145,10 @@ export class UserService {
       user,
       termsOfServiceAgreed,
       privacyPolicyAgreed,
-      marketingAgreed,
     }: CreateSignupAgreementsParams,
     manager?: EntityManager,
   ): Promise<UserAgreementEntity[]> {
     const now = new Date();
-    const isMarketingAgreed = marketingAgreed === true;
     const userAgreementRepository =
       manager?.getRepository(UserAgreementEntity) ??
       this.userAgreementRepository;
@@ -166,12 +163,6 @@ export class UserService {
         user,
         agreementType: AgreementType.PRIVACY_POLICY,
         isAgreed: privacyPolicyAgreed,
-        now,
-      }),
-      this.createAgreement({
-        user,
-        agreementType: AgreementType.MARKETING,
-        isAgreed: isMarketingAgreed,
         now,
       }),
     ]);
