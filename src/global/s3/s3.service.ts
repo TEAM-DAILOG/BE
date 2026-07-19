@@ -48,7 +48,7 @@ export class S3Service {
         throw new BadRequestException('이미지 파일만 업로드 가능합니다.');
       }
 
-      const fileName = `diary/${randomUUID()}-${file.originalname}`;
+      const fileName = `diary/${randomUUID()}-${encodeURIComponent(file.originalname)}`;
 
       await this.s3Client.send(
         new PutObjectCommand({
@@ -72,7 +72,7 @@ export class S3Service {
       throw new BadRequestException('이미지 파일만 업로드 가능합니다.');
     }
 
-    const fileName = `profile/${randomUUID()}-${file.originalname}`;
+    const fileName = `profile/${randomUUID()}-${encodeURIComponent(file.originalname)}`;
     await this.s3Client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -86,8 +86,13 @@ export class S3Service {
   }
 
   async deleteImage(imageUrl: string): Promise<void> {
-    // URL에서 S3 Key 추출
     const key = imageUrl.split('.amazonaws.com/')[1];
+    if (!key) {
+      throw new BadRequestException(
+        '올바르지 않은 이미지 URL입니다.',
+        'INVALID_IMAGE_URL',
+      );
+    }
     await this.s3Client.send(
       new DeleteObjectCommand({
         Bucket: this.bucket,
