@@ -9,10 +9,13 @@ import {
   ReorderCategoryDto,
 } from './category.dto';
 
-import { NotFoundException } from '../global/error/custom.exception';
+import {
+  BadRequestException,
+  NotFoundException,
+} from '../global/error/custom.exception';
 
 const DEFAULT_CATEGORY_NAME = '할 일';
-const DEFAULT_CATEGORY_ORDER = 1;
+const DEFAULT_CATEGORY_COLOR = CategoryColor.BLUE;
 
 @Injectable()
 export class CategoryService {
@@ -20,22 +23,6 @@ export class CategoryService {
     @InjectRepository(CategoryEntity)
     private readonly categoryRepository: Repository<CategoryEntity>,
   ) {}
-
-  async createDefaultCategory(
-    userId: number,
-    manager?: EntityManager,
-  ): Promise<CategoryEntity> {
-    const categoryRepository =
-      manager?.getRepository(CategoryEntity) ?? this.categoryRepository;
-    const category = categoryRepository.create({
-      userId,
-      categoryName: DEFAULT_CATEGORY_NAME,
-      categoryColor: CategoryColor.BLUE,
-      categoryOrder: DEFAULT_CATEGORY_ORDER,
-    });
-
-    return categoryRepository.save(category);
-  }
 
   // 내부 카테고리 조회
   private async findOneCategoryEntity(
@@ -56,10 +43,26 @@ export class CategoryService {
   async findAllCategory(userId: number): Promise<CategoryEntity[]> {
     return this.categoryRepository.find({
       where: { userId },
-      order: {
-        categoryOrder: 'ASC',
-      },
+      order: { categoryOrder: 'ASC' },
     });
+  }
+
+  // 회원가입 시 기본 카테고리 생성
+  async createDefaultCategory(
+    userId: number,
+    manager?: EntityManager,
+  ): Promise<CategoryEntity> {
+    const categoryRepository =
+      manager?.getRepository(CategoryEntity) ?? this.categoryRepository;
+
+    const defaultCategory = categoryRepository.create({
+      userId,
+      categoryName: DEFAULT_CATEGORY_NAME,
+      categoryColor: DEFAULT_CATEGORY_COLOR,
+      categoryOrder: 1,
+    });
+
+    return categoryRepository.save(defaultCategory);
   }
 
   // 카테고리 생성
@@ -67,11 +70,17 @@ export class CategoryService {
     userId: number,
     dto: CreateCategoryDto,
   ): Promise<CategoryEntity> {
+    const duplicateColor = await this.categoryRepository.findOne({
+      where: { userId, categoryColor: dto.categoryColor },
+    });
+
+    if (duplicateColor) {
+      throw new BadRequestException('이미 사용 중인 카테고리 색상입니다.');
+    }
+
     const lastCategory = await this.categoryRepository.findOne({
       where: { userId },
-      order: {
-        categoryOrder: 'DESC',
-      },
+      order: { categoryOrder: 'DESC' },
     });
 
     const nextOrder = lastCategory ? lastCategory.categoryOrder + 1 : 1;
@@ -93,8 +102,17 @@ export class CategoryService {
   ): Promise<CategoryEntity> {
     const category = await this.findOneCategoryEntity(categoryId);
 
-    category.categoryName = dto.categoryName ?? category.categoryName;
+    if (dto.categoryColor && dto.categoryColor !== category.categoryColor) {
+      const duplicateColor = await this.categoryRepository.findOne({
+        where: { userId: category.userId, categoryColor: dto.categoryColor },
+      });
 
+      if (duplicateColor) {
+        throw new BadRequestException('이미 사용 중인 카테고리 색상입니다.');
+      }
+    }
+
+    category.categoryName = dto.categoryName ?? category.categoryName;
     category.categoryColor = dto.categoryColor ?? category.categoryColor;
 
     return this.categoryRepository.save(category);
@@ -103,12 +121,24 @@ export class CategoryService {
   // 카테고리 삭제
   async deleteCategory(categoryId: number) {
     await this.findOneCategoryEntity(categoryId);
-
     return this.categoryRepository.softDelete(categoryId);
   }
 
   // 카테고리 순서 변경
-  async reorderCategory(dto: ReorderCategoryDto) {
-    // TODO: Controller 구현 후 작성
+  async reorderCategory(dto: ReorderCategoryDto): Promise<CategoryEntity[]> {
+    const updatedCategories: CategoryEntity[] = [];
+
+    for (const category of dto.categories) {
+      const foundCategory = await this.findOneCategoryEntity(
+        category.categoryId,
+      );
+
+      foundCategory.categoryOrder = category.categoryOrder;
+
+      const saved = await this.categoryRepository.save(foundCategory);
+      updatedCategories.push(saved);
+    }
+
+    return updatedCategories;
   }
 }
