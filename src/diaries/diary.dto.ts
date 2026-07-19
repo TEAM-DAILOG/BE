@@ -8,6 +8,8 @@ import {
   MaxLength,
 } from 'class-validator';
 
+import {Transform} from 'class-transformer';
+
 export class CreateDiaryDto {
   @ApiProperty({
     description: '일기 제목',
@@ -32,21 +34,22 @@ export class CreateDiaryDto {
     nullable: true,
   })
   @IsOptional()
+  @Transform(({ value }) =>
+  value === '' || value == null ? undefined : Number(value),
+)
   @IsNumber()
-  questionId?: number | null;
+  questionId?: number;
 
-  @ApiPropertyOptional({
-    description: '업로드한 이미지 URL 목록',
-    type: [String],
-    example: [
-      'https://s3.amazonaws.com/image1.jpg',
-      'https://s3.amazonaws.com/image2.jpg',
-    ],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  images?: string[];
+@ApiPropertyOptional({
+  description: '업로드 이미지',
+  type: 'string',
+  format: 'binary',
+  isArray: true,
+})
+@IsOptional()
+images?: any;
+
+
 }
 
 export class UpdateDiaryDto {

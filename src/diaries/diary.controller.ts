@@ -7,8 +7,11 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 import { DiaryService } from './diary.service';
 import { CreateDiaryDto, UpdateDiaryDto } from './diary.dto';
@@ -20,14 +23,8 @@ import {
   UpdateDiarySwagger,
 } from './diary.swagger';
 
-import { UploadedFiles, UseInterceptors } from '@nestjs/common';
-
-import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
-
-import { FilesInterceptor } from '@nestjs/platform-express';
 import { S3Service } from '../global/s3/s3.service';
-
-
+import { AccessTokenAuth, CurrentUserId } from '../auth/auth.decorator';
 
 @ApiTags('Diary')
 @Controller('diaries')
@@ -40,15 +37,16 @@ export class DiaryController {
   /**
    * 일기 목록 조회
    */
+  @AccessTokenAuth()
   @FindAllDiarySwagger()
   @Get()
-  async findAllDiary() {
-    // TODO : JWT 적용 후 수정
-    const userId = 1;
-
+  async findAllDiary(
+    @CurrentUserId() userId: number,
+  ) {
     const diaries = await this.diaryService.findAllDiary(userId);
 
     return {
+      message: '일기 목록 조회 성공',
       data: diaries,
     };
   }
@@ -56,83 +54,82 @@ export class DiaryController {
   /**
    * 일기 상세 조회
    */
+  @AccessTokenAuth()
   @FindDiarySwagger()
   @Get(':diaryId')
   async findDiary(
+    @CurrentUserId() userId: number,
     @Param('diaryId', ParseIntPipe)
     diaryId: number,
   ) {
-    const diary = await this.diaryService.findDiaryDetail(diaryId);
+    const diary = await this.diaryService.findDiaryDetail(
+      diaryId,
+      userId,
+    );
 
     return {
+      message: '일기 상세 조회 성공',
       data: diary,
     };
   }
 
   /**
-   * 일기 작성
+   * 일기 작성 (이미지 업로드 포함)
    */
+  @AccessTokenAuth()
   @CreateDiarySwagger()
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FilesInterceptor('images', 3))
   @Post()
-  async createDiary(@Body() dto: CreateDiaryDto) {
-    // TODO : JWT 적용 후 수정
-    const userId = 1;
+  async createDiary(
+    @CurrentUserId() userId: number,
+
+    @UploadedFiles()
+    files: Express.Multer.File[],
+
+    @Body()
+    dto: CreateDiaryDto,
+  ) {
+    const imageUrls =
+  files && files.length > 0
+    ? await this.s3Service.uploadDiaryImages(files)
+    : [];
+
+dto.images = imageUrls;
+
+    dto.images = imageUrls;
 
     const diary = await this.diaryService.createDiary(userId, dto);
 
     return {
+      message: '일기 작성 성공',
       data: diary,
-    };
-  }
-
-  @ApiOperation({
-    summary: '일기 이미지 업로드',
-  })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        images: {
-          type: 'array',
-          items: {
-            type: 'string',
-            format: 'binary',
-          },
-        },
-      },
-    },
-  })
-  @Post('images')
-  @UseInterceptors(FilesInterceptor('images', 3))
-  async uploadImages(
-    @UploadedFiles()
-    files: Express.Multer.File[],
-  ) {
-    const imageUrls = await this.s3Service.uploadDiaryImages(files);
-
-    return {
-      data: {
-        imageUrls,
-      },
     };
   }
 
   /**
    * 일기 수정
    */
+  @AccessTokenAuth()
   @UpdateDiarySwagger()
   @Patch(':diaryId')
   async updateDiary(
+    @CurrentUserId() userId: number,
+
     @Param('diaryId', ParseIntPipe)
     diaryId: number,
 
     @Body()
     dto: UpdateDiaryDto,
   ) {
-    const diary = await this.diaryService.updateDiary(diaryId, dto);
+    const diary = await this.diaryService.updateDiary(
+      diaryId,
+      userId,
+      dto,
+    );
 
     return {
+      message: '일기 수정 성공',
       data: diary,
     };
   }
@@ -140,15 +137,22 @@ export class DiaryController {
   /**
    * 일기 삭제
    */
+  @AccessTokenAuth()
   @DeleteDiarySwagger()
   @Delete(':diaryId')
   async deleteDiary(
+    @CurrentUserId() userId: number,
+
     @Param('diaryId', ParseIntPipe)
     diaryId: number,
   ) {
-    const result = await this.diaryService.deleteDiary(diaryId);
+    const result = await this.diaryService.deleteDiary(
+      diaryId,
+      userId,
+    );
 
     return {
+      message: '일기 삭제 성공',
       data: result,
     };
   }

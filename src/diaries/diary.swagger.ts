@@ -1,5 +1,5 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 
 // 일기 목록 조회
 export function FindAllDiarySwagger() {
@@ -10,7 +10,19 @@ export function FindAllDiarySwagger() {
     ApiResponse({
       status: 200,
       description: '일기 목록 조회 성공',
-    }),
+      schema: {
+        example: {
+          message: '일기 목록 조회 성공',
+          data: [
+            {
+              diaryId: 1,
+              diaryTitle: '오늘 하루',
+              createdAt: '2026-07-20T10:00:00',
+          },
+      ],
+    },
+  },
+}),
     ApiResponse({
       status: 401,
       description: '사용자 인증 실패',
@@ -36,7 +48,25 @@ export function FindDiarySwagger() {
     ApiResponse({
       status: 200,
       description: '일기 상세 조회 성공',
+      schema: {
+       example: {
+        message: '일기 상세 조회 성공',
+        data: {
+          diaryId: 1,
+          diaryTitle: '오늘 하루',
+         content: '오늘 친구와 산책했다.',
+          questionContent: '오늘 가장 행복했던 순간은?',
+          images: [],
+      },
+    },
+  },
+}),
+
+   ApiResponse({
+      status: 401,
+      description: '사용자 인증 실패',
     }),
+
     ApiResponse({
       status: 404,
       description: '존재하지 않는 일기',
@@ -54,6 +84,10 @@ export function CreateDiarySwagger() {
     ApiOperation({
       summary: '일기 작성',
     }),
+
+
+    ApiConsumes('multipart/form-data'),
+
     ApiBody({
       schema: {
         type: 'object',
@@ -78,11 +112,8 @@ export function CreateDiarySwagger() {
             type: 'array',
             items: {
               type: 'string',
+              format: 'binary',
             },
-            example: [
-              'https://s3.amazonaws.com/image1.jpg',
-              'https://s3.amazonaws.com/image2.jpg',
-            ],
           },
         },
       },
@@ -90,11 +121,28 @@ export function CreateDiarySwagger() {
     ApiResponse({
       status: 201,
       description: '일기 작성 성공',
-    }),
+      schema: {
+        example: {
+          message: '일기 작성 성공',
+          data: {
+            diaryId: 1,
+            diaryTitle: '오늘 하루',
+            diaryType: 'FREE',
+      },
+    },
+  },
+}),
     ApiResponse({
       status: 400,
       description: '잘못된 요청',
     }),
+
+
+       ApiResponse({
+      status: 401,
+      description: '사용자 인증 실패',
+    }),
+
     ApiResponse({
       status: 500,
       description: '서버 내부 오류',
@@ -131,6 +179,12 @@ export function UpdateDiarySwagger() {
       status: 200,
       description: '일기 수정 성공',
     }),
+
+       ApiResponse({
+      status: 401,
+      description: '사용자 인증 실패',
+    }),
+
     ApiResponse({
       status: 404,
       description: '존재하지 않는 일기',
@@ -156,6 +210,12 @@ export function DeleteDiarySwagger() {
       status: 200,
       description: '일기 삭제 성공',
     }),
+
+       ApiResponse({
+      status: 401,
+      description: '사용자 인증 실패',
+    }),
+    
     ApiResponse({
       status: 404,
       description: '존재하지 않는 일기',
