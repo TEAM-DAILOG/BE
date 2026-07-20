@@ -217,26 +217,94 @@ export function FindDiaryQuestionSwagger() {
   );
 }
 
-// AI 일정 추천 생성
+// AI 일정 추천 최초 생성 (한 번에 3개)
 export function CreateRecommendationsSwagger() {
   return applyDecorators(
     ApiOperation({
-      summary: 'AI 일정 추천 생성',
+      summary: 'AI 일정 추천 최초 생성',
       description:
-        '로그인한 유저의 오늘 일기 내용을 바탕으로 일정을 하나 추천합니다(호출당 정확히 1개). 유저의 기존 카테고리와 유사한 게 있으면 연결하고, 없으면 새 카테고리를 생성해 연결합니다. 오늘 이미 추천된 일정과 겹치지 않는 새 일정은 AI가 직접 판단하며, 더 이상 추천할 게 없으면 errorCode `NO_MORE_RECOMMENDATIONS`와 함께 409를 반환합니다.',
+        '오늘 첫 호출 시 로그인한 유저의 오늘 일기 내용을 바탕으로 서로 겹치지 않는 일정을 한 번에 3개(일기 내용이 부족해 3개를 못 채우면 나온 만큼만) 추천합니다. 유저의 기존 카테고리와 유사한 게 있으면 연결하고, 없으면 새 카테고리를 생성해 연결합니다. 오늘 이미 추천이 하나라도 생성돼 있으면 errorCode `ALREADY_INITIALIZED`와 함께 409를 반환하니, 그 이후에는 추가 생성 API(`POST /ai/schedules/add`)를 사용하세요.',
     }),
     ApiResponse({
       status: 201,
-      description: 'AI 일정 추천 생성 성공',
+      description: 'AI 일정 추천 최초 생성 성공',
       schema: {
         example: {
           resultType: 'SUCCESS',
           message: 'AI 일정 추천 생성 성공',
           data: {
-            recommendId: 1,
+            recommendedScheduleCount: 3,
+            recommendedSchedules: [
+              {
+                recommendId: 1,
+                categoryId: 3,
+                categoryTitle: '운동',
+                categoryColor: 'BLUE',
+                scheduleTitle: '저녁 러닝 30분',
+                isAdded: false,
+              },
+              {
+                recommendId: 2,
+                categoryId: 4,
+                categoryTitle: '공부',
+                categoryColor: 'GREEN',
+                scheduleTitle: 'TypeScript 강의 1시간',
+                isAdded: false,
+              },
+              {
+                recommendId: 3,
+                categoryId: 5,
+                categoryTitle: '독서',
+                categoryColor: 'BLUE',
+                scheduleTitle: '소설책 30페이지 읽기',
+                isAdded: false,
+              },
+            ],
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 409,
+      description:
+        '오늘 작성된 일기가 없음(CONFLICT) 또는 오늘의 추천이 이미 생성됨(ALREADY_INITIALIZED)',
+      schema: {
+        example: {
+          resultType: 'FAIL',
+          code: 409,
+          errorCode: 'ALREADY_INITIALIZED',
+          reason: '오늘의 추천 일정이 이미 생성되었습니다.',
+          data: null,
+        },
+      },
+    }),
+    ApiResponse({
+      status: 500,
+      description: '서버 내부 오류',
+    }),
+  );
+}
+
+// AI 일정 추천 추가 생성 (1개)
+export function AddRecommendationSwagger() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'AI 일정 추천 추가 생성',
+      description:
+        '오늘 이미 생성된 추천 목록과 겹치지 않는 일정을 하나 더 추천합니다(호출당 정확히 1개). 최초 생성 여부와 무관하게 호출할 수 있습니다. 유저의 기존 카테고리와 유사한 게 있으면 연결하고, 없으면 새 카테고리를 생성해 연결합니다. 더 이상 추천할 게 없으면 errorCode `NO_MORE_RECOMMENDATIONS`와 함께 409를 반환합니다.',
+    }),
+    ApiResponse({
+      status: 201,
+      description: 'AI 일정 추천 추가 생성 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: 'AI 일정 추천 추가 생성 성공',
+          data: {
+            recommendId: 4,
             categoryId: 3,
             categoryTitle: '운동',
-            scheduleTitle: '저녁 러닝 30분',
+            scheduleTitle: '아침 스트레칭 10분',
           },
         },
       },
@@ -245,6 +313,15 @@ export function CreateRecommendationsSwagger() {
       status: 409,
       description:
         '오늘 작성된 일기가 없음(CONFLICT) 또는 더 이상 추천할 일정이 없음(NO_MORE_RECOMMENDATIONS)',
+      schema: {
+        example: {
+          resultType: 'FAIL',
+          code: 409,
+          errorCode: 'NO_MORE_RECOMMENDATIONS',
+          reason: '더 이상 추천할 수 있는 일정이 없습니다.',
+          data: null,
+        },
+      },
     }),
     ApiResponse({
       status: 500,

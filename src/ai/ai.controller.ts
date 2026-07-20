@@ -21,6 +21,7 @@ import {
   CreateAnswerSwagger,
   FindAnswerSwagger,
   CreateRecommendationsSwagger,
+  AddRecommendationSwagger,
   FindRecommendationsSwagger,
 } from './ai.swagger';
 
@@ -100,15 +101,28 @@ export class AiController {
   }
 
   /**
-   * AI 일정 추천 생성
+   * AI 일정 추천 최초 생성 (한 번에 3개)
    */
   @AccessTokenAuth()
   @CreateRecommendationsSwagger()
   @Post('schedules')
-  async createRecommendation(@CurrentUserId() userId: number) {
-    const data = await this.recommendService.createRecommendation(userId);
+  async createRecommendations(@CurrentUserId() userId: number) {
+    const data =
+      await this.recommendService.createInitialRecommendations(userId);
 
     return { message: 'AI 일정 추천 생성 성공', data };
+  }
+
+  /**
+   * AI 일정 추천 추가 생성 (1개)
+   */
+  @AccessTokenAuth()
+  @AddRecommendationSwagger()
+  @Post('schedules/add')
+  async addRecommendation(@CurrentUserId() userId: number) {
+    const data = await this.recommendService.addRecommendation(userId);
+
+    return { message: 'AI 일정 추천 추가 생성 성공', data };
   }
 
   /**
