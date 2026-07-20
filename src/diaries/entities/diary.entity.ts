@@ -2,7 +2,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { SoftDeleteModel } from '../../global/base-model';
 import { DiaryType } from '../enums/diary-type.enum';
 
-@Entity('diary')
+@Entity('Diary')
 export class DiaryEntity extends SoftDeleteModel {
   @PrimaryGeneratedColumn({
     name: 'diary_id',

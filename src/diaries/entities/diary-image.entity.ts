@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { SoftDeleteModel } from '../../global/base-model';
 
-@Entity('diary_image')
+@Entity('DiaryImage')
 export class DiaryImageEntity extends SoftDeleteModel {
   @PrimaryGeneratedColumn({
     name: 'diary_image_id',

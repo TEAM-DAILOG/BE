@@ -1,13 +1,12 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { UserEntity } from './user.entity';
+import { BaseModel } from '@/src/global/base-model';
 
 export enum AgreementType {
   TERMS_OF_SERVICE = 'TERMS_OF_SERVICE',
@@ -15,8 +14,8 @@ export enum AgreementType {
   PUSH_NOTIFICATION = 'PUSH_NOTIFICATION',
 }
 
-@Entity('user_agreements')
-export class UserAgreementEntity {
+@Entity('UserAgreement')
+export class UserAgreementEntity extends BaseModel {
   @PrimaryGeneratedColumn({ name: 'user_agreement_id', type: 'int' })
   userAgreementId: number;
 
@@ -70,19 +69,4 @@ export class UserAgreementEntity {
   })
   revokedAt: Date | null;
 
-  @CreateDateColumn({
-    name: 'created_at',
-    type: 'timestamp',
-    nullable: false,
-    comment: '생성일',
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    name: 'updated_at',
-    type: 'timestamp',
-    nullable: true,
-    comment: '수정일',
-  })
-  updatedAt: Date | null;
 }
