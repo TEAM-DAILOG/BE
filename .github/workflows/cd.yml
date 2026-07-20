@@ -2,50 +2,54 @@ name: CD
 
 on:
   push:
-    branches: [main]
-
-env:
-  EC2_APP_DIR: /home/ubuntu/dailog
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
 
-      - name: SSH 키 준비
+    steps:
+      - name: SSH 키 준비 및 .env 전송
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          BACKEND_ENV: ${{ secrets.PROD_ENV_FILE }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
-      - name: 코드를 EC2로 전송 (rsync)
-        run: |
-          rsync -az --delete \
-            --exclude '.git' --exclude 'node_modules' --exclude '.env' --exclude 'dist' \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
-            ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ env.EC2_APP_DIR }}/
+          echo "$BACKEND_ENV" > /tmp/.env
+
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            /tmp/.env \
+            $EC2_USER@$EC2_HOST:/home/ubuntu/BE/
 
       - name: 배포 실행
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          command_timeout: 30m
-          script: |
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'EOF'
             set -e
-            cd ${{ env.EC2_APP_DIR }}
-            cat > .env <<'ENVEOF'
-            ${{ secrets.PROD_ENV_FILE }}
-            ENVEOF
-            set -a
-            source .env
-            set +a
-            npm ci --include=dev
+            cd /home/ubuntu/BE
+
+            # 최신 코드 PULL
+            git fetch origin
+            git reset --hard origin/main
+
+            # 의존성 설치
+            npm ci
             npm run build
-            bash scripts/backup-db.sh
             npm run migration:run
             pm2 startOrReload ecosystem.config.js --update-env
+            pm2 status
+          EOF
