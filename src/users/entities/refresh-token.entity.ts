@@ -1,13 +1,12 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { UserEntity } from './user.entity';
+import { BaseModel } from '@/src/global/base-model';
 
 export enum DeviceType {
   IOS = 'IOS',
@@ -15,7 +14,7 @@ export enum DeviceType {
 }
 
 @Entity('RefreshToken')
-export class RefreshTokenEntity {
+export class RefreshTokenEntity extends BaseModel {
   @PrimaryGeneratedColumn({ name: 'refresh_token_id', type: 'int' })
   refreshTokenId: number;
 
@@ -69,19 +68,4 @@ export class RefreshTokenEntity {
   })
   revokedAt: Date | null;
 
-  @CreateDateColumn({
-    name: 'created_at',
-    type: 'timestamp',
-    nullable: false,
-    comment: '생성일',
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    name: 'updated_at',
-    type: 'timestamp',
-    nullable: true,
-    comment: '수정일',
-  })
-  updatedAt: Date | null;
 }

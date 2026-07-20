@@ -1,19 +1,16 @@
 import { PushTokenEntity } from '@/src/alarms/entities/push-token.entity';
 import { UserAlarmEntity } from '@/src/alarms/entities/user-alarm.entity';
+import { SoftDeleteModel } from '@/src/global/base-model';
 import {
-  BaseEntity,
   Column,
-  CreateDateColumn,
-  DeleteDateColumn,
   Entity,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('User')
-export class UserEntity extends BaseEntity {
+export class UserEntity extends SoftDeleteModel {
   @PrimaryGeneratedColumn({ name: 'user_id', type: 'int' })
   userId: number;
 
@@ -77,30 +74,6 @@ export class UserEntity extends BaseEntity {
     comment: '인증 정보 변경일',
   })
   credentialsChangedAt: Date | null;
-
-  @CreateDateColumn({
-    name: 'created_at',
-    type: 'timestamp',
-    nullable: false,
-    comment: '생성일',
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    name: 'updated_at',
-    type: 'timestamp',
-    nullable: true,
-    comment: '수정일',
-  })
-  updatedAt: Date | null;
-
-  @DeleteDateColumn({
-    name: 'deleted_at',
-    type: 'timestamp',
-    nullable: true,
-    comment: '삭제일',
-  })
-  deletedAt: Date | null;
 
   @OneToOne(() => UserAlarmEntity, (userAlarm) => userAlarm.user)
   userAlarm: UserAlarmEntity;

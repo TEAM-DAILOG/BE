@@ -1,5 +1,5 @@
+import { SoftDeleteModel } from '@/src/global/base-model';
 import {
-  BaseEntity,
   Column,
   CreateDateColumn,
   DeleteDateColumn,
@@ -17,7 +17,7 @@ export enum CategoryColor {
 }
 
 @Entity('Category')
-export class CategoryEntity extends BaseEntity {
+export class CategoryEntity extends SoftDeleteModel {
   @PrimaryGeneratedColumn({ name: 'category_id', type: 'int' })
   categoryId: number;
 
@@ -56,27 +56,4 @@ export class CategoryEntity extends BaseEntity {
   })
   categoryOrder: number;
 
-  @CreateDateColumn({
-    name: 'created_at',
-    type: 'timestamp',
-    nullable: false,
-    comment: '생성일',
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    name: 'updated_at',
-    type: 'timestamp',
-    nullable: true,
-    comment: '수정일',
-  })
-  updatedAt: Date | null;
-
-  @DeleteDateColumn({
-    name: 'deleted_at',
-    type: 'timestamp',
-    nullable: true,
-    comment: '삭제일',
-  })
-  deletedAt: Date | null;
 }

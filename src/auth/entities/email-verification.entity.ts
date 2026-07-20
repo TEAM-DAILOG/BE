@@ -1,3 +1,4 @@
+import { BaseModel } from '@/src/global/base-model';
 import {
   Column,
   CreateDateColumn,
@@ -14,7 +15,7 @@ export enum EmailVerificationPurpose {
 
 @Entity('EmailVerification')
 @Unique('UQ_EMAIL_VERIFICATION_EMAIL_PURPOSE', ['email', 'purpose'])
-export class EmailVerificationEntity {
+export class EmailVerificationEntity extends BaseModel {
   @PrimaryGeneratedColumn({ name: 'email_verification_id', type: 'int' })
   emailVerificationId: number;
 
@@ -76,17 +77,4 @@ export class EmailVerificationEntity {
   @Column({ name: 'consumed_at', type: 'timestamp', nullable: true })
   consumedAt: Date | null;
 
-  @CreateDateColumn({
-    name: 'created_at',
-    type: 'timestamp',
-    nullable: false,
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    name: 'updated_at',
-    type: 'timestamp',
-    nullable: false,
-  })
-  updatedAt: Date;
 }
