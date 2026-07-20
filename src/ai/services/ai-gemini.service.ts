@@ -12,7 +12,7 @@ export interface RecommendationItem {
   newCategoryName: string | null;
 }
 
-const RECOMMENDATION_RESPONSE_SCHEMA = {
+const RECOMMENDATION_ITEM_SCHEMA = {
   type: Type.OBJECT,
   properties: {
     scheduleTitle: { type: Type.STRING, nullable: true },
@@ -21,12 +21,20 @@ const RECOMMENDATION_RESPONSE_SCHEMA = {
   },
 };
 
+const RECOMMENDATION_RESPONSE_SCHEMA = RECOMMENDATION_ITEM_SCHEMA;
+
+const INITIAL_RECOMMENDATION_RESPONSE_SCHEMA = {
+  type: Type.ARRAY,
+  items: RECOMMENDATION_ITEM_SCHEMA,
+};
+
 @Injectable()
 export class GeminiService {
   private readonly client: GoogleGenAI;
   private readonly questionPrompt: string;
   private readonly answerPrompt: string;
   private readonly recommendPrompt: string;
+  private readonly initialRecommendPrompt: string;
   private readonly stressPrompt: string;
 
   constructor(private readonly configService: ConfigService) {
@@ -39,6 +47,9 @@ export class GeminiService {
     this.answerPrompt = this.configService.get<string>('GEMINI_ANSWER_PROMPT')!;
     this.recommendPrompt = this.configService.get<string>(
       'GEMINI_RECOMMEND_PROMPT',
+    )!;
+    this.initialRecommendPrompt = this.configService.get<string>(
+      'GEMINI_INITIAL_RECOMMEND_PROMPT',
     )!;
     this.stressPrompt = this.configService.get<string>('GEMINI_STRESS_PROMPT')!;
   }
@@ -76,6 +87,24 @@ export class GeminiService {
     });
 
     return JSON.parse(response.text!) as RecommendationItem;
+  }
+
+  // 오늘 첫 호출 전용: 기존 추천 목록과 비교할 필요가 없어 맥락을 분리한 프롬프트로,
+  // 서로 겹치지 않는 일정을 한 번에 최대 3개까지(부족하면 그보다 적게) 배열로 받는다.
+  async generateInitialRecommendations(
+    diaryContent: string,
+    categories: { categoryId: number; categoryName: string }[],
+  ): Promise<RecommendationItem[]> {
+    const response = await this.client.models.generateContent({
+      model: MODEL,
+      contents: `${this.initialRecommendPrompt}\n\n일기 내용:\n${diaryContent}\n\n사용자 카테고리 목록(JSON):\n${JSON.stringify(categories)}`,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: INITIAL_RECOMMENDATION_RESPONSE_SCHEMA,
+      },
+    });
+
+    return JSON.parse(response.text!) as RecommendationItem[];
   }
 
   async generateStressInsight(
