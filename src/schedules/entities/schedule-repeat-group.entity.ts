@@ -1,3 +1,4 @@
+import { BaseModel } from '@/src/global/base-model';
 import {
   Column,
   CreateDateColumn,
@@ -14,7 +15,7 @@ export enum RepeatType {
 }
 
 @Entity('ScheduleRepeatGroup')
-export class ScheduleRepeatGroupEntity {
+export class ScheduleRepeatGroupEntity extends BaseModel {
   @PrimaryGeneratedColumn({
     name: 'group_id',
     type: 'int',
@@ -57,16 +58,4 @@ export class ScheduleRepeatGroupEntity {
   })
   repeatDays: string | null;
 
-  @CreateDateColumn({
-    name: 'created_at',
-    type: 'timestamp',
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    name: 'updated_at',
-    type: 'timestamp',
-    nullable: true,
-  })
-  updatedAt: Date | null;
 }
