@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
+import { GlobalExceptionFilter } from '@/src/global/error/error.filter';
+import { ResponseInterceptor } from '@/src/global/common/response.interceptor';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
@@ -13,12 +15,20 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalFilters(new GlobalExceptionFilter());
+    app.useGlobalInterceptors(new ResponseInterceptor());
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
+    app.setGlobalPrefix('api/v1', { exclude: ['/'] });
     await app.init();
   });
 
-  it('/health (GET)', () => {
-    return request(app.getHttpServer()).get('/health').expect(200).expect({
-      message: '서버 실행 확인 성공',
+  it('/ (GET)', () => {
+    return request(app.getHttpServer()).get('/').expect(200).expect({
+      resultType: 'SUCCESS',
+      message: '성공',
+      data: '백엔드 화이팅!!!!!!!!!',
     });
   });
 

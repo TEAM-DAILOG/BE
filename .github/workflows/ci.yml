@@ -32,22 +32,26 @@ jobs:
       DB_NAME: dailog_ci
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
-
-      - uses: actions/setup-node@v4
+      
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-
-      - run: npm ci
+          
+      - name: 의존성 설치
+        run: npm ci
 
       - name: 빌드 확인
         run: npm run build
-
+        
       - name: 마이그레이션 적용 확인 (빈 DB)
         run: npm run migration:run
-
+        
       - name: 엔티티-마이그레이션 동기화 확인 (누락된 마이그레이션 검출)
         run: npm run typeorm -- migration:generate src/migrations/CiCheck --check
+        

@@ -1,17 +1,16 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
 import { ScheduleRepeatGroupEntity } from './schedule-repeat-group.entity';
+import { BaseModel } from '@/src/global/base-model';
 
-@Entity('schedule')
-export class ScheduleEntity {
+@Entity('Schedule')
+export class ScheduleEntity extends BaseModel {
   @PrimaryGeneratedColumn({
     name: 'schedule_id',
     type: 'int',
@@ -70,16 +69,4 @@ export class ScheduleEntity {
   })
   isCompleted: boolean;
 
-  @CreateDateColumn({
-    name: 'created_at',
-    type: 'timestamp',
-  })
-  createdAt: Date;
-
-  @UpdateDateColumn({
-    name: 'updated_at',
-    type: 'timestamp',
-    nullable: true,
-  })
-  updatedAt: Date | null;
 }
