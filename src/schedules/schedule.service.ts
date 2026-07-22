@@ -204,12 +204,14 @@ export class ScheduleService {
         isCompleted: false,
       })
       .andWhere(
-        `schedule.date >= (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul')::date`,
+        `schedule.date >= ((CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul')::date + 1)`,
+      )
+      .andWhere(
+        `schedule.date <= ((CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul')::date + 7)`,
       )
       .orderBy('schedule.date', 'ASC')
       .addOrderBy('schedule.createdAt', 'ASC')
       .addOrderBy('schedule.scheduleId', 'ASC')
-      .take(3)
       .getRawMany<ScheduleRaw>();
 
     return schedules.map((schedule) => this.toScheduleResponse(schedule));
