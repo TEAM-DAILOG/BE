@@ -88,7 +88,7 @@ const scheduleItemSchema: SwaggerSchema = {
     isCompleted: { type: 'boolean', example: false },
     repeatType: {
       type: 'string',
-      enum: ['NONE', 'MULTIPLE', 'PERIOD', 'WEEKLY'],
+      enum: ['NONE', 'MULTIPLE', 'PERIOD', 'WEEKLY', 'MONTHLY', 'YEARLY'],
       example: 'NONE',
     },
     repeatStartDate: {
@@ -164,7 +164,7 @@ const updateSingleScheduleDataSchema: SwaggerSchema = {
     isCompleted: { type: 'boolean', example: false },
     repeatType: {
       type: 'string',
-      enum: ['NONE', 'MULTIPLE', 'PERIOD', 'WEEKLY'],
+      enum: ['NONE', 'MULTIPLE', 'PERIOD', 'WEEKLY', 'MONTHLY', 'YEARLY'],
       example: 'NONE',
     },
     repeatStartDate: {
@@ -454,6 +454,28 @@ export class ScheduleController {
           repeatDays: 'MON,WED,FRI',
         },
       },
+      monthly: {
+        summary: '매월 반복 일정',
+        value: {
+          categoryId: 1,
+          title: '매월 반복 일정',
+          content: null,
+          repeatType: 'MONTHLY',
+          repeatStartDate: '2026-07-15',
+          repeatEndDate: '2026-12-31',
+        },
+      },
+      yearly: {
+        summary: '매년 반복 일정',
+        value: {
+          categoryId: 1,
+          title: '매년 반복 일정',
+          content: null,
+          repeatType: 'YEARLY',
+          repeatStartDate: '2026-07-15',
+          repeatEndDate: '2030-12-31',
+        },
+      },
     },
   })
   async createSchedule(
@@ -522,6 +544,22 @@ export class ScheduleController {
           repeatStartDate: '2026-07-01',
           repeatEndDate: '2026-08-31',
           repeatDays: 'MON,WED',
+        },
+      },
+      allMonthly: {
+        summary: '반복 일정 → MONTHLY 변경',
+        value: {
+          repeatType: 'MONTHLY',
+          repeatStartDate: '2026-07-15',
+          repeatEndDate: '2026-12-31',
+        },
+      },
+      allYearly: {
+        summary: '반복 일정 → YEARLY 변경',
+        value: {
+          repeatType: 'YEARLY',
+          repeatStartDate: '2026-07-15',
+          repeatEndDate: '2030-12-31',
         },
       },
       noneToWeekly: {
