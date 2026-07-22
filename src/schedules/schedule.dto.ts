@@ -107,7 +107,8 @@ export class CreateScheduleDto {
   @ApiProperty({
     enum: RepeatType,
     example: RepeatType.NONE,
-    description: '반복 유형',
+    description:
+      '반복 유형입니다. NONE은 date, MULTIPLE은 repeatDates, PERIOD는 반복 시작일·종료일, WEEKLY는 반복 시작일·종료일·요일, MONTHLY는 시작일과 같은 일자, YEARLY는 시작일과 같은 월·일을 기준으로 반복합니다.',
   })
   @IsEnum(RepeatType)
   repeatType: RepeatType;
@@ -115,7 +116,8 @@ export class CreateScheduleDto {
   @ApiPropertyOptional({
     example: '2026-07-15',
     nullable: true,
-    description: '반복 시작일입니다. PERIOD 또는 WEEKLY인 경우 필수입니다.',
+    description:
+      '반복 시작일입니다. PERIOD, WEEKLY, MONTHLY, YEARLY인 경우 필수입니다.',
   })
   @IsOptional()
   @Matches(DATE_PATTERN, {
@@ -126,7 +128,8 @@ export class CreateScheduleDto {
   @ApiPropertyOptional({
     example: '2026-08-31',
     nullable: true,
-    description: '반복 종료일입니다. PERIOD 또는 WEEKLY인 경우 필수입니다.',
+    description:
+      '반복 종료일입니다. PERIOD, WEEKLY, MONTHLY, YEARLY인 경우 필수입니다.',
   })
   @IsOptional()
   @Matches(DATE_PATTERN, {

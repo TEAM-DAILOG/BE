@@ -808,6 +808,12 @@ export class ScheduleService {
 
       case RepeatType.WEEKLY:
         return this.createWeeklyPlan(dto);
+
+      case RepeatType.MONTHLY:
+        return this.createMonthlyPlan(dto);
+
+      case RepeatType.YEARLY:
+        return this.createYearlyPlan(dto);
     }
   }
 
@@ -1115,6 +1121,84 @@ export class ScheduleService {
     };
   }
 
+  private createMonthlyPlan(dto: CreateScheduleDto): ScheduleCreationPlan {
+    if (!dto.repeatStartDate || !dto.repeatEndDate) {
+      throw new CustomBadRequestException(
+        'MONTHLY 일정은 반복 시작일과 종료일이 필요합니다.',
+      );
+    }
+
+    this.assertNoRelatedFields([
+      {
+        name: 'date',
+        value: dto.date,
+      },
+      {
+        name: 'repeatDays',
+        value: dto.repeatDays,
+      },
+      {
+        name: 'repeatDates',
+        value: dto.repeatDates,
+      },
+    ]);
+
+    this.validateDateRange(dto.repeatStartDate, dto.repeatEndDate);
+
+    const dates = this.generateMonthlyDates(
+      dto.repeatStartDate,
+      dto.repeatEndDate,
+    );
+
+    this.assertMaximumCount(dates.length);
+
+    return {
+      dates,
+      repeatStartDate: dto.repeatStartDate,
+      repeatEndDate: dto.repeatEndDate,
+      repeatDays: null,
+    };
+  }
+
+  private createYearlyPlan(dto: CreateScheduleDto): ScheduleCreationPlan {
+    if (!dto.repeatStartDate || !dto.repeatEndDate) {
+      throw new CustomBadRequestException(
+        'YEARLY 일정은 반복 시작일과 종료일이 필요합니다.',
+      );
+    }
+
+    this.assertNoRelatedFields([
+      {
+        name: 'date',
+        value: dto.date,
+      },
+      {
+        name: 'repeatDays',
+        value: dto.repeatDays,
+      },
+      {
+        name: 'repeatDates',
+        value: dto.repeatDates,
+      },
+    ]);
+
+    this.validateDateRange(dto.repeatStartDate, dto.repeatEndDate);
+
+    const dates = this.generateYearlyDates(
+      dto.repeatStartDate,
+      dto.repeatEndDate,
+    );
+
+    this.assertMaximumCount(dates.length);
+
+    return {
+      dates,
+      repeatStartDate: dto.repeatStartDate,
+      repeatEndDate: dto.repeatEndDate,
+      repeatDays: null,
+    };
+  }
+
   private createScheduleListQuery(
     userId: number,
   ): SelectQueryBuilder<ScheduleEntity> {
@@ -1295,6 +1379,75 @@ export class ScheduleService {
       }
 
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+    }
+
+    return dates;
+  }
+
+  private generateMonthlyDates(startDate: string, endDate: string): string[] {
+    const dates: string[] = [];
+    const start = this.parseDate(startDate);
+    const end = this.parseDate(endDate);
+    const targetDay = start.getUTCDate();
+
+    let year = start.getUTCFullYear();
+    let month = start.getUTCMonth();
+
+    while (true) {
+      const candidate = new Date(Date.UTC(year, month, targetDay));
+
+      if (candidate.getTime() > end.getTime()) {
+        break;
+      }
+
+      const isValidDate =
+        candidate.getUTCFullYear() === year &&
+        candidate.getUTCMonth() === month &&
+        candidate.getUTCDate() === targetDay;
+
+      if (isValidDate && candidate.getTime() >= start.getTime()) {
+        dates.push(this.formatDate(candidate));
+        this.assertMaximumCount(dates.length);
+      }
+
+      month += 1;
+
+      if (month > 11) {
+        month = 0;
+        year += 1;
+      }
+    }
+
+    return dates;
+  }
+
+  private generateYearlyDates(startDate: string, endDate: string): string[] {
+    const dates: string[] = [];
+    const start = this.parseDate(startDate);
+    const end = this.parseDate(endDate);
+    const targetMonth = start.getUTCMonth();
+    const targetDay = start.getUTCDate();
+
+    for (
+      let year = start.getUTCFullYear();
+      year <= end.getUTCFullYear();
+      year += 1
+    ) {
+      const candidate = new Date(Date.UTC(year, targetMonth, targetDay));
+
+      const isValidDate =
+        candidate.getUTCFullYear() === year &&
+        candidate.getUTCMonth() === targetMonth &&
+        candidate.getUTCDate() === targetDay;
+
+      if (
+        isValidDate &&
+        candidate.getTime() >= start.getTime() &&
+        candidate.getTime() <= end.getTime()
+      ) {
+        dates.push(this.formatDate(candidate));
+        this.assertMaximumCount(dates.length);
+      }
     }
 
     return dates;
