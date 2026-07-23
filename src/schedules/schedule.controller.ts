@@ -88,7 +88,7 @@ const scheduleItemSchema: SwaggerSchema = {
     isCompleted: { type: 'boolean', example: false },
     repeatType: {
       type: 'string',
-      enum: ['NONE', 'MULTIPLE', 'PERIOD', 'WEEKLY'],
+      enum: ['NONE', 'MULTIPLE', 'PERIOD', 'WEEKLY', 'MONTHLY', 'YEARLY'],
       example: 'NONE',
     },
     repeatStartDate: {
@@ -164,7 +164,7 @@ const updateSingleScheduleDataSchema: SwaggerSchema = {
     isCompleted: { type: 'boolean', example: false },
     repeatType: {
       type: 'string',
-      enum: ['NONE', 'MULTIPLE', 'PERIOD', 'WEEKLY'],
+      enum: ['NONE', 'MULTIPLE', 'PERIOD', 'WEEKLY', 'MONTHLY', 'YEARLY'],
       example: 'NONE',
     },
     repeatStartDate: {
@@ -363,7 +363,7 @@ export class ScheduleController {
   @ApiOperation({
     summary: '가까운 일정 조회',
     description:
-      '오늘을 포함한 이후의 미완료 일정을 날짜 오름차순으로 최대 3개 조회합니다. 날짜가 같으면 생성일시와 일정 ID 오름차순으로 정렬합니다.',
+      '한국 시간 기준 내일부터 7일 후까지의 미완료 일정을 개수 제한 없이 조회합니다. 일정 날짜 오름차순으로 정렬하며, 날짜가 같으면 생성일시와 일정 ID 오름차순으로 정렬합니다.',
   })
   @ApiOkResponse({
     description: '가까운 일정 조회 성공',
@@ -454,6 +454,28 @@ export class ScheduleController {
           repeatDays: 'MON,WED,FRI',
         },
       },
+      monthly: {
+        summary: '매월 반복 일정',
+        value: {
+          categoryId: 1,
+          title: '매월 반복 일정',
+          content: null,
+          repeatType: 'MONTHLY',
+          repeatStartDate: '2026-07-15',
+          repeatEndDate: '2026-12-31',
+        },
+      },
+      yearly: {
+        summary: '매년 반복 일정',
+        value: {
+          categoryId: 1,
+          title: '매년 반복 일정',
+          content: null,
+          repeatType: 'YEARLY',
+          repeatStartDate: '2026-07-15',
+          repeatEndDate: '2030-12-31',
+        },
+      },
     },
   })
   async createSchedule(
@@ -522,6 +544,22 @@ export class ScheduleController {
           repeatStartDate: '2026-07-01',
           repeatEndDate: '2026-08-31',
           repeatDays: 'MON,WED',
+        },
+      },
+      allMonthly: {
+        summary: '반복 일정 → MONTHLY 변경',
+        value: {
+          repeatType: 'MONTHLY',
+          repeatStartDate: '2026-07-15',
+          repeatEndDate: '2026-12-31',
+        },
+      },
+      allYearly: {
+        summary: '반복 일정 → YEARLY 변경',
+        value: {
+          repeatType: 'YEARLY',
+          repeatStartDate: '2026-07-15',
+          repeatEndDate: '2030-12-31',
         },
       },
       noneToWeekly: {

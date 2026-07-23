@@ -1,17 +1,13 @@
 import { BaseModel } from '@/src/global/base-model';
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum RepeatType {
   NONE = 'NONE',
   MULTIPLE = 'MULTIPLE',
   PERIOD = 'PERIOD',
   WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY',
+  YEARLY = 'YEARLY',
 }
 
 @Entity('ScheduleRepeatGroup')
@@ -57,5 +53,4 @@ export class ScheduleRepeatGroupEntity extends BaseModel {
     nullable: true,
   })
   repeatDays: string | null;
-
 }
