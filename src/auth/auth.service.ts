@@ -11,9 +11,11 @@ import {
   UnauthorizedException,
 } from '../global/error/custom.exception';
 import { RefreshTokenEntity } from '../users/entities/refresh-token.entity';
+import { UserEntity } from '../users/entities/user.entity';
 import { UserService } from '../users/user.service';
 import {
   ChangePasswordDto,
+  CheckCurrentPasswordDto,
   CheckSignupEmailDto,
   LoginDto,
   ReissueAccessTokenDto,
@@ -171,24 +173,7 @@ export class AuthService {
     { currentPassword, newPassword }: ChangePasswordDto,
   ) {
     this.validatePassword(newPassword);
-    const user = await this.userService.findActiveLocalById(userId);
-
-    if (
-      !user ||
-      typeof user.password !== 'string' ||
-      user.password.length === 0
-    ) {
-      throw new UnauthorizedException('인증에 실패했습니다');
-    }
-
-    const isCurrentPasswordValid = await bcrypt.compare(
-      currentPassword,
-      user.password,
-    );
-
-    if (!isCurrentPasswordValid) {
-      throw new UnauthorizedException('인증에 실패했습니다');
-    }
+    const user = await this.validateCurrentPassword(userId, currentPassword);
 
     const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
     const credentialsChangedAt = new Date();
@@ -209,6 +194,18 @@ export class AuthService {
 
     return {
       message: '비밀번호가 변경되었습니다.',
+      data: null,
+    };
+  }
+
+  async checkCurrentPassword(
+    userId: number,
+    { currentPassword }: CheckCurrentPasswordDto,
+  ) {
+    await this.validateCurrentPassword(userId, currentPassword);
+
+    return {
+      message: '비밀번호가 일치합니다.',
       data: null,
     };
   }
@@ -386,6 +383,35 @@ export class AuthService {
     ) {
       throw new BadRequestException('비밀번호 조건이 올바르지 않습니다');
     }
+  }
+
+  private async validateCurrentPassword(
+    userId: number,
+    currentPassword: string,
+  ): Promise<UserEntity> {
+    const user = await this.userService.findActiveLocalById(userId);
+
+    if (
+      !user ||
+      typeof user.password !== 'string' ||
+      user.password.length === 0
+    ) {
+      throw new UnauthorizedException('인증에 실패했습니다');
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+
+    if (!isCurrentPasswordValid) {
+      throw new BadRequestException(
+        '비밀번호가 불일치합니다.',
+        'INVALID_CURRENT_PASSWORD',
+      );
+    }
+
+    return user;
   }
 
   private validateRequiredAgreements({
