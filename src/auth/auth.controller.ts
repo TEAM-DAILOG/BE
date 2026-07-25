@@ -1,8 +1,17 @@
-import { Body, Controller, HttpCode, Patch, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Patch,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import {
   ChangePasswordDto,
+  CheckCurrentPasswordDto,
   CheckSignupEmailDto,
   LoginDto,
   ReissueAccessTokenDto,
@@ -16,6 +25,7 @@ import {
 import { AccessTokenAuth, CurrentUserId } from './auth.decorator';
 import {
   ChangePasswordSwagger,
+  CheckCurrentPasswordSwagger,
   CheckSignupEmailSwagger,
   LoginSwagger,
   ReissueAccessTokenSwagger,
@@ -32,7 +42,10 @@ import { S3Service } from '../global/s3/s3.service';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService, private readonly s3Service: S3Service) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly s3Service: S3Service,
+  ) {}
 
   @CheckSignupEmailSwagger()
   @Post('signup/email/check')
@@ -63,10 +76,13 @@ export class AuthController {
   @Post('signup')
   @HttpCode(201)
   @UseInterceptors(FileInterceptor('profileImage'))
-  async signup(@Body() signupDto: SignupDto, @UploadedFile() file?: Express.Multer.File,) {
+  async signup(
+    @Body() signupDto: SignupDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
     let profileImageUrl: string | null = null;
     if (file) {
-        profileImageUrl = await this.s3Service.uploadProfileImage(file);
+      profileImageUrl = await this.s3Service.uploadProfileImage(file);
     }
     return this.authService.signup({ ...signupDto, profileImageUrl });
   }
@@ -94,6 +110,17 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
   ) {
     return this.authService.changePassword(userId, dto);
+  }
+
+  @CheckCurrentPasswordSwagger()
+  @Post('password/check')
+  @AccessTokenAuth()
+  @HttpCode(200)
+  checkCurrentPassword(
+    @CurrentUserId() userId: number,
+    @Body() dto: CheckCurrentPasswordDto,
+  ) {
+    return this.authService.checkCurrentPassword(userId, dto);
   }
 
   @SendPasswordResetEmailVerificationSwagger()

@@ -72,6 +72,12 @@ export class ChangePasswordDto {
   newPassword: string;
 }
 
+export class CheckCurrentPasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  currentPassword: string;
+}
+
 export class VerifySignupEmailDto extends EmailDto {
   @IsString()
   @Matches(/^\d{6}$/)
