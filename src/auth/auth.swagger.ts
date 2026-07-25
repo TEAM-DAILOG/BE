@@ -1,5 +1,10 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiBody, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 
 export function CheckSignupEmailSwagger() {
   return applyDecorators(
@@ -461,11 +466,59 @@ export function ChangePasswordSwagger() {
         },
       },
     }),
-    ApiResponse({ status: 400, description: '비밀번호 조건이 올바르지 않음' }),
+    ApiResponse({
+      status: 400,
+      description: '비밀번호 조건이 올바르지 않거나 현재 비밀번호가 불일치함',
+    }),
     ApiResponse({
       status: 401,
-      description: '토큰이 없거나 유효하지 않거나 현재 비밀번호 불일치',
+      description: '토큰이 없거나 유효하지 않음',
     }),
+    ApiResponse({ status: 500, description: '서버 내부 오류' }),
+  );
+}
+
+export function CheckCurrentPasswordSwagger() {
+  return applyDecorators(
+    ApiOperation({ summary: '현재 비밀번호 확인' }),
+    ApiBody({
+      schema: {
+        type: 'object',
+        required: ['currentPassword'],
+        properties: {
+          currentPassword: {
+            type: 'string',
+            description: '현재 비밀번호',
+            example: 'Password123!',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 200,
+      description: '현재 비밀번호 일치',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: '비밀번호가 일치합니다.',
+          data: null,
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      description: '현재 비밀번호 불일치',
+      schema: {
+        example: {
+          resultType: 'FAIL',
+          code: 400,
+          errorCode: 'INVALID_CURRENT_PASSWORD',
+          reason: '비밀번호가 불일치합니다.',
+          data: null,
+        },
+      },
+    }),
+    ApiResponse({ status: 401, description: '토큰이 없거나 유효하지 않음' }),
     ApiResponse({ status: 500, description: '서버 내부 오류' }),
   );
 }
