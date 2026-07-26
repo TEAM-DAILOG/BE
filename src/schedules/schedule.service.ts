@@ -112,9 +112,9 @@ export interface DeleteScheduleResult {
   scheduleId: number;
 }
 
-export interface CompleteScheduleResult {
+export interface UpdateScheduleCompletionResult {
   scheduleId: number;
-  isCompleted: true;
+  isCompleted: boolean;
 }
 
 @Injectable()
@@ -479,10 +479,11 @@ export class ScheduleService {
     return lockedSchedule;
   }
 
-  async completeSchedule(
+  async updateScheduleCompletion(
     userId: number,
     scheduleId: number,
-  ): Promise<CompleteScheduleResult> {
+    isCompleted: boolean,
+  ): Promise<UpdateScheduleCompletionResult> {
     return this.dataSource.transaction(async (manager) => {
       const scheduleRepository = manager.getRepository(ScheduleEntity);
       const schedule = await scheduleRepository.findOne({
@@ -502,19 +503,12 @@ export class ScheduleService {
         );
       }
 
-      if (schedule.isCompleted) {
-        throw new CustomBadRequestException(
-          '이미 완료 처리된 일정입니다.',
-          'SCHEDULE_ALREADY_COMPLETED',
-        );
-      }
-
-      schedule.isCompleted = true;
-      await scheduleRepository.save(schedule);
+      schedule.isCompleted = isCompleted;
+      const savedSchedule = await scheduleRepository.save(schedule);
 
       return {
-        scheduleId: schedule.scheduleId,
-        isCompleted: true,
+        scheduleId: savedSchedule.scheduleId,
+        isCompleted: savedSchedule.isCompleted,
       };
     });
   }

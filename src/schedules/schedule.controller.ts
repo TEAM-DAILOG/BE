@@ -39,6 +39,7 @@ import {
   DeleteScheduleScopeQueryDto,
   GetSchedulesQueryDto,
   ScheduleScopeQueryDto,
+  UpdateScheduleCompletionDto,
   UpdateScheduleDto,
 } from './schedule.dto';
 import { ScheduleService } from './schedule.service';
@@ -205,7 +206,7 @@ const updateScheduleDataSchema: SwaggerSchema = {
   oneOf: [updateSingleScheduleDataSchema, updateAllSchedulesDataSchema],
 };
 
-const completeScheduleDataSchema: SwaggerSchema = {
+const updateScheduleCompletionDataSchema: SwaggerSchema = {
   type: 'object',
   required: ['scheduleId', 'isCompleted'],
   properties: {
@@ -278,7 +279,11 @@ const scheduleNotFoundResponseSchema = createErrorResponseSchema(
 
 @ApiTags('Schedules')
 @ApiBearerAuth('access-token')
-@ApiExtraModels(CreateScheduleDto, UpdateScheduleDto)
+@ApiExtraModels(
+  CreateScheduleDto,
+  UpdateScheduleDto,
+  UpdateScheduleCompletionDto,
+)
 @ApiUnauthorizedResponse({
   description: '인증 실패',
   schema: unauthorizedResponseSchema,
@@ -599,23 +604,15 @@ export class ScheduleController {
   @Patch(':scheduleId/complete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: '일정 완료 처리',
+    summary: '일정 완료 상태 변경',
     description:
-      '로그인한 사용자의 미완료 일정 한 건을 완료 상태로 변경합니다.',
+      '로그인한 사용자의 일정 한 건을 변경합니다. isCompleted가 true이면 완료 처리하고, false이면 완료를 취소합니다.',
   })
   @ApiOkResponse({
-    description: '일정 완료 처리 성공',
+    description: '일정 완료 상태 변경 성공',
     schema: createSuccessResponseSchema(
-      '일정 완료 처리에 성공했습니다.',
-      completeScheduleDataSchema,
-    ),
-  })
-  @ApiBadRequestResponse({
-    description: '이미 완료된 일정',
-    schema: createErrorResponseSchema(
-      400,
-      'SCHEDULE_ALREADY_COMPLETED',
-      '이미 완료 처리된 일정입니다.',
+      '일정 완료 상태 변경에 성공했습니다.',
+      updateScheduleCompletionDataSchema,
     ),
   })
   @ApiNotFoundResponse({
@@ -627,21 +624,43 @@ export class ScheduleController {
     required: true,
     type: Number,
     example: 1,
-    description: '완료 처리할 일정 ID',
+    description: '완료 상태를 변경할 일정 ID',
   })
-  async completeSchedule(
+  @ApiBody({
+    required: true,
+    schema: {
+      $ref: getSchemaPath(UpdateScheduleCompletionDto),
+    },
+    examples: {
+      complete: {
+        summary: '일정 완료 처리',
+        value: {
+          isCompleted: true,
+        },
+      },
+      cancelCompletion: {
+        summary: '일정 완료 취소',
+        value: {
+          isCompleted: false,
+        },
+      },
+    },
+  })
+  async updateScheduleCompletion(
     @Req() request: AuthenticatedRequest,
     @Param('scheduleId', ParseIntPipe) scheduleId: number,
+    @Body() body: UpdateScheduleCompletionDto,
   ) {
     const userId = request.user.userId;
 
-    const result = await this.scheduleService.completeSchedule(
+    const result = await this.scheduleService.updateScheduleCompletion(
       userId,
       scheduleId,
+      body.isCompleted,
     );
 
     return {
-      message: '일정 완료 처리에 성공했습니다.',
+      message: '일정 완료 상태 변경에 성공했습니다.',
       data: result,
     };
   }

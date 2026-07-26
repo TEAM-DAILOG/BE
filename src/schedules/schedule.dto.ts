@@ -169,6 +169,15 @@ export class CreateScheduleDto {
 
 export class UpdateScheduleDto extends PartialType(CreateScheduleDto) {}
 
+export class UpdateScheduleCompletionDto {
+  @ApiProperty({
+    example: true,
+    description: '일정의 완료 여부를 변경하는 값',
+  })
+  @IsBoolean()
+  isCompleted: boolean;
+}
+
 export class ScheduleScopeQueryDto {
   @ApiProperty({
     enum: SCHEDULE_SCOPES,
