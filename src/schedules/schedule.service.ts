@@ -69,6 +69,7 @@ interface ScheduleRaw {
   repeatStartDate: ScheduleRepeatGroupEntity['repeatStartDate'];
   repeatEndDate: ScheduleRepeatGroupEntity['repeatEndDate'];
   repeatDays: ScheduleRepeatGroupEntity['repeatDays'];
+  isLastDayOfMonth: ScheduleRepeatGroupEntity['isLastDayOfMonth'] | null;
   createdAt: ScheduleEntity['createdAt'];
   updatedAt: ScheduleEntity['updatedAt'];
 }
@@ -78,6 +79,7 @@ interface ScheduleCreationPlan {
   repeatStartDate: string | null;
   repeatEndDate: string | null;
   repeatDays: string | null;
+  isLastDayOfMonth: boolean;
 }
 
 export interface CreateScheduleResult {
@@ -106,15 +108,16 @@ export interface UpdatedSchedule {
   repeatStartDate: string | null;
   repeatEndDate: string | null;
   repeatDays: string | null;
+  isLastDayOfMonth: boolean;
 }
 
 export interface DeleteScheduleResult {
   scheduleId: number;
 }
 
-export interface CompleteScheduleResult {
+export interface UpdateScheduleCompletionResult {
   scheduleId: number;
-  isCompleted: true;
+  isCompleted: boolean;
 }
 
 @Injectable()
@@ -285,6 +288,7 @@ export class ScheduleService {
         repeatStartDate: creationPlan.repeatStartDate,
         repeatEndDate: creationPlan.repeatEndDate,
         repeatDays: creationPlan.repeatDays,
+        isLastDayOfMonth: creationPlan.isLastDayOfMonth,
       });
 
       const savedRepeatGroup = await repeatGroupRepository.save(repeatGroup);
@@ -479,10 +483,11 @@ export class ScheduleService {
     return lockedSchedule;
   }
 
-  async completeSchedule(
+  async updateScheduleCompletion(
     userId: number,
     scheduleId: number,
-  ): Promise<CompleteScheduleResult> {
+    isCompleted: boolean,
+  ): Promise<UpdateScheduleCompletionResult> {
     return this.dataSource.transaction(async (manager) => {
       const scheduleRepository = manager.getRepository(ScheduleEntity);
       const schedule = await scheduleRepository.findOne({
@@ -502,19 +507,12 @@ export class ScheduleService {
         );
       }
 
-      if (schedule.isCompleted) {
-        throw new CustomBadRequestException(
-          '이미 완료 처리된 일정입니다.',
-          'SCHEDULE_ALREADY_COMPLETED',
-        );
-      }
-
-      schedule.isCompleted = true;
-      await scheduleRepository.save(schedule);
+      schedule.isCompleted = isCompleted;
+      const savedSchedule = await scheduleRepository.save(schedule);
 
       return {
-        scheduleId: schedule.scheduleId,
-        isCompleted: true,
+        scheduleId: savedSchedule.scheduleId,
+        isCompleted: savedSchedule.isCompleted,
       };
     });
   }
@@ -530,6 +528,7 @@ export class ScheduleService {
       'repeatEndDate',
       'repeatDays',
       'repeatDates',
+      'isLastDayOfMonth',
     ] as const;
     if (repeatFields.some((field) => this.hasOwn(dto, field))) {
       throw new CustomBadRequestException(
@@ -577,12 +576,13 @@ export class ScheduleService {
     dto: UpdateScheduleDto,
   ): Promise<UpdateScheduleResult> {
     const hasRepeatType = this.hasOwn(dto, 'repeatType');
-    const hasRepeatSettings = this.hasAnyOwn(dto, [
-      'repeatStartDate',
-      'repeatEndDate',
-      'repeatDays',
-      'repeatDates',
-    ]);
+    const hasRepeatSettings =
+      this.hasAnyOwn(dto, [
+        'repeatStartDate',
+        'repeatEndDate',
+        'repeatDays',
+        'repeatDates',
+      ]) || dto.isLastDayOfMonth === true;
 
     if (!hasRepeatType && hasRepeatSettings) {
       throw new CustomBadRequestException(
@@ -621,6 +621,7 @@ export class ScheduleService {
         repeatStartDate: plan.repeatStartDate,
         repeatEndDate: plan.repeatEndDate,
         repeatDays: plan.repeatDays,
+        isLastDayOfMonth: plan.isLastDayOfMonth,
       }),
     );
     schedule.groupId = group.groupId;
@@ -691,6 +692,7 @@ export class ScheduleService {
       'repeatEndDate',
       'repeatDays',
       'repeatDates',
+      'isLastDayOfMonth',
     ]);
 
     if (this.hasOwn(dto, 'date') && dto.repeatType !== RepeatType.NONE) {
@@ -781,6 +783,7 @@ export class ScheduleService {
     group.repeatStartDate = plan.repeatStartDate;
     group.repeatEndDate = plan.repeatEndDate;
     group.repeatDays = plan.repeatDays;
+    group.isLastDayOfMonth = plan.isLastDayOfMonth;
     await groupRepository.save(group);
     if (created.length) await scheduleRepository.save(created);
 
@@ -898,6 +901,11 @@ export class ScheduleService {
         : isSameRepeatType && targetType === RepeatType.MULTIPLE
           ? currentDates
           : undefined,
+      isLastDayOfMonth: this.hasOwn(dto, 'isLastDayOfMonth')
+        ? dto.isLastDayOfMonth
+        : isSameRepeatType && targetType === RepeatType.MONTHLY
+          ? currentGroup.isLastDayOfMonth
+          : false,
       date: this.hasOwn(dto, 'date') ? dto.date : undefined,
       categoryId: 1,
       title: 'update',
@@ -914,6 +922,9 @@ export class ScheduleService {
       'repeatDays',
       'repeatDates',
     ].filter((field) => this.hasOwn(dto, field));
+    if (dto.isLastDayOfMonth === true) {
+      invalid.push('isLastDayOfMonth');
+    }
     if (invalid.length) {
       throw new CustomBadRequestException(
         `NONE에는 반복 설정 필드를 사용할 수 없습니다: ${invalid.join(', ')}`,
@@ -945,6 +956,7 @@ export class ScheduleService {
       repeatStartDate: group?.repeatStartDate ?? null,
       repeatEndDate: group?.repeatEndDate ?? null,
       repeatDays: group?.repeatDays ?? null,
+      isLastDayOfMonth: group?.isLastDayOfMonth ?? false,
     };
   }
 
@@ -980,6 +992,10 @@ export class ScheduleService {
         name: 'repeatDates',
         value: dto.repeatDates,
       },
+      {
+        name: 'isLastDayOfMonth',
+        value: dto.isLastDayOfMonth === true ? true : undefined,
+      },
     ]);
 
     this.validateDate(dto.date, 'date');
@@ -989,6 +1005,7 @@ export class ScheduleService {
       repeatStartDate: null,
       repeatEndDate: null,
       repeatDays: null,
+      isLastDayOfMonth: false,
     };
   }
 
@@ -1018,6 +1035,10 @@ export class ScheduleService {
         name: 'repeatDays',
         value: dto.repeatDays,
       },
+      {
+        name: 'isLastDayOfMonth',
+        value: dto.isLastDayOfMonth === true ? true : undefined,
+      },
     ]);
 
     dto.repeatDates.forEach((date) => {
@@ -1037,6 +1058,7 @@ export class ScheduleService {
       repeatStartDate: null,
       repeatEndDate: null,
       repeatDays: null,
+      isLastDayOfMonth: false,
     };
   }
 
@@ -1060,6 +1082,10 @@ export class ScheduleService {
         name: 'repeatDates',
         value: dto.repeatDates,
       },
+      {
+        name: 'isLastDayOfMonth',
+        value: dto.isLastDayOfMonth === true ? true : undefined,
+      },
     ]);
 
     this.validateDateRange(dto.repeatStartDate, dto.repeatEndDate);
@@ -1072,6 +1098,7 @@ export class ScheduleService {
       repeatStartDate: dto.repeatStartDate,
       repeatEndDate: dto.repeatEndDate,
       repeatDays: null,
+      isLastDayOfMonth: false,
     };
   }
 
@@ -1090,6 +1117,10 @@ export class ScheduleService {
       {
         name: 'repeatDates',
         value: dto.repeatDates,
+      },
+      {
+        name: 'isLastDayOfMonth',
+        value: dto.isLastDayOfMonth === true ? true : undefined,
       },
     ]);
 
@@ -1118,6 +1149,7 @@ export class ScheduleService {
       repeatStartDate: dto.repeatStartDate,
       repeatEndDate: dto.repeatEndDate,
       repeatDays: repeatDays.join(','),
+      isLastDayOfMonth: false,
     };
   }
 
@@ -1148,15 +1180,23 @@ export class ScheduleService {
     const dates = this.generateMonthlyDates(
       dto.repeatStartDate,
       dto.repeatEndDate,
+      dto.isLastDayOfMonth ?? false,
     );
 
     this.assertMaximumCount(dates.length);
+
+    if (dates.length === 0) {
+      throw new CustomBadRequestException(
+        '반복 기간 내 생성 가능한 일정이 없습니다.',
+      );
+    }
 
     return {
       dates,
       repeatStartDate: dto.repeatStartDate,
       repeatEndDate: dto.repeatEndDate,
       repeatDays: null,
+      isLastDayOfMonth: dto.isLastDayOfMonth ?? false,
     };
   }
 
@@ -1180,6 +1220,10 @@ export class ScheduleService {
         name: 'repeatDates',
         value: dto.repeatDates,
       },
+      {
+        name: 'isLastDayOfMonth',
+        value: dto.isLastDayOfMonth === true ? true : undefined,
+      },
     ]);
 
     this.validateDateRange(dto.repeatStartDate, dto.repeatEndDate);
@@ -1196,6 +1240,7 @@ export class ScheduleService {
       repeatStartDate: dto.repeatStartDate,
       repeatEndDate: dto.repeatEndDate,
       repeatDays: null,
+      isLastDayOfMonth: false,
     };
   }
 
@@ -1244,6 +1289,7 @@ export class ScheduleService {
         'repeatGroup.repeatStartDate AS "repeatStartDate"',
         'repeatGroup.repeatEndDate AS "repeatEndDate"',
         'repeatGroup.repeatDays AS "repeatDays"',
+        'repeatGroup.isLastDayOfMonth AS "isLastDayOfMonth"',
         'schedule.createdAt AS "createdAt"',
         'schedule.updatedAt AS "updatedAt"',
       ]);
@@ -1266,6 +1312,7 @@ export class ScheduleService {
       repeatStartDate: schedule.repeatStartDate,
       repeatEndDate: schedule.repeatEndDate,
       repeatDays: schedule.repeatDays,
+      isLastDayOfMonth: schedule.isLastDayOfMonth ?? false,
       createdAt: schedule.createdAt,
       updatedAt: schedule.updatedAt,
     };
@@ -1384,7 +1431,11 @@ export class ScheduleService {
     return dates;
   }
 
-  private generateMonthlyDates(startDate: string, endDate: string): string[] {
+  private generateMonthlyDates(
+    startDate: string,
+    endDate: string,
+    isLastDayOfMonth: boolean,
+  ): string[] {
     const dates: string[] = [];
     const start = this.parseDate(startDate);
     const end = this.parseDate(endDate);
@@ -1394,7 +1445,9 @@ export class ScheduleService {
     let month = start.getUTCMonth();
 
     while (true) {
-      const candidate = new Date(Date.UTC(year, month, targetDay));
+      const candidate = isLastDayOfMonth
+        ? new Date(Date.UTC(year, month + 1, 0))
+        : new Date(Date.UTC(year, month, targetDay));
 
       if (candidate.getTime() > end.getTime()) {
         break;
@@ -1403,7 +1456,7 @@ export class ScheduleService {
       const isValidDate =
         candidate.getUTCFullYear() === year &&
         candidate.getUTCMonth() === month &&
-        candidate.getUTCDate() === targetDay;
+        (isLastDayOfMonth || candidate.getUTCDate() === targetDay);
 
       if (isValidDate && candidate.getTime() >= start.getTime()) {
         dates.push(this.formatDate(candidate));

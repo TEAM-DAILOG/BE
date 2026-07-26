@@ -39,6 +39,7 @@ import {
   DeleteScheduleScopeQueryDto,
   GetSchedulesQueryDto,
   ScheduleScopeQueryDto,
+  UpdateScheduleCompletionDto,
   UpdateScheduleDto,
 } from './schedule.dto';
 import { ScheduleService } from './schedule.service';
@@ -63,6 +64,7 @@ const scheduleItemSchema: SwaggerSchema = {
     'repeatStartDate',
     'repeatEndDate',
     'repeatDays',
+    'isLastDayOfMonth',
     'createdAt',
     'updatedAt',
   ],
@@ -104,6 +106,11 @@ const scheduleItemSchema: SwaggerSchema = {
       example: null,
     },
     repeatDays: { type: 'string', nullable: true, example: null },
+    isLastDayOfMonth: {
+      type: 'boolean',
+      example: false,
+      description: '월간 반복 일정의 말일 설정 여부',
+    },
     createdAt: {
       type: 'string',
       format: 'date-time',
@@ -153,6 +160,7 @@ const updateSingleScheduleDataSchema: SwaggerSchema = {
     'repeatStartDate',
     'repeatEndDate',
     'repeatDays',
+    'isLastDayOfMonth',
   ],
   properties: {
     scheduleId: { type: 'integer', example: 1 },
@@ -180,6 +188,11 @@ const updateSingleScheduleDataSchema: SwaggerSchema = {
       example: null,
     },
     repeatDays: { type: 'string', nullable: true, example: null },
+    isLastDayOfMonth: {
+      type: 'boolean',
+      example: false,
+      description: '월간 반복 일정의 말일 설정 여부',
+    },
   },
 };
 
@@ -205,7 +218,7 @@ const updateScheduleDataSchema: SwaggerSchema = {
   oneOf: [updateSingleScheduleDataSchema, updateAllSchedulesDataSchema],
 };
 
-const completeScheduleDataSchema: SwaggerSchema = {
+const updateScheduleCompletionDataSchema: SwaggerSchema = {
   type: 'object',
   required: ['scheduleId', 'isCompleted'],
   properties: {
@@ -278,7 +291,11 @@ const scheduleNotFoundResponseSchema = createErrorResponseSchema(
 
 @ApiTags('Schedules')
 @ApiBearerAuth('access-token')
-@ApiExtraModels(CreateScheduleDto, UpdateScheduleDto)
+@ApiExtraModels(
+  CreateScheduleDto,
+  UpdateScheduleDto,
+  UpdateScheduleCompletionDto,
+)
 @ApiUnauthorizedResponse({
   description: '인증 실패',
   schema: unauthorizedResponseSchema,
@@ -458,11 +475,24 @@ export class ScheduleController {
         summary: '매월 반복 일정',
         value: {
           categoryId: 1,
-          title: '매월 반복 일정',
+          title: '매월 15일 일정',
           content: null,
           repeatType: 'MONTHLY',
-          repeatStartDate: '2026-07-15',
-          repeatEndDate: '2026-12-31',
+          repeatStartDate: '2026-01-15',
+          repeatEndDate: '2026-05-31',
+          isLastDayOfMonth: false,
+        },
+      },
+      monthlyLastDay: {
+        summary: '매월 말일 반복 일정',
+        value: {
+          categoryId: 1,
+          title: '월말 정산',
+          content: null,
+          repeatType: 'MONTHLY',
+          repeatStartDate: '2026-01-31',
+          repeatEndDate: '2026-05-31',
+          isLastDayOfMonth: true,
         },
       },
       yearly: {
@@ -552,6 +582,16 @@ export class ScheduleController {
           repeatType: 'MONTHLY',
           repeatStartDate: '2026-07-15',
           repeatEndDate: '2026-12-31',
+          isLastDayOfMonth: false,
+        },
+      },
+      allMonthlyLastDay: {
+        summary: '반복 일정 ALL 월말 설정',
+        value: {
+          repeatType: 'MONTHLY',
+          repeatStartDate: '2026-01-31',
+          repeatEndDate: '2026-05-31',
+          isLastDayOfMonth: true,
         },
       },
       allYearly: {
@@ -599,23 +639,15 @@ export class ScheduleController {
   @Patch(':scheduleId/complete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: '일정 완료 처리',
+    summary: '일정 완료 상태 변경',
     description:
-      '로그인한 사용자의 미완료 일정 한 건을 완료 상태로 변경합니다.',
+      '로그인한 사용자의 일정 한 건을 변경합니다. isCompleted가 true이면 완료 처리하고, false이면 완료를 취소합니다.',
   })
   @ApiOkResponse({
-    description: '일정 완료 처리 성공',
+    description: '일정 완료 상태 변경 성공',
     schema: createSuccessResponseSchema(
-      '일정 완료 처리에 성공했습니다.',
-      completeScheduleDataSchema,
-    ),
-  })
-  @ApiBadRequestResponse({
-    description: '이미 완료된 일정',
-    schema: createErrorResponseSchema(
-      400,
-      'SCHEDULE_ALREADY_COMPLETED',
-      '이미 완료 처리된 일정입니다.',
+      '일정 완료 상태 변경에 성공했습니다.',
+      updateScheduleCompletionDataSchema,
     ),
   })
   @ApiNotFoundResponse({
@@ -627,21 +659,43 @@ export class ScheduleController {
     required: true,
     type: Number,
     example: 1,
-    description: '완료 처리할 일정 ID',
+    description: '완료 상태를 변경할 일정 ID',
   })
-  async completeSchedule(
+  @ApiBody({
+    required: true,
+    schema: {
+      $ref: getSchemaPath(UpdateScheduleCompletionDto),
+    },
+    examples: {
+      complete: {
+        summary: '일정 완료 처리',
+        value: {
+          isCompleted: true,
+        },
+      },
+      cancelCompletion: {
+        summary: '일정 완료 취소',
+        value: {
+          isCompleted: false,
+        },
+      },
+    },
+  })
+  async updateScheduleCompletion(
     @Req() request: AuthenticatedRequest,
     @Param('scheduleId', ParseIntPipe) scheduleId: number,
+    @Body() body: UpdateScheduleCompletionDto,
   ) {
     const userId = request.user.userId;
 
-    const result = await this.scheduleService.completeSchedule(
+    const result = await this.scheduleService.updateScheduleCompletion(
       userId,
       scheduleId,
+      body.isCompleted,
     );
 
     return {
-      message: '일정 완료 처리에 성공했습니다.',
+      message: '일정 완료 상태 변경에 성공했습니다.',
       data: result,
     };
   }

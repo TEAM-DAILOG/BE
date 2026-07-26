@@ -53,4 +53,12 @@ export class ScheduleRepeatGroupEntity extends BaseModel {
     nullable: true,
   })
   repeatDays: string | null;
+
+  @Column({
+    name: 'is_last_day_of_month',
+    type: 'boolean',
+    nullable: false,
+    default: false,
+  })
+  isLastDayOfMonth: boolean;
 }
