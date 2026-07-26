@@ -18,6 +18,7 @@ import {
   CheckCurrentPasswordDto,
   CheckSignupEmailDto,
   LoginDto,
+  LogoutDto,
   ReissueAccessTokenDto,
   ResetPasswordDto,
   SendPasswordResetEmailVerificationDto,
@@ -360,6 +361,36 @@ export class AuthService {
     };
   }
 
+  async logout(userId: number, { refreshToken }: LogoutDto) {
+    const payload = await this.verifyRefreshToken(
+      refreshToken,
+      '유효하지 않은 Refresh Token입니다',
+    );
+
+    const storedRefreshToken = await this.userService.findRefreshTokenByHash(
+      this.hashToken(refreshToken),
+    );
+
+    if (
+      !this.isUsableRefreshToken(storedRefreshToken) ||
+      payload.sub !== userId ||
+      payload.sub !== storedRefreshToken.user.userId ||
+      !this.isRefreshTokenCredentialsMarkerValid(
+        payload,
+        storedRefreshToken.user,
+      )
+    ) {
+      throw new UnauthorizedException('유효하지 않은 Refresh Token입니다');
+    }
+
+    await this.userService.revokeRefreshToken(storedRefreshToken, new Date());
+
+    return {
+      message: '로그아웃에 성공했습니다.',
+      data: null,
+    };
+  }
+
   private async validateSignupEmail(email: string): Promise<void> {
     if (!this.isValidEmail(email)) {
       throw new BadRequestException('이메일 형식이 올바르지 않습니다');
@@ -489,6 +520,7 @@ export class AuthService {
 
   private async verifyRefreshToken(
     refreshToken: string,
+    invalidReason = '인증에 실패했습니다',
   ): Promise<RefreshTokenPayload> {
     try {
       const payload = await this.jwtService.verifyAsync<RefreshTokenPayload>(
@@ -504,7 +536,7 @@ export class AuthService {
 
       return payload;
     } catch {
-      throw new UnauthorizedException('인증에 실패했습니다');
+      throw new UnauthorizedException(invalidReason);
     }
   }
 

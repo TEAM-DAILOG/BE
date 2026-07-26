@@ -95,7 +95,7 @@ export class DiaryController {
     ? await this.s3Service.uploadDiaryImages(files)
     : [];
 
-dto.images = imageUrls;
+
 
     dto.images = imageUrls;
 

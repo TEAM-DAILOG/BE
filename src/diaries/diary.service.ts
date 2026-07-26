@@ -1,13 +1,13 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 
 import { DiaryEntity } from './entities/diary.entity';
 import { DiaryImageEntity } from './entities/diary-image.entity';
 import { DiaryType } from './enums/diary-type.enum';
 import { CreateDiaryDto, UpdateDiaryDto } from './diary.dto';
 
-import { NotFoundException } from '../global/error/custom.exception';
+import { NotFoundException, ConflictException, } from '../global/error/custom.exception';
 import { QuestionService } from '../ai/services/ai-question.service';
 
 @Injectable()
@@ -73,6 +73,28 @@ export class DiaryService {
   console.log('questionId == null:', dto.questionId == null);
   console.log('==================================');
 
+  const now = new Date();
+
+const startOfDay = new Date(now);
+startOfDay.setHours(0, 0, 0, 0);
+
+const endOfDay = new Date(now);
+endOfDay.setHours(23, 59, 59, 999);
+
+const todayDiary = await this.diaryRepository.findOne({
+  where: {
+    userId,
+    createdAt: Between(startOfDay, endOfDay),
+  },
+});
+
+if (todayDiary) {
+  throw new ConflictException(
+    '오늘은 이미 일기를 작성했습니다.',
+    'ALREADY_CREATED_DIARY',
+  );
+}
+
   const isQuestionDiary =
     !!dto.questionId;
 
@@ -112,14 +134,36 @@ export class DiaryService {
   return savedDiary;
 }
 
-  async findAllDiary(userId: number): Promise<DiaryEntity[]> {
-    return this.diaryRepository.find({
-      where: { userId },
-      order: {
-        createdAt: 'DESC',
-      },
-    });
-  }
+  async findAllDiary(userId: number) {
+  const diaries = await this.diaryRepository.find({
+    where: { userId },
+    order: {
+      createdAt: 'DESC',
+    },
+  });
+
+  return Promise.all(
+    diaries.map(async (diary) => {
+      const images = await this.diaryImageRepository.find({
+        where: {
+          diaryId: diary.diaryId,
+        },
+      });
+
+      return {
+        diaryId: diary.diaryId,
+        userId: diary.userId,
+        diaryType: diary.diaryType,
+        diaryTitle: diary.diaryTitle,
+        content: diary.content,
+        aiSummary: diary.aiSummary,
+        createdAt: diary.createdAt,
+        updatedAt: diary.updatedAt,
+        images: images.map((image) => image.imageUrl),
+      };
+    }),
+  );
+}
 
   async findDiaryDetail(
     diaryId: number,

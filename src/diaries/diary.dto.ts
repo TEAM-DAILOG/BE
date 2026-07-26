@@ -95,6 +95,12 @@ export class DiaryListResponseDto {
   title: string;
 
   createdAt: Date;
+
+  @ApiProperty({
+  description: '이미지 URL 목록',
+  type: [String],
+})
+images: string[];
 }
 
 /**

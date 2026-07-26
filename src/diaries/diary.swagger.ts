@@ -25,6 +25,9 @@ export function FindAllDiarySwagger() {
               diaryTitle: '오늘 하루',
               content: '오늘 친구와 산책했다.',
               aiSummary: null,
+              images:[
+                "https://example.com/image1.jpg"
+              ],
            },
         ],
     },
