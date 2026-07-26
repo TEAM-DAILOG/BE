@@ -23,6 +23,7 @@ import {
   CreateRecommendationsSwagger,
   AddRecommendationSwagger,
   FindRecommendationsSwagger,
+  FindRecommendationsByDiarySwagger,
 } from './ai.swagger';
 
 @ApiTags('AI')
@@ -135,5 +136,18 @@ export class AiController {
     const data = await this.recommendService.getTodayRecommendations(userId);
 
     return { message: 'AI 일정 추천 조회 성공', data };
+  }
+
+  /**
+   * 일기별 AI 일정 추천 조회
+   */
+  @FindRecommendationsByDiarySwagger()
+  @Get('schedules/:diaryId')
+  async findRecommendationsByDiary(
+    @Param('diaryId', ParseIntPipe) diaryId: number,
+  ) {
+    const data = await this.recommendService.getRecommendationsByDiary(diaryId);
+
+    return { message: '일기별 AI 일정 추천 조회 성공', data };
   }
 }

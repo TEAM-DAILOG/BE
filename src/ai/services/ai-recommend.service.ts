@@ -237,4 +237,14 @@ export class RecommendService {
 
     return new RecommendListDTO(recommends);
   }
+
+  // 오늘 일기 여부와 무관하게, 특정 일기에 연결된 AI 추천 일정 목록을 조회한다.
+  async getRecommendationsByDiary(diaryId: number): Promise<RecommendListDTO> {
+    const recommends = await this.recommendRepository.find({
+      where: { diary: { diaryId } },
+      relations: ['category'],
+    });
+
+    return new RecommendListDTO(recommends);
+  }
 }
