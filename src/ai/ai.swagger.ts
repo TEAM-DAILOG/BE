@@ -379,3 +379,54 @@ export function FindRecommendationsSwagger() {
     }),
   );
 }
+
+// 일기별 AI 일정 추천 조회
+export function FindRecommendationsByDiarySwagger() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '일기별 AI 일정 추천 조회',
+      description:
+        '오늘 일기인지 여부와 무관하게, 특정 diaryId에 연결된 AI 추천 일정 목록을 조회합니다.',
+    }),
+    ApiParam({
+      name: 'diaryId',
+      type: Number,
+      description: '일기 ID',
+    }),
+    ApiResponse({
+      status: 200,
+      description: '일기별 AI 일정 추천 조회 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: '일기별 AI 일정 추천 조회 성공',
+          data: {
+            recommendedScheduleCount: 2,
+            recommendedSchedules: [
+              {
+                recommendId: 1,
+                categoryId: 3,
+                categoryTitle: '운동',
+                categoryColor: 'BLUE',
+                scheduleTitle: '저녁 러닝 30분',
+                isAdded: false,
+              },
+              {
+                recommendId: 2,
+                categoryId: 4,
+                categoryTitle: '공부',
+                categoryColor: 'GREEN',
+                scheduleTitle: 'TypeScript 강의 1시간',
+                isAdded: true,
+              },
+            ],
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 500,
+      description: '서버 내부 오류',
+    }),
+  );
+}
