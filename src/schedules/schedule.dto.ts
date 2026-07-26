@@ -149,6 +149,15 @@ export class CreateScheduleDto {
   repeatDays?: string | null;
 
   @ApiPropertyOptional({
+    example: false,
+    description:
+      'MONTHLY 반복 일정에서만 사용하는 설정입니다. true이면 반복 기간 내 매월 마지막 날짜에 생성하며, false 또는 생략하면 반복 시작일과 같은 일자에 생성합니다.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isLastDayOfMonth?: boolean;
+
+  @ApiPropertyOptional({
     example: ['2026-07-15', '2026-07-18', '2026-07-22'],
     nullable: true,
     type: [String],

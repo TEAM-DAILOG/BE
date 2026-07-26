@@ -64,6 +64,7 @@ const scheduleItemSchema: SwaggerSchema = {
     'repeatStartDate',
     'repeatEndDate',
     'repeatDays',
+    'isLastDayOfMonth',
     'createdAt',
     'updatedAt',
   ],
@@ -105,6 +106,11 @@ const scheduleItemSchema: SwaggerSchema = {
       example: null,
     },
     repeatDays: { type: 'string', nullable: true, example: null },
+    isLastDayOfMonth: {
+      type: 'boolean',
+      example: false,
+      description: '월간 반복 일정의 말일 설정 여부',
+    },
     createdAt: {
       type: 'string',
       format: 'date-time',
@@ -154,6 +160,7 @@ const updateSingleScheduleDataSchema: SwaggerSchema = {
     'repeatStartDate',
     'repeatEndDate',
     'repeatDays',
+    'isLastDayOfMonth',
   ],
   properties: {
     scheduleId: { type: 'integer', example: 1 },
@@ -181,6 +188,11 @@ const updateSingleScheduleDataSchema: SwaggerSchema = {
       example: null,
     },
     repeatDays: { type: 'string', nullable: true, example: null },
+    isLastDayOfMonth: {
+      type: 'boolean',
+      example: false,
+      description: '월간 반복 일정의 말일 설정 여부',
+    },
   },
 };
 
@@ -463,11 +475,24 @@ export class ScheduleController {
         summary: '매월 반복 일정',
         value: {
           categoryId: 1,
-          title: '매월 반복 일정',
+          title: '매월 15일 일정',
           content: null,
           repeatType: 'MONTHLY',
-          repeatStartDate: '2026-07-15',
-          repeatEndDate: '2026-12-31',
+          repeatStartDate: '2026-01-15',
+          repeatEndDate: '2026-05-31',
+          isLastDayOfMonth: false,
+        },
+      },
+      monthlyLastDay: {
+        summary: '매월 말일 반복 일정',
+        value: {
+          categoryId: 1,
+          title: '월말 정산',
+          content: null,
+          repeatType: 'MONTHLY',
+          repeatStartDate: '2026-01-31',
+          repeatEndDate: '2026-05-31',
+          isLastDayOfMonth: true,
         },
       },
       yearly: {
@@ -557,6 +582,16 @@ export class ScheduleController {
           repeatType: 'MONTHLY',
           repeatStartDate: '2026-07-15',
           repeatEndDate: '2026-12-31',
+          isLastDayOfMonth: false,
+        },
+      },
+      allMonthlyLastDay: {
+        summary: '반복 일정 ALL 월말 설정',
+        value: {
+          repeatType: 'MONTHLY',
+          repeatStartDate: '2026-01-31',
+          repeatEndDate: '2026-05-31',
+          isLastDayOfMonth: true,
         },
       },
       allYearly: {
