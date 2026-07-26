@@ -6,6 +6,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
+import * as path from 'path';
 import { BadRequestException } from '../error/custom.exception';
 
 @Injectable()
@@ -48,7 +49,8 @@ export class S3Service {
         throw new BadRequestException('이미지 파일만 업로드 가능합니다.');
       }
 
-      const fileName = `diary/${randomUUID()}-${encodeURIComponent(file.originalname)}`;
+      const ext = path.extname(file.originalname).toLowerCase();
+      const fileName = `diary/${randomUUID()}${ext}`;
 
       await this.s3Client.send(
         new PutObjectCommand({
