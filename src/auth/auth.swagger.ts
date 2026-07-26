@@ -308,6 +308,63 @@ export function ReissueAccessTokenSwagger() {
   );
 }
 
+export function LogoutSwagger() {
+  return applyDecorators(
+    ApiOperation({ summary: '통합 로그아웃' }),
+    ApiBody({
+      schema: {
+        type: 'object',
+        required: ['refreshToken'],
+        properties: {
+          refreshToken: {
+            type: 'string',
+            description: '무효화할 Refresh Token',
+            example: 'refresh-token',
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 200,
+      description: '로그아웃 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: '로그아웃에 성공했습니다.',
+          data: null,
+        },
+      },
+    }),
+    ApiResponse({
+      status: 401,
+      description: '토큰이 없거나 유효하지 않음',
+      schema: {
+        example: {
+          resultType: 'FAIL',
+          code: 401,
+          errorCode: 'UNAUTHORIZED',
+          reason: '인증에 실패했습니다',
+          data: null,
+        },
+      },
+    }),
+    ApiResponse({
+      status: 401,
+      description: '유효하지 않은 Refresh Token',
+      schema: {
+        example: {
+          resultType: 'FAIL',
+          code: 401,
+          errorCode: 'UNAUTHORIZED',
+          reason: '유효하지 않은 Refresh Token입니다',
+          data: null,
+        },
+      },
+    }),
+    ApiResponse({ status: 500, description: '서버 내부 오류' }),
+  );
+}
+
 export function SendPasswordResetEmailVerificationSwagger() {
   return applyDecorators(
     ApiOperation({ summary: '자체 비밀번호 찾기 인증번호 전송' }),

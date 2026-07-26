@@ -14,6 +14,7 @@ import {
   CheckCurrentPasswordDto,
   CheckSignupEmailDto,
   LoginDto,
+  LogoutDto,
   ReissueAccessTokenDto,
   ResetPasswordDto,
   SendPasswordResetEmailVerificationDto,
@@ -28,6 +29,7 @@ import {
   CheckCurrentPasswordSwagger,
   CheckSignupEmailSwagger,
   LoginSwagger,
+  LogoutSwagger,
   ReissueAccessTokenSwagger,
   ResetPasswordSwagger,
   SendPasswordResetEmailVerificationSwagger,
@@ -99,6 +101,14 @@ export class AuthController {
   @HttpCode(200)
   reissueAccessToken(@Body() reissueAccessTokenDto: ReissueAccessTokenDto) {
     return this.authService.reissueAccessToken(reissueAccessTokenDto);
+  }
+
+  @LogoutSwagger()
+  @Post('logout')
+  @AccessTokenAuth()
+  @HttpCode(200)
+  logout(@CurrentUserId() userId: number, @Body() dto: LogoutDto) {
+    return this.authService.logout(userId, dto);
   }
 
   @ChangePasswordSwagger()

@@ -34,6 +34,12 @@ export class ReissueAccessTokenDto {
   refreshToken: string;
 }
 
+export class LogoutDto {
+  @IsString()
+  @IsNotEmpty()
+  refreshToken: string;
+}
+
 class EmailDto {
   @IsEmail()
   @IsNotEmpty()

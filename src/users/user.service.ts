@@ -207,6 +207,15 @@ export class UserService {
     });
   }
 
+  async revokeRefreshToken(
+    refreshToken: RefreshTokenEntity,
+    revokedAt: Date,
+  ): Promise<RefreshTokenEntity> {
+    refreshToken.revokedAt = revokedAt;
+
+    return this.refreshTokenRepository.save(refreshToken);
+  }
+
   private createAgreement({
     user,
     agreementType,
