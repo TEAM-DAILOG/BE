@@ -5,6 +5,7 @@ import {
 } from '../categories/entities/category.entity';
 import { ScheduleEntity as Schedule } from '../schedules/entities/schedule.entity';
 import { RecommendDTO } from '../ai/dto/ai-recommend.dto';
+import { toIsoDateTime } from '../global/date.util';
 
 export class MostFrequentCategoryDTO {
   @ApiProperty({ description: '가장 많이 사용한 카테고리 ID입니다' })
@@ -59,7 +60,10 @@ export class CategoryRankScheduleDTO {
   @ApiProperty({ description: '스케쥴 제목입니다' })
   title: string;
 
-  @ApiProperty({ description: '스케쥴 날짜입니다' })
+  @ApiProperty({
+    description: '스케쥴 날짜입니다',
+    example: '2026-07-19T00:00:00Z',
+  })
   date: string;
 }
 
@@ -119,7 +123,10 @@ export class ScheduleStatsDTO {
   @ApiProperty({ description: '스케쥴 제목입니다' })
   title: string;
 
-  @ApiProperty({ description: '스케쥴 날짜입니다' })
+  @ApiProperty({
+    description: '스케쥴 날짜입니다',
+    example: '2026-07-19T00:00:00Z',
+  })
   date: string;
 
   @ApiProperty({ description: '스케쥴 카테고리 Id입니다' })
@@ -137,7 +144,7 @@ export class ScheduleStatsDTO {
   constructor(schedule: Schedule, category: CategoryEntity) {
     this.scheduleId = schedule.scheduleId;
     this.title = schedule.title;
-    this.date = schedule.date;
+    this.date = toIsoDateTime(schedule.date);
     this.categoryId = category.categoryId;
     this.categoryName = category.categoryName;
     this.categoryColor = category.categoryColor;

@@ -17,7 +17,7 @@ export function FindTodayQuestionSwagger() {
           data: {
             questionId: 1,
             content: '오늘 가장 기억에 남는 순간은 무엇인가요?',
-            targetDate: '2026-07-19',
+            targetDate: '2026-07-19T00:00:00Z',
           },
         },
       },
@@ -46,7 +46,7 @@ export function RegenerateTodayQuestionSwagger() {
           data: {
             questionId: 1,
             content: '오늘 나를 웃게 만든 일이 있었나요?',
-            targetDate: '2026-07-19',
+            targetDate: '2026-07-19T00:00:00Z',
           },
         },
       },
@@ -83,7 +83,7 @@ export function CreateAnswerSwagger() {
             diaryId: 5,
             answer:
               '오늘 하루도 고생 많으셨어요. 맛있는 저녁까지 챙기셨다니 다행이에요.',
-            createdAt: '2026-07-19T09:00:00.000Z',
+            createdAt: '2026-07-19T09:00:00Z',
           },
         },
       },
