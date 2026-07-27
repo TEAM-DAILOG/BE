@@ -207,10 +207,10 @@ export class ScheduleService {
         isCompleted: false,
       })
       .andWhere(
-        `schedule.date >= ((CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul')::date + 1)`,
+        `schedule.date >= ((CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date + 1)`,
       )
       .andWhere(
-        `schedule.date <= ((CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul')::date + 7)`,
+        `schedule.date <= ((CURRENT_TIMESTAMP AT TIME ZONE 'UTC')::date + 7)`,
       )
       .orderBy('schedule.date', 'ASC')
       .addOrderBy('schedule.createdAt', 'ASC')
