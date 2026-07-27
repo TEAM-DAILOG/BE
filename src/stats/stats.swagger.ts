@@ -81,9 +81,21 @@ export function GetScheduleDetailSwagger() {
                 count: 3,
                 categoryColor: 'BLUE',
                 schedules: [
-                  { scheduleId: 1, title: '아침 러닝', date: '2026-07-18' },
-                  { scheduleId: 2, title: '헬스장 등록', date: '2026-07-16' },
-                  { scheduleId: 7, title: '저녁 스트레칭', date: '2026-07-14' },
+                  {
+                    scheduleId: 1,
+                    title: '아침 러닝',
+                    date: '2026-07-18T00:00:00Z',
+                  },
+                  {
+                    scheduleId: 2,
+                    title: '헬스장 등록',
+                    date: '2026-07-16T00:00:00Z',
+                  },
+                  {
+                    scheduleId: 7,
+                    title: '저녁 스트레칭',
+                    date: '2026-07-14T00:00:00Z',
+                  },
                 ],
               },
               {
@@ -95,12 +107,12 @@ export function GetScheduleDetailSwagger() {
                   {
                     scheduleId: 3,
                     title: 'TypeScript 스터디',
-                    date: '2026-07-18',
+                    date: '2026-07-18T00:00:00Z',
                   },
                   {
                     scheduleId: 4,
                     title: '알고리즘 문제풀이',
-                    date: '2026-07-19',
+                    date: '2026-07-19T00:00:00Z',
                   },
                 ],
               },
@@ -110,7 +122,11 @@ export function GetScheduleDetailSwagger() {
                 count: 1,
                 categoryColor: 'PINK',
                 schedules: [
-                  { scheduleId: 6, title: '영화 보기', date: '2026-07-18' },
+                  {
+                    scheduleId: 6,
+                    title: '영화 보기',
+                    date: '2026-07-18T00:00:00Z',
+                  },
                 ],
               },
             ],
@@ -148,7 +164,7 @@ export function GetPendingStatsSwagger() {
               {
                 scheduleId: 4,
                 title: '알고리즘 문제풀이',
-                date: '2026-07-19',
+                date: '2026-07-19T00:00:00Z',
                 categoryId: 4,
                 categoryName: '공부',
                 categoryColor: 'GREEN',
@@ -156,7 +172,7 @@ export function GetPendingStatsSwagger() {
               {
                 scheduleId: 1,
                 title: '아침 러닝',
-                date: '2026-07-18',
+                date: '2026-07-18T00:00:00Z',
                 categoryId: 3,
                 categoryName: '운동',
                 categoryColor: 'BLUE',
@@ -164,7 +180,7 @@ export function GetPendingStatsSwagger() {
               {
                 scheduleId: 6,
                 title: '영화 보기',
-                date: '2026-07-18',
+                date: '2026-07-18T00:00:00Z',
                 categoryId: 5,
                 categoryName: '취미',
                 categoryColor: 'PINK',
@@ -201,7 +217,7 @@ export function GetCompletedStatsSwagger() {
               {
                 scheduleId: 2,
                 title: '헬스장 등록',
-                date: '2026-07-16',
+                date: '2026-07-16T00:00:00Z',
                 categoryId: 3,
                 categoryName: '운동',
                 categoryColor: 'BLUE',
@@ -209,7 +225,7 @@ export function GetCompletedStatsSwagger() {
               {
                 scheduleId: 5,
                 title: '기타 연습',
-                date: '2026-07-17',
+                date: '2026-07-17T00:00:00Z',
                 categoryId: 5,
                 categoryName: '취미',
                 categoryColor: 'PINK',
@@ -217,7 +233,7 @@ export function GetCompletedStatsSwagger() {
               {
                 scheduleId: 8,
                 title: '독서 30분',
-                date: '2026-07-15',
+                date: '2026-07-15T00:00:00Z',
                 categoryId: 4,
                 categoryName: '공부',
                 categoryColor: 'GREEN',
@@ -225,7 +241,7 @@ export function GetCompletedStatsSwagger() {
               {
                 scheduleId: 9,
                 title: '아침 요가',
-                date: '2026-07-14',
+                date: '2026-07-14T00:00:00Z',
                 categoryId: 3,
                 categoryName: '운동',
                 categoryColor: 'BLUE',

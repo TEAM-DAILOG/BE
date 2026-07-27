@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 
-import { getKstTodayRange } from '../../global/kst-date.util';
+import { getTodayUtcRange } from '../../global/date.util';
 
 import { RecommendEntity } from '../entities/ai-recommend.entity';
 import {
@@ -34,9 +34,9 @@ export class RecommendService {
     private readonly geminiService: GeminiService,
   ) {}
 
-  // 하루에 일기는 하나만 작성 가능하다는 전제 하에 오늘(KST) 일기를 조회한다
+  // 하루에 일기는 하나만 작성 가능하다는 전제 하에 오늘(UTC) 일기를 조회한다
   private async findTodayDiary(userId: number): Promise<DiaryEntity | null> {
-    const { start, end } = getKstTodayRange();
+    const { start, end } = getTodayUtcRange();
 
     return this.diaryRepository.findOne({
       where: {
