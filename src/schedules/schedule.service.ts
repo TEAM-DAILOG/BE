@@ -74,6 +74,11 @@ interface ScheduleRaw {
   updatedAt: ScheduleEntity['updatedAt'];
 }
 
+interface RepeatDateRaw {
+  groupId: number;
+  date: string;
+}
+
 interface ScheduleCreationPlan {
   dates: string[];
   repeatStartDate: string | null;
@@ -198,7 +203,14 @@ export class ScheduleService {
       .addOrderBy('schedule.scheduleId', 'ASC')
       .getRawMany<ScheduleRaw>();
 
-    return schedules.map((schedule) => this.toScheduleResponse(schedule));
+    const repeatDatesByGroup = await this.getRepeatDatesByGroup(
+      userId,
+      schedules,
+    );
+
+    return schedules.map((schedule) =>
+      this.toScheduleResponse(schedule, repeatDatesByGroup),
+    );
   }
 
   async getUpcomingSchedules(userId: number) {
@@ -217,7 +229,14 @@ export class ScheduleService {
       .addOrderBy('schedule.scheduleId', 'ASC')
       .getRawMany<ScheduleRaw>();
 
-    return schedules.map((schedule) => this.toScheduleResponse(schedule));
+    const repeatDatesByGroup = await this.getRepeatDatesByGroup(
+      userId,
+      schedules,
+    );
+
+    return schedules.map((schedule) =>
+      this.toScheduleResponse(schedule, repeatDatesByGroup),
+    );
   }
 
   async createSchedule(
@@ -1282,12 +1301,12 @@ export class ScheduleService {
         'category.categoryColor AS "categoryColor"',
         'schedule.title AS "title"',
         'schedule.content AS "content"',
-        'schedule.date AS "date"',
+        'CAST(schedule.date AS text) AS "date"',
         'schedule.groupId AS "groupId"',
         'schedule.isCompleted AS "isCompleted"',
         'repeatGroup.repeatType AS "repeatType"',
-        'repeatGroup.repeatStartDate AS "repeatStartDate"',
-        'repeatGroup.repeatEndDate AS "repeatEndDate"',
+        'CAST(repeatGroup.repeatStartDate AS text) AS "repeatStartDate"',
+        'CAST(repeatGroup.repeatEndDate AS text) AS "repeatEndDate"',
         'repeatGroup.repeatDays AS "repeatDays"',
         'repeatGroup.isLastDayOfMonth AS "isLastDayOfMonth"',
         'schedule.createdAt AS "createdAt"',
@@ -1295,7 +1314,56 @@ export class ScheduleService {
       ]);
   }
 
-  private toScheduleResponse(schedule: ScheduleRaw) {
+  private async getRepeatDatesByGroup(
+    userId: number,
+    schedules: ScheduleRaw[],
+  ): Promise<Map<number, string[]>> {
+    const groupIds = schedules.reduce<Set<number>>((result, schedule) => {
+      if (
+        schedule.repeatType === RepeatType.MULTIPLE &&
+        schedule.groupId !== null
+      ) {
+        result.add(schedule.groupId);
+      }
+
+      return result;
+    }, new Set<number>());
+
+    if (groupIds.size === 0) {
+      return new Map();
+    }
+
+    const repeatDates = await this.scheduleRepository
+      .createQueryBuilder('schedule')
+      .select('schedule.groupId', 'groupId')
+      .addSelect('CAST(schedule.date AS text)', 'date')
+      .where('schedule.userId = :userId', {
+        userId,
+      })
+      .andWhere('schedule.groupId IN (:...groupIds)', {
+        groupIds: [...groupIds],
+      })
+      .orderBy('schedule.groupId', 'ASC')
+      .addOrderBy('schedule.date', 'ASC')
+      .getRawMany<RepeatDateRaw>();
+
+    const dateSetsByGroup = new Map<number, Set<string>>();
+
+    repeatDates.forEach(({ groupId, date }) => {
+      const dates = dateSetsByGroup.get(groupId) ?? new Set<string>();
+      dates.add(date);
+      dateSetsByGroup.set(groupId, dates);
+    });
+
+    return new Map(
+      [...dateSetsByGroup].map(([groupId, dates]) => [groupId, [...dates]]),
+    );
+  }
+
+  private toScheduleResponse(
+    schedule: ScheduleRaw,
+    repeatDatesByGroup: ReadonlyMap<number, string[]>,
+  ) {
     return {
       scheduleId: schedule.scheduleId,
       category: {
@@ -1312,6 +1380,10 @@ export class ScheduleService {
       repeatStartDate: schedule.repeatStartDate,
       repeatEndDate: schedule.repeatEndDate,
       repeatDays: schedule.repeatDays,
+      repeatDates:
+        schedule.repeatType === RepeatType.MULTIPLE && schedule.groupId !== null
+          ? (repeatDatesByGroup.get(schedule.groupId) ?? [])
+          : null,
       isLastDayOfMonth: schedule.isLastDayOfMonth ?? false,
       createdAt: schedule.createdAt,
       updatedAt: schedule.updatedAt,
