@@ -64,6 +64,7 @@ const scheduleItemSchema: SwaggerSchema = {
     'repeatStartDate',
     'repeatEndDate',
     'repeatDays',
+    'repeatDates',
     'isLastDayOfMonth',
     'createdAt',
     'updatedAt',
@@ -106,6 +107,17 @@ const scheduleItemSchema: SwaggerSchema = {
       example: null,
     },
     repeatDays: { type: 'string', nullable: true, example: null },
+    repeatDates: {
+      type: 'array',
+      nullable: true,
+      items: {
+        type: 'string',
+        format: 'date',
+      },
+      example: ['2026-07-17', '2026-07-20', '2026-07-25'],
+      description:
+        'MULTIPLE 일정의 동일 그룹 전체 날짜 목록이며, 그 외 반복 유형은 null입니다.',
+    },
     isLastDayOfMonth: {
       type: 'boolean',
       example: false,
