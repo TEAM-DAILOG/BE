@@ -62,6 +62,7 @@ export class StatsService {
     private readonly geminiService: GeminiService,
   ) {}
 
+  // 카테고리가 soft-delete된 일정은 통계 전체(개수/목록/비율)에서 제외한다
   private async getMonthSchedules(
     userId: number,
     year?: number,
@@ -69,9 +70,16 @@ export class StatsService {
   ): Promise<ScheduleEntity[]> {
     const { startDate, endDate } = getMonthRange(year, month);
 
-    return this.scheduleRepository.find({
+    const schedules = await this.scheduleRepository.find({
       where: { userId, date: Between(startDate, endDate) },
     });
+
+    const categories = await this.categoryRepository.find({
+      where: { userId },
+    });
+    const categoryIds = new Set(categories.map((c) => c.categoryId));
+
+    return schedules.filter((schedule) => categoryIds.has(schedule.categoryId));
   }
 
   private async findTodayDiary(userId: number): Promise<DiaryEntity | null> {
