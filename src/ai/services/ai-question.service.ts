@@ -17,11 +17,20 @@ import {
 
 const POSTGRES_UNIQUE_VIOLATION = '23505';
 
+// KST 자정(=UTC 15시)을 하루의 경계로 고정한다. 서버 프로세스 TZ와 무관하게 항상 UTC 기준으로 계산.
+const KST_MIDNIGHT_UTC_HOUR = 15;
+
 function todayDateString(): string {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
+  const rolledOver = new Date(now.getTime());
+
+  if (now.getUTCHours() >= KST_MIDNIGHT_UTC_HOUR) {
+    rolledOver.setUTCDate(rolledOver.getUTCDate() + 1);
+  }
+
+  const year = rolledOver.getUTCFullYear();
+  const month = String(rolledOver.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(rolledOver.getUTCDate()).padStart(2, '0');
 
   return `${year}-${month}-${day}`;
 }
@@ -62,8 +71,8 @@ export class QuestionService implements OnApplicationBootstrap {
     }
   }
 
-  // 매일 자정에 오늘의 질문을 미리 생성해둔다 (getTodayQuestion과 동일한 멱등 로직 재사용)
-  @Cron('0 0 * * *')
+  // 매일 KST 자정(=UTC 15시)에 오늘의 질문을 미리 생성해둔다 (getTodayQuestion과 동일한 멱등 로직 재사용)
+  @Cron('0 15 * * *')
   async handleMidnightQuestionGeneration(): Promise<void> {
     try {
       await this.getTodayQuestion();
