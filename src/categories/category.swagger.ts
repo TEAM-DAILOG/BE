@@ -7,11 +7,11 @@ export function FindAllCategorySwagger() {
     ApiOperation({ summary: '카테고리 목록 조회' }),
     ApiResponse({
       status: 200,
-      description: '카테고리 조회 성공',
+      description: '카테고리 목록 조회 성공',
       schema: {
         example: {
           resultType: 'SUCCESS',
-          message: '카테고리 조회 성공',
+          message: '카테고리 목록 조회 성공',
           data: [
             {
               categoryId: 1,

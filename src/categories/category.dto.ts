@@ -22,7 +22,9 @@ export class CategoryResponseDto {
 // 카테고리 생성 DTO
 export class CreateCategoryDto {
   // 카테고리 이름
+  @IsNotEmpty({ message: '카테고리 이름은 필수입니다.' })
   @IsString()
+  @MaxLength(30, { message: '카테고리 이름은 30자 이하로 입력해주세요.' })
   categoryName: string;
 
   // 카테고리 색상
@@ -34,7 +36,9 @@ export class CreateCategoryDto {
 export class UpdateCategoryDto {
   // 카테고리 이름
   @IsOptional()
+  @IsNotEmpty({ message: '카테고리 이름은 필수입니다.' })
   @IsString()
+  @MaxLength(30, { message: '카테고리 이름은 30자 이하로 입력해주세요.' })
   categoryName?: string;
 
   // 카테고리 색상
