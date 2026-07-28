@@ -7,7 +7,7 @@ export function FindOneAlarmSwagger() {
     ApiOperation({
       summary: '알람 설정 조회',
       description:
-        ' 로그인한 사용자의 알림 설정을 조회한다.\n\n회원가입 시 모든 알림은 false로 설정된다.',
+        '로그인한 사용자의 알림 설정을 조회한다.\n\n회원가입 시 모든 알림은 false로 설정된다.',
     }),
     ApiResponse({
       status: 200,
@@ -190,7 +190,7 @@ export function RegisterPushTokenSwagger() {
   return applyDecorators(
     ApiOperation({
       summary: 'FCM 토큰 등록 (앱 로그인/실행 시)',
-      description: '앱 로그인/실행 시 FCM 디바이스 토큰 등록 및 업데이트한다.',
+      description: '앱 로그인/실행 시 FCM 디바이스 토큰을 등록하고 업데이트합니다.',
     }),
     ApiBody({
       schema: {
@@ -237,7 +237,7 @@ export function DeletePushTokenSwagger() {
   return applyDecorators(
     ApiOperation({
       summary: 'FCM 토큰 삭제 (앱 로그아웃 시)',
-      description: '앱 로그아웃 시 FCM 디바이스 토큰 삭제한다.',
+      description: '앱 로그아웃 시 FCM 디바이스 토큰을 삭제합니다.',
     }),
     ApiParam({ name: 'tokenId', type: Number, description: '삭제할 토큰 ID' }),
     ApiResponse({
