@@ -7,6 +7,7 @@ import {
   IsString,
 } from 'class-validator';
 import { DeviceType } from './entities/push-token.entity';
+import { ToUtcTime } from '../global/decorators/date.decorator';
 
 // 알람 설정 조회 응답 DTO
 export class AlarmResponseDto {
@@ -60,7 +61,7 @@ export class UpdateReminderDto {
 
   // 알람 시간
   @IsOptional()
-  @IsString()
+  @ToUtcTime()
   time?: string | null;
 }
 
