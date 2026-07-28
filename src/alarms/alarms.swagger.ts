@@ -109,7 +109,7 @@ export function FindOneReminderSwagger() {
   return applyDecorators(
     ApiOperation({
       summary: '리마인드 알람 설정 조회',
-      description: '로그인한 사용자의 리마인드 알림 설정을 조회한다.',
+      description: '로그인한 사용자의 리마인드 알림 설정을 조회한다.(time은 KST 기준 HH:mm)',
     }),
     ApiResponse({
       status: 200,
@@ -140,7 +140,7 @@ export function UpdateReminderSwagger() {
   return applyDecorators(
     ApiOperation({
       summary: '리마인드 알람 설정 수정',
-      description: '로그인한 사용자의 리마인드 알람 설정을 수정한다.',
+      description: '로그인한 사용자의 리마인드 알람 설정을 수정한다.(time은 KST 기준 HH:mm)',
     }),
     ApiBody({
       schema: {

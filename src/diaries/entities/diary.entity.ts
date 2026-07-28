@@ -52,6 +52,16 @@ export class DiaryEntity extends SoftDeleteModel {
     name: 'date',
     type: 'date',
     nullable: true,
+    transformer: {
+      // DB에 저장할때는 그대로
+      to: (value: string | null) => value,
+      // DB에서 읽을 떄 Date 객체로 와도 YYYY-MM-DD 문자열로 보장
+      from: (value: string | Date | null) => {
+        if (!value) return null;
+        if (typeof value === 'string') return value;
+        return value.toISOString().split('T')[0];
+      },
+    },
   })
   date: string | null;
 }

@@ -32,13 +32,9 @@ const TIME_OFFSET_REGEX = /^\d{2}:\d{2}(:\d{2})?[+-]\d{2}:\d{2}$/;
 // 알람 입력 (HH:MM:SS+09:00 → UTC HH:MM)
 export function parseTimeWithOffset(value: string): string {
   if (!TIME_OFFSET_REGEX.test(value)) {
-    throw new BadRequestException(
-      '올바른 시간 형식이 아닙니다. (예: 21:30:00+09:00)',
-    );
+    throw new BadRequestException('올바른 시간 형식이 아닙니다. (예: 21:30:00+09:00)');
   }
-  const match = value.match(
-    /^(\d{2}):(\d{2})(?::\d{2})?([+-])(\d{2}):(\d{2})$/,
-  );
+  const match = value.match(/^(\d{2}):(\d{2})(?::\d{2})?([+-])(\d{2}):(\d{2})$/);
   if (!match) throw new BadRequestException('올바른 시간 형식이 아닙니다.');
 
   const hours = parseInt(match[1]);
@@ -47,8 +43,7 @@ export function parseTimeWithOffset(value: string): string {
   const offsetHours = parseInt(match[4]);
   const offsetMinutes = parseInt(match[5]);
 
-  const totalMinutes =
-    hours * 60 + minutes - sign * (offsetHours * 60 + offsetMinutes);
+  const totalMinutes = hours * 60 + minutes - sign * (offsetHours * 60 + offsetMinutes);
   const utcMinutes = ((totalMinutes % 1440) + 1440) % 1440;
 
   return `${String(Math.floor(utcMinutes / 60)).padStart(2, '0')}:${String(utcMinutes % 60).padStart(2, '0')}`;
