@@ -21,21 +21,28 @@ import {
 import { RecommendDTO } from '../ai/dto/ai-recommend.dto';
 import { getTodayUtcRange, toIsoDateTime } from '../global/date.util';
 
-function getCurrentMonthRange(): {
-  targetMonth: string;
+// year/month를 안 넘기면 이번 달(UTC) 기준으로 범위를 계산한다
+function getMonthRange(
+  year?: number,
+  month?: number,
+): {
+  targetYear: number;
+  targetMonth: number;
   startDate: string;
   endDate: string;
 } {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const targetMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
-  const lastDay = new Date(year, month + 1, 0).getDate();
+  const targetYear = year ?? now.getUTCFullYear();
+  const targetMonthIndex = month ? month - 1 : now.getUTCMonth();
+  const targetMonth = targetMonthIndex + 1;
+  const monthStr = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
+  const lastDay = new Date(Date.UTC(targetYear, targetMonth, 0)).getUTCDate();
 
   return {
+    targetYear,
     targetMonth,
-    startDate: `${targetMonth}-01`,
-    endDate: `${targetMonth}-${String(lastDay).padStart(2, '0')}`,
+    startDate: `${monthStr}-01`,
+    endDate: `${monthStr}-${String(lastDay).padStart(2, '0')}`,
   };
 }
 
@@ -55,11 +62,12 @@ export class StatsService {
     private readonly geminiService: GeminiService,
   ) {}
 
-  // 이번 달(targetMonth) 고정 — 다른 달 조회는 아직 지원하지 않음
-  private async getThisMonthSchedules(
+  private async getMonthSchedules(
     userId: number,
+    year?: number,
+    month?: number,
   ): Promise<ScheduleEntity[]> {
-    const { startDate, endDate } = getCurrentMonthRange();
+    const { startDate, endDate } = getMonthRange(year, month);
 
     return this.scheduleRepository.find({
       where: { userId, date: Between(startDate, endDate) },
@@ -119,7 +127,7 @@ export class StatsService {
   }
 
   async getMainStats(userId: number): Promise<StatsMainDTO> {
-    const schedules = await this.getThisMonthSchedules(userId);
+    const schedules = await this.getMonthSchedules(userId);
     const mostFrequentCategory = await this.findMostFrequentCategory(schedules);
     const recommendedSchedules = await this.getRecommendedSchedules(userId);
 
@@ -137,8 +145,13 @@ export class StatsService {
     return new StatsMainDTO(mostFrequentCategory, recommendedSchedules, stress);
   }
 
-  async getScheduleDetail(userId: number): Promise<ScheduleDetailDTO> {
-    const schedules = await this.getThisMonthSchedules(userId);
+  async getScheduleDetail(
+    userId: number,
+    year?: number,
+    month?: number,
+  ): Promise<ScheduleDetailDTO> {
+    const { targetYear, targetMonth } = getMonthRange(year, month);
+    const schedules = await this.getMonthSchedules(userId, year, month);
     const mostFrequentCategory = await this.findMostFrequentCategory(schedules);
 
     const categories = await this.categoryRepository.find({
@@ -166,12 +179,21 @@ export class StatsService {
       .filter((info) => info.count > 0)
       .sort((a, b) => b.count - a.count);
 
-    return new ScheduleDetailDTO(mostFrequentCategory, categoryRankInfo);
+    return new ScheduleDetailDTO(
+      targetYear,
+      targetMonth,
+      mostFrequentCategory,
+      categoryRankInfo,
+    );
   }
 
-  async getPendingStats(userId: number): Promise<IncompletedScheduleStatsDTO> {
-    const { targetMonth } = getCurrentMonthRange();
-    const schedules = await this.getThisMonthSchedules(userId);
+  async getPendingStats(
+    userId: number,
+    year?: number,
+    month?: number,
+  ): Promise<IncompletedScheduleStatsDTO> {
+    const { targetYear, targetMonth } = getMonthRange(year, month);
+    const schedules = await this.getMonthSchedules(userId, year, month);
     const incompleted = schedules.filter((schedule) => !schedule.isCompleted);
     const incompletedSchedules = await this.toScheduleStatsDTOs(
       incompleted,
@@ -186,20 +208,31 @@ export class StatsService {
     return new IncompletedScheduleStatsDTO(
       incompleted.length,
       rate,
+      targetYear,
       targetMonth,
       incompletedSchedules,
     );
   }
 
-  async getCompletedStats(userId: number): Promise<CompletedScheduleStatsDTO> {
-    const schedules = await this.getThisMonthSchedules(userId);
+  async getCompletedStats(
+    userId: number,
+    year?: number,
+    month?: number,
+  ): Promise<CompletedScheduleStatsDTO> {
+    const { targetYear, targetMonth } = getMonthRange(year, month);
+    const schedules = await this.getMonthSchedules(userId, year, month);
     const completed = schedules.filter((schedule) => schedule.isCompleted);
     const completedSchedules = await this.toScheduleStatsDTOs(
       completed,
       userId,
     );
 
-    return new CompletedScheduleStatsDTO(completed.length, completedSchedules);
+    return new CompletedScheduleStatsDTO(
+      completed.length,
+      targetYear,
+      targetMonth,
+      completedSchedules,
+    );
   }
 
   private async toScheduleStatsDTOs(
