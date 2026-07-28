@@ -46,5 +46,16 @@ export class DiaryEntity extends SoftDeleteModel {
     nullable: true,
     comment: 'AI 일기 요약',
   })
-  aiSummary: string | null;
+
+ aiSummary: string | null;
+
+
+@Column({
+  name: 'date',
+  type: 'date',
+  nullable: true,
+  comment: '사용자 로컬 기준 일기 날짜',
+})
+date: string | null;
+
 }
