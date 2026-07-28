@@ -63,9 +63,14 @@ export class RecommendListDTO {
   @ApiProperty({ example: '추천일정 리스트 입니다' })
   recommendedSchedules: RecommendDTO[];
 
+  // 카테고리가 soft-delete된 추천은 목록에서 제외한다
   constructor(recommendList: RecommendEntity[]) {
-    this.recommendedScheduleCount = recommendList.length;
-    this.recommendedSchedules = recommendList.map(
+    const validRecommends = recommendList.filter(
+      (recommend) => recommend.category != null,
+    );
+
+    this.recommendedScheduleCount = validRecommends.length;
+    this.recommendedSchedules = validRecommends.map(
       (recommend) => new RecommendDTO(recommend),
     );
   }
