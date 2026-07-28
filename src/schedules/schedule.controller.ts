@@ -152,9 +152,23 @@ const createScheduleDataSchema: SwaggerSchema = {
   type: 'object',
   required: ['scheduleId', 'groupId', 'createdCount'],
   properties: {
-    scheduleId: { type: 'integer', nullable: true, example: 1 },
-    groupId: { type: 'integer', nullable: true, example: null },
-    createdCount: { type: 'integer', example: 1 },
+    scheduleId: {
+      type: 'integer',
+      nullable: true,
+      example: 1,
+      description: '단일 일정이면 생성된 일정 ID, 반복 일정이면 null',
+    },
+    groupId: {
+      type: 'integer',
+      nullable: true,
+      example: null,
+      description: '반복 일정이면 생성된 반복 그룹 ID, 단일 일정이면 null',
+    },
+    createdCount: {
+      type: 'integer',
+      example: 1,
+      description: '실제로 생성된 일정 수',
+    },
   },
 };
 
@@ -283,12 +297,12 @@ const createErrorResponseSchema = (
 const unauthorizedResponseSchema = createErrorResponseSchema(
   401,
   'UNAUTHORIZED',
-  '인증에 실패했습니다',
+  '인증에 실패했습니다.',
 );
 const internalServerErrorResponseSchema = createErrorResponseSchema(
   500,
   'INTERNAL_SERVER_ERROR',
-  '서버 내부에 오류가 발생했습니다.',
+  '서버 내부 오류가 발생했습니다.',
 );
 const categoryNotFoundResponseSchema = createErrorResponseSchema(
   404,
@@ -418,18 +432,102 @@ export class ScheduleController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: '일정 등록',
-    description: '로그인한 사용자의 단일 일정 또는 반복 일정을 등록합니다.',
+    description:
+      '로그인한 사용자의 단일 일정 또는 반복 일정을 등록합니다. 사용자 ID는 액세스 토큰에서 확인하며, 새 일정의 완료 여부는 false로 저장됩니다. 반복 일정은 한 번의 요청으로 최대 365개까지 생성할 수 있습니다.',
   })
   @ApiCreatedResponse({
-    description: '일정 등록 성공',
-    schema: createSuccessResponseSchema(
-      '일정 등록에 성공했습니다.',
-      createScheduleDataSchema,
-    ),
+    description:
+      '일정 등록 성공. 단일 일정은 scheduleId가 반환되고, 반복 일정은 groupId가 반환됩니다.',
+    content: {
+      'application/json': {
+        schema: createSuccessResponseSchema(
+          '일정 등록에 성공했습니다.',
+          createScheduleDataSchema,
+        ),
+        examples: {
+          none: {
+            summary: 'NONE — 단일 일정',
+            value: {
+              resultType: 'SUCCESS',
+              message: '일정 등록에 성공했습니다.',
+              data: {
+                scheduleId: 1,
+                groupId: null,
+                createdCount: 1,
+              },
+            },
+          },
+          multiple: {
+            summary: 'MULTIPLE — 다중 날짜 일정',
+            value: {
+              resultType: 'SUCCESS',
+              message: '일정 등록에 성공했습니다.',
+              data: {
+                scheduleId: null,
+                groupId: 10,
+                createdCount: 2,
+              },
+            },
+          },
+          period: {
+            summary: 'PERIOD — 기간 반복 일정',
+            value: {
+              resultType: 'SUCCESS',
+              message: '일정 등록에 성공했습니다.',
+              data: {
+                scheduleId: null,
+                groupId: 11,
+                createdCount: 6,
+              },
+            },
+          },
+          weekly: {
+            summary: 'WEEKLY — 요일 반복 일정',
+            value: {
+              resultType: 'SUCCESS',
+              message: '일정 등록에 성공했습니다.',
+              data: {
+                scheduleId: null,
+                groupId: 12,
+                createdCount: 14,
+              },
+            },
+          },
+          monthly: {
+            summary: 'MONTHLY — 매월 반복 일정',
+            value: {
+              resultType: 'SUCCESS',
+              message: '일정 등록에 성공했습니다.',
+              data: {
+                scheduleId: null,
+                groupId: 13,
+                createdCount: 5,
+              },
+            },
+          },
+          yearly: {
+            summary: 'YEARLY — 매년 반복 일정',
+            value: {
+              resultType: 'SUCCESS',
+              message: '일정 등록에 성공했습니다.',
+              data: {
+                scheduleId: null,
+                groupId: 14,
+                createdCount: 5,
+              },
+            },
+          },
+        },
+      },
+    },
   })
   @ApiBadRequestResponse({
-    description: '잘못된 요청, 반복 설정 오류, 날짜 오류 또는 365개 초과',
-    schema: createErrorResponseSchema(400, 'BAD_REQUEST', '잘못된 요청입니다.'),
+    description: '필수 입력값 누락 또는 잘못된 요청 형식',
+    schema: createErrorResponseSchema(
+      400,
+      'BAD_REQUEST',
+      '필수 입력값이 누락되었거나 요청 형식이 올바르지 않습니다.',
+    ),
   })
   @ApiNotFoundResponse({
     description: '카테고리를 찾을 수 없음',
@@ -441,50 +539,50 @@ export class ScheduleController {
     },
     examples: {
       none: {
-        summary: '단일 일정',
+        summary: 'NONE — 단일 일정',
         value: {
-          categoryId: 1,
+          categoryId: 2,
           title: '단일 일정 제목 예시',
           content: '단일 일정 내용 예시',
-          date: '2026-07-16',
+          date: '2026-07-15',
           repeatType: 'NONE',
         },
       },
       multiple: {
-        summary: '여러 날짜 일정',
+        summary: 'MULTIPLE — 다중 날짜 일정',
         value: {
-          categoryId: 1,
-          title: '여러 날짜 일정',
-          content: null,
+          categoryId: 2,
+          title: '다중 날짜 일정 제목 예시',
+          content: '다중 날짜 일정 내용 예시',
           repeatType: 'MULTIPLE',
-          repeatDates: ['2026-07-17', '2026-07-20', '2026-07-25'],
+          repeatDates: ['2026-07-20', '2026-07-25'],
         },
       },
       period: {
-        summary: '기간 반복 일정',
+        summary: 'PERIOD — 기간 반복 일정',
         value: {
-          categoryId: 1,
-          title: '매일 반복 일정',
-          content: null,
+          categoryId: 2,
+          title: '기간 반복 일정 제목 예시',
+          content: '기간 반복 일정 내용 예시',
           repeatType: 'PERIOD',
-          repeatStartDate: '2026-07-17',
+          repeatStartDate: '2026-07-15',
           repeatEndDate: '2026-07-20',
         },
       },
       weekly: {
-        summary: '요일 반복 일정',
+        summary: 'WEEKLY — 요일 반복 일정',
         value: {
-          categoryId: 1,
-          title: '요일 반복 일정',
-          content: null,
+          categoryId: 2,
+          title: '요일 반복 일정 제목 예시',
+          content: '요일 반복 일정 내용 예시',
           repeatType: 'WEEKLY',
-          repeatStartDate: '2026-07-17',
-          repeatEndDate: '2026-08-17',
+          repeatStartDate: '2026-07-15',
+          repeatEndDate: '2026-08-15',
           repeatDays: 'MON,WED,FRI',
         },
       },
       monthly: {
-        summary: '매월 반복 일정',
+        summary: 'MONTHLY — 매월 반복 일정',
         value: {
           categoryId: 1,
           title: '매월 15일 일정',
@@ -496,7 +594,7 @@ export class ScheduleController {
         },
       },
       monthlyLastDay: {
-        summary: '매월 말일 반복 일정',
+        summary: 'MONTHLY — 매월 말일 반복 일정',
         value: {
           categoryId: 1,
           title: '월말 정산',
@@ -508,7 +606,7 @@ export class ScheduleController {
         },
       },
       yearly: {
-        summary: '매년 반복 일정',
+        summary: 'YEARLY — 매년 반복 일정',
         value: {
           categoryId: 1,
           title: '매년 반복 일정',
