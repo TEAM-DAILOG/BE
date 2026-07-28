@@ -4,7 +4,11 @@ import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 // 알람 설정 조회
 export function FindOneAlarmSwagger() {
   return applyDecorators(
-    ApiOperation({ summary: '알람 설정 조회' }),
+    ApiOperation({
+      summary: '알람 설정 조회',
+      description:
+        ' 로그인한 사용자의 알림 설정을 조회한다.\n\n회원가입 시 모든 알림은 false로 설정된다.',
+    }),
     ApiResponse({
       status: 200,
       description: '알람 설정 조회 성공',
@@ -30,7 +34,11 @@ export function FindOneAlarmSwagger() {
 // 알람 설정 수정
 export function UpdateAlarmSwagger() {
   return applyDecorators(
-    ApiOperation({ summary: '알람 설정 수정' }),
+    ApiOperation({
+      summary: '알람 설정 수정',
+      description:
+        '로그인한 사용자의 알림 설정을 수정한다.\n\n모든 필드는 선택 사항입니다.\n\nisPush가 false면 isDiary, isDiaryReply도 자동으로 false로 수정됩니다.',
+    }),
     ApiBody({
       schema: {
         type: 'object',
@@ -99,7 +107,10 @@ export function UpdateAlarmSwagger() {
 // 리마인드 알람 설정 조회
 export function FindOneReminderSwagger() {
   return applyDecorators(
-    ApiOperation({ summary: '리마인드 알람 설정 조회' }),
+    ApiOperation({
+      summary: '리마인드 알람 설정 조회',
+      description: '로그인한 사용자의 리마인드 알림 설정을 조회한다.',
+    }),
     ApiResponse({
       status: 200,
       description: '리마인드 알람 설정 조회 성공',
@@ -127,7 +138,10 @@ export function FindOneReminderSwagger() {
 // 리마인드 알람 설정 수정
 export function UpdateReminderSwagger() {
   return applyDecorators(
-    ApiOperation({ summary: '리마인드 알람 설정 수정' }),
+    ApiOperation({
+      summary: '리마인드 알람 설정 수정',
+      description: '로그인한 사용자의 리마인드 알람 설정을 수정한다.',
+    }),
     ApiBody({
       schema: {
         type: 'object',
@@ -174,7 +188,10 @@ export function UpdateReminderSwagger() {
 // FCM 토큰 등록
 export function RegisterPushTokenSwagger() {
   return applyDecorators(
-    ApiOperation({ summary: 'FCM 토큰 등록 (앱 로그인/실행 시)' }),
+    ApiOperation({
+      summary: 'FCM 토큰 등록 (앱 로그인/실행 시)',
+      description: '앱 로그인/실행 시 FCM 디바이스 토큰 등록 및 업데이트한다.',
+    }),
     ApiBody({
       schema: {
         type: 'object',
@@ -209,6 +226,7 @@ export function RegisterPushTokenSwagger() {
         },
       },
     }),
+    ApiResponse({ status: 401, description: '사용자 인증 실패' }),
     ApiResponse({ status: 404, description: '해당 사용자를 찾을 수 없음' }),
     ApiResponse({ status: 500, description: '서버 내부 오류' }),
   );
@@ -217,7 +235,10 @@ export function RegisterPushTokenSwagger() {
 // FCM 토큰 삭제
 export function DeletePushTokenSwagger() {
   return applyDecorators(
-    ApiOperation({ summary: 'FCM 토큰 삭제 (앱 로그아웃 시)' }),
+    ApiOperation({
+      summary: 'FCM 토큰 삭제 (앱 로그아웃 시)',
+      description: '앱 로그아웃 시 FCM 디바이스 토큰 삭제한다.',
+    }),
     ApiParam({ name: 'tokenId', type: Number, description: '삭제할 토큰 ID' }),
     ApiResponse({
       status: 200,
@@ -230,6 +251,7 @@ export function DeletePushTokenSwagger() {
         },
       },
     }),
+    ApiResponse({ status: 401, description: '사용자 인증 실패' }),
     ApiResponse({ status: 404, description: '해당 토큰을 찾을 수 없음' }),
     ApiResponse({ status: 500, description: '서버 내부 오류' }),
   );
