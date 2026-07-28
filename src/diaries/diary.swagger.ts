@@ -16,15 +16,15 @@ export function FindAllDiarySwagger() {
           message: '일기 목록 조회 성공',
           data: [
             {
-              createdAt: '2026-07-19T17:53:56.937Z',
-              updatedAt: '2026-07-19T17:53:56.937Z',
-              deletedAt: null,
               diaryId: 27,
               userId: 1,
+              date: '2026-07-28',
               diaryType: 'QUESTION',
               diaryTitle: '오늘 하루',
               content: '오늘 친구와 산책했다.',
               aiSummary: null,
+              createdAt: '2026-07-19T17:53:56.937Z',
+              updatedAt: '2026-07-19T17:53:56.937Z',
               images:[
                 "https://example.com/image1.jpg"
               ],
@@ -65,14 +65,16 @@ export function FindDiarySwagger() {
   data: {
     diaryId: 27,
     userId: 1,
+    date: '2026-07-28',
     diaryType: 'QUESTION',
     diaryTitle: '오늘 하루',
     content: '오늘 친구와 산책했다.',
     aiSummary: null,
     createdAt: '2026-07-19T17:53:56.937Z',
     updatedAt: '2026-07-19T17:53:56.937Z',
+    
     questionContent: '오늘 당신의 마음을 가장 잘 대변해주는 날씨나 풍경은 어떤 모습인가요?',
-    images: [],
+    images: ["https://example.com/image1.jpg"],
   },
 },
   },
@@ -108,7 +110,7 @@ export function CreateDiarySwagger() {
       schema: {
         type: 'object',
 
-        required: ['title', 'content'],
+        required: ['title', 'content','date'],
 
         properties: {
           title: {
@@ -123,6 +125,11 @@ export function CreateDiarySwagger() {
             type: 'number',
             nullable: true,
             example: 1,
+          },
+          date:{
+            type:'string',
+            format:'date-time',
+            example:'2026-07-28T00:30:00+09:00',
           },
           images: {
             type: 'array',
@@ -142,16 +149,17 @@ export function CreateDiarySwagger() {
   resultType: 'SUCCESS',
   message: '일기 작성 성공',
   data: {
-    createdAt: '2026-07-19T17:58:11.931Z',
-    updatedAt: '2026-07-19T17:58:11.931Z',
-    deletedAt: null,
-    diaryId: 29,
-    userId: 1,
-    diaryType: 'QUESTION',
-    diaryTitle: '오늘 하루',
-    content: '오늘 친구와 산책했다.',
-    aiSummary: null,
-  },
+  createdAt: '2026-07-19T17:58:11.931Z',
+  updatedAt: '2026-07-19T17:58:11.931Z',
+  deletedAt: null,
+  diaryId: 29,
+  userId: 1,
+  diaryType: 'QUESTION',
+  diaryTitle: '오늘 하루',
+  content: '오늘 친구와 산책했다.',
+  aiSummary: null,
+  date: '2026-07-28',
+},
 },
   },
 }),
@@ -211,10 +219,12 @@ export function UpdateDiarySwagger() {
         deletedAt: null,
         diaryId: 5,
         userId: 1,
+        
         diaryType: 'QUESTION',
         diaryTitle: '수정된 제목',
         content: '수정된 내용',
         aiSummary: null,
+        date:'2026-07-28',
       },
     },
   },

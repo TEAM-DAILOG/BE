@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsDateString,
   MaxLength,
 } from 'class-validator';
 
@@ -48,6 +49,13 @@ export class CreateDiaryDto {
 })
 @IsOptional()
 images?: any;
+
+@ApiProperty({
+  example: '2026-07-28T00:30:00+09:00',
+  description: '사용자 로컬 기준 작성 시각',
+})
+@IsDateString()
+date: string;
 
 
 }
