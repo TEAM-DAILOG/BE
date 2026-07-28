@@ -1,6 +1,6 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 import { DiaryEntity } from './entities/diary.entity';
 import { DiaryImageEntity } from './entities/diary-image.entity';
@@ -66,48 +66,23 @@ export class DiaryService {
   userId: number,
   dto: CreateDiaryDto,
 ): Promise<DiaryEntity> {
-  console.log('========== Create Diary ==========');
-  console.log(dto);
-  console.log('questionId:', dto.questionId);
-  console.log('typeof questionId:', typeof dto.questionId);
-  console.log('questionId == null:', dto.questionId == null);
-  console.log('==================================');
+  
 
- const now = new Date();
 
-const startOfDay = new Date(now);
-startOfDay.setUTCHours(0, 0, 0, 0);
 
-const endOfDay = new Date(now);
-endOfDay.setUTCHours(23, 59, 59, 999);
-
-const todayDiary = await this.diaryRepository.findOne({
-  where: {
-    userId,
-    createdAt: Between(startOfDay, endOfDay),
-  },
-});
-
-if (todayDiary) {
-  throw new ConflictException(
-    '오늘은 이미 일기를 작성했습니다.',
-    'ALREADY_CREATED_DIARY',
-  );
-}
 
   const isQuestionDiary =
     !!dto.questionId;
 
-  console.log('isQuestionDiary:', isQuestionDiary);
-
+ 
   const diary = this.diaryRepository.create({
-    userId,
-    diaryTitle: dto.title,
-    content: dto.content,
-    diaryType: isQuestionDiary
-      ? DiaryType.QUESTION
-      : DiaryType.FREE,
-  });
+  userId,
+  diaryTitle: dto.title,
+  content: dto.content,
+  diaryType: isQuestionDiary
+    ? DiaryType.QUESTION
+    : DiaryType.FREE,
+});
 
   const savedDiary = await this.diaryRepository.save(diary);
 
@@ -153,6 +128,7 @@ if (todayDiary) {
       return {
         diaryId: diary.diaryId,
         userId: diary.userId,
+        date: diary.date,
         diaryType: diary.diaryType,
         diaryTitle: diary.diaryTitle,
         content: diary.content,
@@ -190,6 +166,7 @@ if (todayDiary) {
     return {
       diaryId: diary.diaryId,
       userId: diary.userId,
+      date: diary.date,
       diaryType: diary.diaryType,
       diaryTitle: diary.diaryTitle,
       content: diary.content,
