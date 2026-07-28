@@ -121,7 +121,7 @@ export function FindOneReminderSwagger() {
           data: {
             reminderId: 1,
             days: ['MON', 'WED', 'FRI'],
-            time: '21:30:00',
+            time: '21:30',
           },
         },
       },
@@ -155,7 +155,7 @@ export function UpdateReminderSwagger() {
           time: {
             type: 'string',
             description: '알람 시간',
-            example: '21:30:00',
+            example: '21:30:00+09:00',
           },
         },
       },
@@ -170,12 +170,15 @@ export function UpdateReminderSwagger() {
           data: {
             reminderId: 1,
             days: ['MON', 'WED', 'FRI'],
-            time: '21:30:00',
+            time: '21:30',
           },
         },
       },
     }),
-    ApiResponse({ status: 400, description: '잘못된 요청' }),
+    ApiResponse({
+      status: 400,
+      description: '올바른 시간 형식이 아닙니다. (예: 21:30:00+09:00)',
+    }),
     ApiResponse({ status: 401, description: '사용자 인증 실패' }),
     ApiResponse({
       status: 404,
@@ -190,7 +193,8 @@ export function RegisterPushTokenSwagger() {
   return applyDecorators(
     ApiOperation({
       summary: 'FCM 토큰 등록 (앱 로그인/실행 시)',
-      description: '앱 로그인/실행 시 FCM 디바이스 토큰을 등록하고 업데이트합니다.',
+      description:
+        '앱 로그인/실행 시 FCM 디바이스 토큰을 등록하고 업데이트합니다.',
     }),
     ApiBody({
       schema: {
