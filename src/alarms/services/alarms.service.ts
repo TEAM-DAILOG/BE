@@ -14,6 +14,7 @@ import {
   UpdateReminderDto,
 } from '../alarms.dto';
 import { UserEntity } from '@/src/users/entities/user.entity';
+import { utcTimeToKst } from '@/src/global/utills/date.utill';
 
 @Injectable()
 export class AlarmService {
@@ -64,7 +65,7 @@ export class AlarmService {
   // 컨트롤러에서 호출하는 리마인드 조회용 API
   async findOneReminderEntity(userId: number): Promise<ReminderResponseDto> {
     const { reminderId, days, time } = await this.findReminderByUserId(userId);
-    return { reminderId, days, time };
+    return { reminderId, days, time: time ? utcTimeToKst(time) : null };
   }
 
   // DB에서 원본 그대로 반환, 내부에서만 사용
@@ -93,11 +94,15 @@ export class AlarmService {
     updateReminderDto: UpdateReminderDto,
   ): Promise<ReminderResponseDto> {
     const foundReminder = await this.findReminderByUserId(userId);
+    const { time: inputTime, ...rest } = updateReminderDto;
     // 변경값 적용
-    Object.assign(foundReminder, updateReminderDto);
+    Object.assign(foundReminder, rest);
+    if (inputTime !== undefined) {
+      foundReminder.time = inputTime;
+    }
     const saved = await this.reminderRepository.save(foundReminder);
     const { reminderId, days, time } = saved;
-    return { reminderId, days, time };
+    return { reminderId, days, time: time ? utcTimeToKst(time) : null };
   }
 
   // 알람 수정

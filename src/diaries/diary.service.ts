@@ -5,9 +5,9 @@ import { Repository } from 'typeorm';
 import { DiaryEntity } from './entities/diary.entity';
 import { DiaryImageEntity } from './entities/diary-image.entity';
 import { DiaryType } from './enums/diary-type.enum';
-import { CreateDiaryDto, UpdateDiaryDto } from './diary.dto';
+import { CreateDiaryDto, CreateDiaryResponseDto, DiaryDetailResponseDto, DiaryListResponseDto, UpdateDiaryDto } from './diary.dto';
 
-import { NotFoundException, ConflictException, } from '../global/error/custom.exception';
+import { NotFoundException } from '../global/error/custom.exception';
 import { QuestionService } from '../ai/services/ai-question.service';
 
 @Injectable()
@@ -23,9 +23,7 @@ export class DiaryService {
     private readonly questionService: QuestionService,
   ) {}
 
-  /**
-   * 사용자 권한 검증용
-   */
+  // 사용자 권한 검증용
   private async findOneDiaryEntity(
     diaryId: number,
     userId: number,
@@ -44,12 +42,8 @@ export class DiaryService {
     return diary;
   }
 
-  /**
-   * AI 서비스에서 사용하는 조회
-   */
-  async findOneDiary(
-    diaryId: number,
-  ): Promise<DiaryEntity> {
+  // AI 서비스에서 사용하는 조회
+  async findOneDiary(diaryId: number): Promise<DiaryEntity> {
     const diary = await this.diaryRepository.findOne({
       where: {
         diaryId,
@@ -62,93 +56,74 @@ export class DiaryService {
 
     return diary;
   }
-  async createDiary(
-  userId: number,
-  dto: CreateDiaryDto,
-): Promise<DiaryEntity> {
-  
 
+  // 일기 작성
+  async createDiary(userId: number, dto: CreateDiaryDto): Promise<CreateDiaryResponseDto> {
+    const isQuestionDiary = !!dto.questionId;
 
+    const diary = this.diaryRepository.create({
+      userId,
+      diaryTitle: dto.title,
+      content: dto.content,
+      diaryType: isQuestionDiary ? DiaryType.QUESTION : DiaryType.FREE,
+      date: dto.date,
+    });
 
+    const savedDiary = await this.diaryRepository.save(diary);
 
-  const isQuestionDiary =
-    !!dto.questionId;
+    const { diaryId, userId: uid, date, diaryType, diaryTitle, content, aiSummary } = savedDiary;
 
- 
-  const diary = this.diaryRepository.create({
-  userId,
-  diaryTitle: dto.title,
-  content: dto.content,
-  diaryType: isQuestionDiary
-    ? DiaryType.QUESTION
-    : DiaryType.FREE,
-});
+    if (isQuestionDiary) {
+      await this.questionService.linkDiaryQuestion(
+        dto.questionId!,
+        savedDiary.diaryId,
+      );
+    }
 
-  const savedDiary = await this.diaryRepository.save(diary);
+    const images = dto.images ?? [];
 
-  if (isQuestionDiary) {
-    await this.questionService.linkDiaryQuestion(
-      dto.questionId!,
-      savedDiary.diaryId,
-    );
+    if (images.length > 0) {
+      const diaryImages = images.map((image) =>
+        this.diaryImageRepository.create({
+          diaryId: savedDiary.diaryId,
+          imageUrl: image,
+        }),
+      );
+
+      await this.diaryImageRepository.save(diaryImages);
+    }
+
+    return { diaryId, userId: uid, date, diaryType, diaryTitle, content, aiSummary };
   }
 
-  const images = dto.images ?? [];
+  // 전체 일기 조회
+  async findAllDiary(userId: number): Promise<DiaryListResponseDto[]> {
+    const diaries = await this.diaryRepository.find({
+      where: { userId },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
 
-  if (images.length > 0) {
-    const diaryImages = images.map((image) =>
-      this.diaryImageRepository.create({
-        diaryId: savedDiary.diaryId,
-        imageUrl: image,
-      }),
-    );
-
-    await this.diaryImageRepository.save(diaryImages);
-  }
-
-  return savedDiary;
-}
-
-  async findAllDiary(userId: number) {
-  const diaries = await this.diaryRepository.find({
-    where: { userId },
-    order: {
-      createdAt: 'DESC',
-    },
-  });
-
-  return Promise.all(
+    const result = await Promise.all(
     diaries.map(async (diary) => {
       const images = await this.diaryImageRepository.find({
-        where: {
-          diaryId: diary.diaryId,
-        },
+        where: { diaryId: diary.diaryId },
       });
 
+      const { diaryId, userId, date, diaryType, diaryTitle, content, aiSummary } = diary;
       return {
-        diaryId: diary.diaryId,
-        userId: diary.userId,
-        date: diary.date,
-        diaryType: diary.diaryType,
-        diaryTitle: diary.diaryTitle,
-        content: diary.content,
-        aiSummary: diary.aiSummary,
-        createdAt: diary.createdAt,
-        updatedAt: diary.updatedAt,
-        images: images.map((image) => image.imageUrl),
+        diaryId, userId, date, diaryType, diaryTitle,
+        content, aiSummary, images: images.map((image) => image.imageUrl),
       };
     }),
   );
-}
+  return result;
+  }
 
-  async findDiaryDetail(
-    diaryId: number,
-    userId: number,
-  ) {
-    const diary = await this.findOneDiaryEntity(
-      diaryId,
-      userId,
-    );
+  // 일기 상세 조회
+  async findDiaryDetail(diaryId: number, userId: number): Promise<DiaryDetailResponseDto> {
+    const diary = await this.findOneDiaryEntity(diaryId, userId);
 
     const images = await this.diaryImageRepository.find({
       where: { diaryId },
@@ -162,31 +137,22 @@ export class DiaryService {
 
       questionContent = diaryQuestion.questionContent;
     }
-
+    const { diaryId: id, userId: uid, date, diaryType, diaryTitle, content, aiSummary } = diary;
+  
     return {
-      diaryId: diary.diaryId,
-      userId: diary.userId,
-      date: diary.date,
-      diaryType: diary.diaryType,
-      diaryTitle: diary.diaryTitle,
-      content: diary.content,
-      aiSummary: diary.aiSummary,
-      createdAt: diary.createdAt,
-      updatedAt: diary.updatedAt,
-      questionContent,
-      images: images.map((image) => image.imageUrl),
-    };
+    diaryId: id, userId: uid, date, diaryType, diaryTitle,
+    content, aiSummary, questionContent,
+    images: images.map((image) => image.imageUrl),
+  };
   }
 
+  // 일기 수정
   async updateDiary(
     diaryId: number,
     userId: number,
     dto: UpdateDiaryDto,
   ): Promise<DiaryEntity> {
-    const diary = await this.findOneDiaryEntity(
-      diaryId,
-      userId,
-    );
+    const diary = await this.findOneDiaryEntity(diaryId, userId);
 
     diary.diaryTitle = dto.title ?? diary.diaryTitle;
     diary.content = dto.content ?? diary.content;
@@ -194,14 +160,9 @@ export class DiaryService {
     return this.diaryRepository.save(diary);
   }
 
-  async deleteDiary(
-    diaryId: number,
-    userId: number,
-  ) {
-    await this.findOneDiaryEntity(
-      diaryId,
-      userId,
-    );
+  // 일기 삭제
+  async deleteDiary(diaryId: number, userId: number) {
+    await this.findOneDiaryEntity(diaryId, userId);
 
     await this.diaryImageRepository.softDelete({
       diaryId,
