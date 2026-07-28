@@ -46,16 +46,22 @@ export class DiaryEntity extends SoftDeleteModel {
     nullable: true,
     comment: 'AI 일기 요약',
   })
+  aiSummary: string | null;
 
- aiSummary: string | null;
-
-
-@Column({
-  name: 'date',
-  type: 'date',
-  nullable: true,
-  comment: '사용자 로컬 기준 일기 날짜',
-})
-date: string | null;
-
+  @Column({
+    name: 'date',
+    type: 'date',
+    nullable: true,
+    transformer: {
+      // DB에 저장할때는 그대로
+      to: (value: string | null) => value,
+      // DB에서 읽을 떄 Date 객체로 와도 YYYY-MM-DD 문자열로 보장
+      from: (value: string | Date | null) => {
+        if (!value) return null;
+        if (typeof value === 'string') return value;
+        return value.toISOString().split('T')[0];
+      },
+    },
+  })
+  date: string | null;
 }

@@ -34,48 +34,28 @@ export class DiaryController {
     private readonly s3Service: S3Service,
   ) {}
 
-  /**
-   * 일기 목록 조회
-   */
+  // 일기 목록 조회
   @AccessTokenAuth()
   @FindAllDiarySwagger()
   @Get()
-  async findAllDiary(
-    @CurrentUserId() userId: number,
-  ) {
+  async findAllDiary(@CurrentUserId() userId: number) {
     const diaries = await this.diaryService.findAllDiary(userId);
-
-    return {
-      message: '일기 목록 조회 성공',
-      data: diaries,
-    };
+    return { message: '일기 목록 조회 성공', data: diaries };
   }
 
-  /**
-   * 일기 상세 조회
-   */
+  // 일기 상세 조회
   @AccessTokenAuth()
   @FindDiarySwagger()
   @Get(':diaryId')
   async findDiary(
     @CurrentUserId() userId: number,
-    @Param('diaryId', ParseIntPipe)
-    diaryId: number,
+    @Param('diaryId', ParseIntPipe) diaryId: number,
   ) {
-    const diary = await this.diaryService.findDiaryDetail(
-      diaryId,
-      userId,
-    );
-
-    return {
-      message: '일기 상세 조회 성공',
-      data: diary,
-    };
+    const diary = await this.diaryService.findDiaryDetail(diaryId, userId);
+    return { message: '일기 상세 조회 성공', data: diary };
   }
 
-  /**
-   * 일기 작성 (이미지 업로드 포함)
-   */
+  // 일기 작성 (이미지 업로드 포함)
   @AccessTokenAuth()
   @CreateDiarySwagger()
   @ApiConsumes('multipart/form-data')
@@ -83,77 +63,41 @@ export class DiaryController {
   @Post()
   async createDiary(
     @CurrentUserId() userId: number,
-
-    @UploadedFiles()
-    files: Express.Multer.File[],
-
-    @Body()
-    dto: CreateDiaryDto,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body() dto: CreateDiaryDto,
   ) {
     const imageUrls =
-  files && files.length > 0
-    ? await this.s3Service.uploadDiaryImages(files)
-    : [];
-
-
-
+      files && files.length > 0
+        ? await this.s3Service.uploadDiaryImages(files)
+        : [];
     dto.images = imageUrls;
-
     const diary = await this.diaryService.createDiary(userId, dto);
-
-    return {
-      message: '일기 작성 성공',
-      data: diary,
-    };
+    return { message: '일기 작성 성공', data: diary };
   }
 
-  /**
-   * 일기 수정
-   */
+  // 일기 수정
   @AccessTokenAuth()
   @UpdateDiarySwagger()
   @Patch(':diaryId')
   async updateDiary(
     @CurrentUserId() userId: number,
-
-    @Param('diaryId', ParseIntPipe)
-    diaryId: number,
-
-    @Body()
-    dto: UpdateDiaryDto,
+    @Param('diaryId', ParseIntPipe) diaryId: number,
+    @Body() dto: UpdateDiaryDto,
   ) {
-    const diary = await this.diaryService.updateDiary(
-      diaryId,
-      userId,
-      dto,
-    );
-
-    return {
-      message: '일기 수정 성공',
-      data: diary,
-    };
+    const diary = await this.diaryService.updateDiary(diaryId, userId, dto);
+    return { message: '일기 수정 성공', data: diary };
   }
 
-  /**
-   * 일기 삭제
-   */
+  // 일기 삭제
   @AccessTokenAuth()
   @DeleteDiarySwagger()
   @Delete(':diaryId')
   async deleteDiary(
     @CurrentUserId() userId: number,
-
     @Param('diaryId', ParseIntPipe)
     diaryId: number,
   ) {
-    const result = await this.diaryService.deleteDiary(
-      diaryId,
-      userId,
-    );
-
-    return {
-      message: '일기 삭제 성공',
-      data: result,
-    };
+    await this.diaryService.deleteDiary(diaryId, userId);
+    return { message: '일기 삭제 성공', data: null };
   }
 }
