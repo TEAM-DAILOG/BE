@@ -1,4 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
 import {
   CategoryColor,
   CategoryEntity,
@@ -6,6 +8,25 @@ import {
 import { ScheduleEntity as Schedule } from '../schedules/entities/schedule.entity';
 import { RecommendDTO } from '../ai/dto/ai-recommend.dto';
 import { toIsoDateTime } from '../global/date.util';
+
+// year/month를 안 넘기면 이번 달(UTC) 기준으로 조회한다
+export class StatsMonthQueryDto {
+  @ApiPropertyOptional({ example: 2026, description: '조회할 연도' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(2000)
+  @Max(2100)
+  year?: number;
+
+  @ApiPropertyOptional({ example: 5, description: '조회할 월(1~12)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  month?: number;
+}
 
 export class MostFrequentCategoryDTO {
   @ApiProperty({ description: '가장 많이 사용한 카테고리 ID입니다' })
@@ -97,9 +118,15 @@ export class CategoryRankInfoDTO {
 }
 
 export class ScheduleDetailDTO {
+  @ApiProperty({ description: '분석 대상 연도 입니다', example: 2026 })
+  targetYear: number;
+
+  @ApiProperty({ description: '분석 대상 월(1~12) 입니다', example: 5 })
+  targetMonth: number;
+
   @ApiProperty({
     description:
-      '가장 많이 사용된 카테고리 정보입니다 (이번 달 등록된 일정이 없으면 null)',
+      '가장 많이 사용된 카테고리 정보입니다 (해당 월 등록된 일정이 없으면 null)',
     nullable: true,
   })
   mostFrequentCategory: MostFrequentCategoryDTO | null;
@@ -108,9 +135,13 @@ export class ScheduleDetailDTO {
   categoryRankInfo: CategoryRankInfoDTO[];
 
   constructor(
+    targetYear: number,
+    targetMonth: number,
     mostFrequentCategory: MostFrequentCategoryDTO | null,
     categoryRankInfo: CategoryRankInfoDTO[],
   ) {
+    this.targetYear = targetYear;
+    this.targetMonth = targetMonth;
     this.mostFrequentCategory = mostFrequentCategory;
     this.categoryRankInfo = categoryRankInfo;
   }
@@ -158,8 +189,11 @@ export class IncompletedScheduleStatsDTO {
   @ApiProperty({ description: '완료되지 않은 스케쥴비율입니다' })
   incompletedScheduleRate: number;
 
-  @ApiProperty({ description: '분석 대상 월 입니다' })
-  targetMonth: string;
+  @ApiProperty({ description: '분석 대상 연도 입니다', example: 2026 })
+  targetYear: number;
+
+  @ApiProperty({ description: '분석 대상 월(1~12) 입니다', example: 5 })
+  targetMonth: number;
 
   @ApiProperty({ description: '완료되지 않은 스케쥴 목록입니다' })
   incompletedSchedules: ScheduleStatsDTO[];
@@ -167,11 +201,13 @@ export class IncompletedScheduleStatsDTO {
   constructor(
     incompletedScheduleCount: number,
     incompletedScheduleRate: number,
-    targetMonth: string,
+    targetYear: number,
+    targetMonth: number,
     incompletedSchedules: ScheduleStatsDTO[],
   ) {
     this.incompletedScheduleCount = incompletedScheduleCount;
     this.incompletedScheduleRate = incompletedScheduleRate;
+    this.targetYear = targetYear;
     this.targetMonth = targetMonth;
     this.incompletedSchedules = incompletedSchedules;
   }
@@ -181,14 +217,24 @@ export class CompletedScheduleStatsDTO {
   @ApiProperty({ description: '완료된 스케쥴 개수입니다' })
   completedScheduleCount: number;
 
+  @ApiProperty({ description: '분석 대상 연도 입니다', example: 2026 })
+  targetYear: number;
+
+  @ApiProperty({ description: '분석 대상 월(1~12) 입니다', example: 5 })
+  targetMonth: number;
+
   @ApiProperty({ description: '완료된 스케쥴 목록입니다' })
   completedSchedules: ScheduleStatsDTO[];
 
   constructor(
     completedScheduleCount: number,
+    targetYear: number,
+    targetMonth: number,
     completedSchedules: ScheduleStatsDTO[],
   ) {
     this.completedScheduleCount = completedScheduleCount;
+    this.targetYear = targetYear;
+    this.targetMonth = targetMonth;
     this.completedSchedules = completedSchedules;
   }
 }

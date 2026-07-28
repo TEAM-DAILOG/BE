@@ -1,5 +1,23 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+
+const yearQuery = () =>
+  ApiQuery({
+    name: 'year',
+    required: false,
+    type: Number,
+    example: 2026,
+    description: '조회할 연도 (안 넘기면 이번 달 기준)',
+  });
+
+const monthQuery = () =>
+  ApiQuery({
+    name: 'month',
+    required: false,
+    type: Number,
+    example: 5,
+    description: '조회할 월, 1~12 (안 넘기면 이번 달 기준)',
+  });
 
 // 통계 메인 조회
 export function GetMainStatsSwagger() {
@@ -59,8 +77,10 @@ export function GetScheduleDetailSwagger() {
     ApiOperation({
       summary: '일정 통계 상세 조회',
       description:
-        '이번 달 가장 많이 사용한 카테고리와, 카테고리별 사용 횟수·일정 목록을 사용 횟수 내림차순으로 반환합니다. 이번 달 등록된 일정이 없으면 mostFrequentCategory는 null, categoryRankInfo는 빈 배열입니다.',
+        'year, month를 넘기면 해당 월, 안 넘기면 이번 달 기준으로 가장 많이 사용한 카테고리와 카테고리별 사용 횟수·일정 목록을 사용 횟수 내림차순으로 반환합니다. 해당 월에 등록된 일정이 없으면 mostFrequentCategory는 null, categoryRankInfo는 빈 배열입니다.',
     }),
+    yearQuery(),
+    monthQuery(),
     ApiResponse({
       status: 200,
       description: '일정 통계 상세 조회 성공',
@@ -69,6 +89,8 @@ export function GetScheduleDetailSwagger() {
           resultType: 'SUCCESS',
           message: '일정 통계 상세 조회 성공',
           data: {
+            targetYear: 2026,
+            targetMonth: 5,
             mostFrequentCategory: {
               categoryId: 3,
               categoryName: '운동',
@@ -147,8 +169,10 @@ export function GetPendingStatsSwagger() {
     ApiOperation({
       summary: '미완료 일정 조회',
       description:
-        '이번 달(targetMonth) 기준 완료되지 않은 일정 개수, 비율(%), 목록을 반환합니다.',
+        'year, month를 넘기면 해당 월(targetMonth), 안 넘기면 이번 달 기준 완료되지 않은 일정 개수, 비율(%), 목록을 반환합니다.',
     }),
+    yearQuery(),
+    monthQuery(),
     ApiResponse({
       status: 200,
       description: '미완료 일정 조회 성공',
@@ -159,7 +183,8 @@ export function GetPendingStatsSwagger() {
           data: {
             incompletedScheduleCount: 3,
             incompletedScheduleRate: 42.9,
-            targetMonth: '2026-07',
+            targetYear: 2026,
+            targetMonth: 7,
             incompletedSchedules: [
               {
                 scheduleId: 4,
@@ -202,8 +227,11 @@ export function GetCompletedStatsSwagger() {
   return applyDecorators(
     ApiOperation({
       summary: '완료된 일정 조회',
-      description: '이번 달 기준 완료된 일정 개수와 목록을 반환합니다.',
+      description:
+        'year, month를 넘기면 해당 월, 안 넘기면 이번 달 기준 완료된 일정 개수와 목록을 반환합니다.',
     }),
+    yearQuery(),
+    monthQuery(),
     ApiResponse({
       status: 200,
       description: '완료된 일정 조회 성공',
@@ -213,6 +241,8 @@ export function GetCompletedStatsSwagger() {
           message: '완료된 일정 조회 성공',
           data: {
             completedScheduleCount: 4,
+            targetYear: 2026,
+            targetMonth: 5,
             completedSchedules: [
               {
                 scheduleId: 2,
