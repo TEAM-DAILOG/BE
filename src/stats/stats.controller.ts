@@ -26,9 +26,7 @@ export class StatsController {
     const data = await this.statsService.getMainStats(userId);
 
     return {
-      message: data.mostFrequentCategory
-        ? '통계 메인 조회 성공'
-        : '이번 달 등록된 일정이 없습니다.',
+      message: '통계 메인 조회 성공',
       data,
     };
   }
