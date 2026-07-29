@@ -35,7 +35,6 @@ export class GeminiService {
   private readonly answerPrompt: string;
   private readonly recommendPrompt: string;
   private readonly initialRecommendPrompt: string;
-  private readonly stressPrompt: string;
 
   constructor(private readonly configService: ConfigService) {
     this.client = new GoogleGenAI({
@@ -51,7 +50,6 @@ export class GeminiService {
     this.initialRecommendPrompt = this.configService.get<string>(
       'GEMINI_INITIAL_RECOMMEND_PROMPT',
     )!;
-    this.stressPrompt = this.configService.get<string>('GEMINI_STRESS_PROMPT')!;
   }
 
   async generateTodayQuestion(): Promise<string> {
@@ -105,17 +103,5 @@ export class GeminiService {
     });
 
     return JSON.parse(response.text!) as RecommendationItem[];
-  }
-
-  async generateStressInsight(
-    diaryContent: string,
-    schedules: { title: string; date: string }[],
-  ): Promise<string> {
-    const response = await this.client.models.generateContent({
-      model: MODEL,
-      contents: `${this.stressPrompt}\n\n일기 내용:\n${diaryContent}\n\n이번 달 등록된 일정 목록(JSON):\n${JSON.stringify(schedules)}`,
-    });
-
-    return response.text!.trim();
   }
 }

@@ -4,9 +4,7 @@ import { Between, Repository } from 'typeorm';
 
 import { ScheduleEntity } from '../schedules/entities/schedule.entity';
 import { CategoryEntity } from '../categories/entities/category.entity';
-import { DiaryEntity } from '../diaries/entities/diary.entity';
 import { RecommendService } from '../ai/services/ai-recommend.service';
-import { GeminiService } from '../ai/services/ai-gemini.service';
 import { ConflictException } from '../global/error/custom.exception';
 import {
   MostFrequentCategoryDTO,
@@ -19,7 +17,7 @@ import {
   CompletedScheduleStatsDTO,
 } from './stats.dto';
 import { RecommendDTO } from '../ai/dto/ai-recommend.dto';
-import { getTodayUtcRange, toIsoDateTime } from '../global/date.util';
+import { toIsoDateTime } from '../global/date.util';
 
 // year/month를 안 넘기면 이번 달(UTC) 기준으로 범위를 계산한다
 function getMonthRange(
@@ -55,11 +53,7 @@ export class StatsService {
     @InjectRepository(CategoryEntity)
     private readonly categoryRepository: Repository<CategoryEntity>,
 
-    @InjectRepository(DiaryEntity)
-    private readonly diaryRepository: Repository<DiaryEntity>,
-
     private readonly recommendService: RecommendService,
-    private readonly geminiService: GeminiService,
   ) {}
 
   // 카테고리가 soft-delete된 일정은 통계 전체(개수/목록/비율)에서 제외한다
@@ -80,14 +74,6 @@ export class StatsService {
     const categoryIds = new Set(categories.map((c) => c.categoryId));
 
     return schedules.filter((schedule) => categoryIds.has(schedule.categoryId));
-  }
-
-  private async findTodayDiary(userId: number): Promise<DiaryEntity | null> {
-    const { start, end } = getTodayUtcRange();
-
-    return this.diaryRepository.findOne({
-      where: { userId, createdAt: Between(start, end) },
-    });
   }
 
   private async findMostFrequentCategory(
@@ -134,23 +120,43 @@ export class StatsService {
     }
   }
 
+  private getLastMonth(): { year: number; month: number } {
+    const now = new Date();
+    const lastMonthDate = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1),
+    );
+
+    return {
+      year: lastMonthDate.getUTCFullYear(),
+      month: lastMonthDate.getUTCMonth() + 1,
+    };
+  }
+
   async getMainStats(userId: number): Promise<StatsMainDTO> {
-    const schedules = await this.getMonthSchedules(userId);
-    const mostFrequentCategory = await this.findMostFrequentCategory(schedules);
+    const { year: lastYear, month: lastMonth } = this.getLastMonth();
+    const lastMonthSchedules = await this.getMonthSchedules(
+      userId,
+      lastYear,
+      lastMonth,
+    );
+
+    const lastMonthCompletionRate =
+      lastMonthSchedules.length === 0
+        ? 0
+        : Math.round(
+            (lastMonthSchedules.filter((schedule) => schedule.isCompleted)
+              .length /
+              lastMonthSchedules.length) *
+              1000,
+          ) / 10;
+
     const recommendedSchedules = await this.getRecommendedSchedules(userId);
 
-    const todayDiary = await this.findTodayDiary(userId);
-    const stress = todayDiary
-      ? await this.geminiService.generateStressInsight(
-          todayDiary.content,
-          schedules.map((schedule) => ({
-            title: schedule.title,
-            date: schedule.date,
-          })),
-        )
-      : '오늘 작성된 일기가 없어 스트레스를 분석할 수 없습니다.';
-
-    return new StatsMainDTO(mostFrequentCategory, recommendedSchedules, stress);
+    return new StatsMainDTO(
+      lastMonth,
+      lastMonthCompletionRate,
+      recommendedSchedules,
+    );
   }
 
   async getScheduleDetail(
@@ -208,14 +214,15 @@ export class StatsService {
       userId,
     );
 
-    const rate =
+    const completedCount = schedules.length - incompleted.length;
+    const completionRate =
       schedules.length === 0
         ? 0
-        : Math.round((incompleted.length / schedules.length) * 1000) / 10;
+        : Math.round((completedCount / schedules.length) * 1000) / 10;
 
     return new IncompletedScheduleStatsDTO(
       incompleted.length,
-      rate,
+      completionRate,
       targetYear,
       targetMonth,
       incompletedSchedules,
