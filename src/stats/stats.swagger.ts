@@ -25,7 +25,7 @@ export function GetMainStatsSwagger() {
     ApiOperation({
       summary: '통계 메인 조회',
       description:
-        '이번 달 가장 많이 사용한 카테고리, 오늘의 AI 추천 일정, AI 기반 스트레스 분석을 함께 반환합니다. 이번 달 등록된 일정이 없으면 mostFrequentCategory는 null입니다. 오늘 작성된 일기가 없으면 stress는 안내 문구로 대체됩니다.',
+        '지난 달 일정 달성률과 오늘의 AI 추천 일정을 함께 반환합니다. 지난 달 등록된 일정이 없으면 lastMonthCompletionRate는 0입니다.',
     }),
     ApiResponse({
       status: 200,
@@ -35,11 +35,8 @@ export function GetMainStatsSwagger() {
           resultType: 'SUCCESS',
           message: '통계 메인 조회 성공',
           data: {
-            mostFrequentCategory: {
-              categoryId: 3,
-              categoryName: '운동',
-              categoryColor: 'BLUE',
-            },
+            lastMonth: 6,
+            lastMonthCompletionRate: 66.7,
             recommendedSchedules: [
               {
                 recommendId: 1,
@@ -58,8 +55,6 @@ export function GetMainStatsSwagger() {
                 isAdded: true,
               },
             ],
-            stress:
-              '최근 일정이 많아 피로가 쌓여 있을 수 있어요. 짧은 산책으로 기분 전환해보세요.',
           },
         },
       },
@@ -169,7 +164,7 @@ export function GetPendingStatsSwagger() {
     ApiOperation({
       summary: '미완료 일정 조회',
       description:
-        'year, month를 넘기면 해당 월(targetMonth), 안 넘기면 이번 달 기준 완료되지 않은 일정 개수, 비율(%), 목록을 반환합니다.',
+        'year, month를 넘기면 해당 월(targetMonth), 안 넘기면 이번 달 기준 완료되지 않은 일정 개수, 달성률(%), 목록을 반환합니다.',
     }),
     yearQuery(),
     monthQuery(),
@@ -182,7 +177,7 @@ export function GetPendingStatsSwagger() {
           message: '미완료 일정 조회 성공',
           data: {
             incompletedScheduleCount: 3,
-            incompletedScheduleRate: 42.9,
+            completionRate: 57.1,
             targetYear: 2026,
             targetMonth: 7,
             incompletedSchedules: [

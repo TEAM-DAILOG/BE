@@ -49,27 +49,23 @@ export class MostFrequentCategoryDTO {
 }
 
 export class StatsMainDTO {
-  @ApiProperty({
-    description:
-      '가장 많이 사용한 카테고리정보 (이번 달 등록된 일정이 없으면 null)',
-    nullable: true,
-  })
-  mostFrequentCategory: MostFrequentCategoryDTO | null;
+  @ApiProperty({ description: '지난 달(1~12) 입니다' })
+  lastMonth: number;
+
+  @ApiProperty({ description: '지난 달 일정 달성률(%) 입니다' })
+  lastMonthCompletionRate: number;
 
   @ApiProperty({ description: '추천일정 목록 입니다' })
   recommendedSchedules: RecommendDTO[];
 
-  @ApiProperty({ description: '스트레스 관련 정보 입니다' })
-  stress: string;
-
   constructor(
-    mostFrequentCategory: MostFrequentCategoryDTO | null,
+    lastMonth: number,
+    lastMonthCompletionRate: number,
     recommendedSchedules: RecommendDTO[],
-    stress: string,
   ) {
-    this.mostFrequentCategory = mostFrequentCategory;
+    this.lastMonth = lastMonth;
+    this.lastMonthCompletionRate = lastMonthCompletionRate;
     this.recommendedSchedules = recommendedSchedules;
-    this.stress = stress;
   }
 }
 
@@ -186,8 +182,8 @@ export class IncompletedScheduleStatsDTO {
   @ApiProperty({ description: '완료되지 않은 스케쥴 개수입니다' })
   incompletedScheduleCount: number;
 
-  @ApiProperty({ description: '완료되지 않은 스케쥴비율입니다' })
-  incompletedScheduleRate: number;
+  @ApiProperty({ description: '일정 달성률(%) 입니다' })
+  completionRate: number;
 
   @ApiProperty({ description: '분석 대상 연도 입니다', example: 2026 })
   targetYear: number;
@@ -200,13 +196,13 @@ export class IncompletedScheduleStatsDTO {
 
   constructor(
     incompletedScheduleCount: number,
-    incompletedScheduleRate: number,
+    completionRate: number,
     targetYear: number,
     targetMonth: number,
     incompletedSchedules: ScheduleStatsDTO[],
   ) {
     this.incompletedScheduleCount = incompletedScheduleCount;
-    this.incompletedScheduleRate = incompletedScheduleRate;
+    this.completionRate = completionRate;
     this.targetYear = targetYear;
     this.targetMonth = targetMonth;
     this.incompletedSchedules = incompletedSchedules;
