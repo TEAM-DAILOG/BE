@@ -223,7 +223,7 @@ export function CreateRecommendationsSwagger() {
     ApiOperation({
       summary: 'AI 일정 추천 최초 생성',
       description:
-        '오늘 첫 호출 시 로그인한 유저의 오늘 일기 내용을 바탕으로 서로 겹치지 않는 일정을 한 번에 3개(일기 내용이 부족해 3개를 못 채우면 나온 만큼만) 추천합니다. 유저의 기존 카테고리와 유사한 게 있으면 연결하고, 없으면 새 카테고리를 생성해 연결합니다. 오늘 이미 추천이 하나라도 생성돼 있으면 errorCode `ALREADY_INITIALIZED`와 함께 409를 반환하니, 그 이후에는 추가 생성 API(`POST /ai/schedules/add`)를 사용하세요.',
+        '오늘 첫 호출 시 로그인한 유저의 오늘 일기 내용을 바탕으로 서로 겹치지 않는 일정을 한 번에 3개(일기 내용이 부족해 3개를 못 채우면 나온 만큼만) 추천합니다. 반드시 유저가 이미 만들어둔 카테고리 중에서만 골라 연결하며, 새 카테고리는 생성하지 않습니다. 카테고리가 하나도 없으면 errorCode `NO_CATEGORY`와 함께 409를 반환합니다. 오늘 이미 추천이 하나라도 생성돼 있으면 errorCode `ALREADY_INITIALIZED`와 함께 409를 반환하니, 그 이후에는 추가 생성 API(`POST /ai/schedules/add`)를 사용하세요.',
     }),
     ApiResponse({
       status: 201,
@@ -267,14 +267,41 @@ export function CreateRecommendationsSwagger() {
     ApiResponse({
       status: 409,
       description:
-        '오늘 작성된 일기가 없음(CONFLICT) 또는 오늘의 추천이 이미 생성됨(ALREADY_INITIALIZED)',
-      schema: {
-        example: {
-          resultType: 'FAIL',
-          code: 409,
-          errorCode: 'ALREADY_INITIALIZED',
-          reason: '오늘의 추천 일정이 이미 생성되었습니다.',
-          data: null,
+        '오늘 작성된 일기가 없음(CONFLICT), 오늘의 추천이 이미 생성됨(ALREADY_INITIALIZED), 또는 카테고리가 하나도 없음(NO_CATEGORY)',
+      content: {
+        'application/json': {
+          examples: {
+            noDiary: {
+              summary: '오늘 작성된 일기가 없음',
+              value: {
+                resultType: 'FAIL',
+                code: 409,
+                errorCode: 'CONFLICT',
+                reason: '오늘 작성된 일기가 없습니다.',
+                data: null,
+              },
+            },
+            alreadyInitialized: {
+              summary: '오늘의 추천이 이미 생성됨',
+              value: {
+                resultType: 'FAIL',
+                code: 409,
+                errorCode: 'ALREADY_INITIALIZED',
+                reason: '오늘의 추천 일정이 이미 생성되었습니다.',
+                data: null,
+              },
+            },
+            noCategory: {
+              summary: '카테고리가 하나도 없음',
+              value: {
+                resultType: 'FAIL',
+                code: 409,
+                errorCode: 'NO_CATEGORY',
+                reason: '일정 추천을 받으려면 먼저 카테고리를 생성해야 합니다.',
+                data: null,
+              },
+            },
+          },
         },
       },
     }),
@@ -291,7 +318,7 @@ export function AddRecommendationSwagger() {
     ApiOperation({
       summary: 'AI 일정 추천 추가 생성',
       description:
-        '오늘 이미 생성된 추천 목록과 겹치지 않는 일정을 하나 더 추천합니다(호출당 정확히 1개). 최초 생성 여부와 무관하게 호출할 수 있습니다. 유저의 기존 카테고리와 유사한 게 있으면 연결하고, 없으면 새 카테고리를 생성해 연결합니다. 더 이상 추천할 게 없으면 errorCode `NO_MORE_RECOMMENDATIONS`와 함께 409를 반환합니다.',
+        '오늘 이미 생성된 추천 목록과 겹치지 않는 일정을 하나 더 추천합니다(호출당 정확히 1개). 최초 생성 여부와 무관하게 호출할 수 있습니다. 반드시 유저가 이미 만들어둔 카테고리 중에서만 골라 연결하며, 새 카테고리는 생성하지 않습니다. 카테고리가 하나도 없으면 errorCode `NO_CATEGORY`와 함께 409를 반환합니다. 더 이상 추천할 게 없으면 errorCode `NO_MORE_RECOMMENDATIONS`와 함께 409를 반환합니다.',
     }),
     ApiResponse({
       status: 201,
@@ -312,14 +339,41 @@ export function AddRecommendationSwagger() {
     ApiResponse({
       status: 409,
       description:
-        '오늘 작성된 일기가 없음(CONFLICT) 또는 더 이상 추천할 일정이 없음(NO_MORE_RECOMMENDATIONS)',
-      schema: {
-        example: {
-          resultType: 'FAIL',
-          code: 409,
-          errorCode: 'NO_MORE_RECOMMENDATIONS',
-          reason: '더 이상 추천할 수 있는 일정이 없습니다.',
-          data: null,
+        '오늘 작성된 일기가 없음(CONFLICT), 더 이상 추천할 일정이 없음(NO_MORE_RECOMMENDATIONS), 또는 카테고리가 하나도 없음(NO_CATEGORY)',
+      content: {
+        'application/json': {
+          examples: {
+            noDiary: {
+              summary: '오늘 작성된 일기가 없음',
+              value: {
+                resultType: 'FAIL',
+                code: 409,
+                errorCode: 'CONFLICT',
+                reason: '오늘 작성된 일기가 없습니다.',
+                data: null,
+              },
+            },
+            noMoreRecommendations: {
+              summary: '더 이상 추천할 일정이 없음',
+              value: {
+                resultType: 'FAIL',
+                code: 409,
+                errorCode: 'NO_MORE_RECOMMENDATIONS',
+                reason: '더 이상 추천할 수 있는 일정이 없습니다.',
+                data: null,
+              },
+            },
+            noCategory: {
+              summary: '카테고리가 하나도 없음',
+              value: {
+                resultType: 'FAIL',
+                code: 409,
+                errorCode: 'NO_CATEGORY',
+                reason: '일정 추천을 받으려면 먼저 카테고리를 생성해야 합니다.',
+                data: null,
+              },
+            },
+          },
         },
       },
     }),
