@@ -11,11 +11,11 @@ import {
 } from '../dto/ai-recommend.dto';
 import { GeminiService, RecommendationItem } from './ai-gemini.service';
 import { DiaryEntity } from '../../diaries/entities/diary.entity';
+import { CategoryEntity } from '../../categories/entities/category.entity';
 import {
-  CategoryColor,
-  CategoryEntity,
-} from '../../categories/entities/category.entity';
-import { ConflictException } from '../../global/error/custom.exception';
+  ConflictException,
+  InternalServerException,
+} from '../../global/error/custom.exception';
 
 const MAX_INITIAL_RECOMMENDATION_COUNT = 3;
 
@@ -46,54 +46,30 @@ export class RecommendService {
     });
   }
 
-  // ponytail: 새 카테고리 색은 매번 BLUE로 고정 — 색 다양화 필요해지면 그때 로직 추가
-  private async resolveCategory(
+  // AI는 반드시 기존 카테고리 중 하나를 선택해야 한다 — 새 카테고리 생성은 지원하지 않는다.
+  // AI가 유효하지 않은 categoryId를 준 경우(응답 오류)에만 여기서 걸린다.
+  private resolveCategory(
     item: RecommendationItem,
-    userId: number,
     ownedCategories: CategoryEntity[],
-  ): Promise<CategoryEntity> {
-    const matched =
-      item.categoryId != null
-        ? ownedCategories.find(
-            (category) => category.categoryId === item.categoryId,
-          )
-        : undefined;
+  ): CategoryEntity {
+    const matched = ownedCategories.find(
+      (category) => category.categoryId === item.categoryId,
+    );
 
-    if (matched) {
-      return matched;
+    if (!matched) {
+      throw new InternalServerException();
     }
 
-    // category.service.ts와 동일한 규칙: 유저의 마지막 순서 다음으로 이어붙임
-    const nextOrder =
-      ownedCategories.length > 0
-        ? Math.max(
-            ...ownedCategories.map((category) => category.categoryOrder),
-          ) + 1
-        : 1;
-
-    return this.categoryRepository.save(
-      this.categoryRepository.create({
-        userId,
-        categoryName: item.newCategoryName ?? '기타',
-        categoryColor: CategoryColor.BLUE,
-        categoryOrder: nextOrder,
-      }),
-    );
+    return matched;
   }
 
   // AI가 만든 추천 아이템 하나를 카테고리 연결까지 해서 저장한다.
-  // 이번 배치에서 방금 새로 만든 카테고리는 ownedCategories에 반영해 다음 아이템도 재사용하게 한다.
   private async saveRecommendation(
-    userId: number,
     diary: DiaryEntity,
     item: RecommendationItem & { scheduleTitle: string },
     ownedCategories: CategoryEntity[],
   ): Promise<RecommendEntity> {
-    const category = await this.resolveCategory(item, userId, ownedCategories);
-
-    if (!ownedCategories.some((c) => c.categoryId === category.categoryId)) {
-      ownedCategories.push(category);
-    }
+    const category = this.resolveCategory(item, ownedCategories);
 
     return this.recommendRepository.save(
       this.recommendRepository.create({
@@ -108,7 +84,6 @@ export class RecommendService {
   // 일기 내용 + 겹치면 안 되는 제목 목록을 넘겨서 정확히 하나만 추천받는다.
   // AI가 더 추천할 게 없다고 판단하면(scheduleTitle이 null) null을 반환한다.
   private async generateOneRecommendation(
-    userId: number,
     diary: DiaryEntity,
     ownedCategories: CategoryEntity[],
     excludedTitles: string[],
@@ -127,7 +102,6 @@ export class RecommendService {
     }
 
     return this.saveRecommendation(
-      userId,
       diary,
       { ...item, scheduleTitle: item.scheduleTitle },
       ownedCategories,
@@ -161,6 +135,13 @@ export class RecommendService {
       where: { userId },
     });
 
+    if (ownedCategories.length === 0) {
+      throw new ConflictException(
+        '일정 추천을 받으려면 먼저 카테고리를 생성해야 합니다.',
+        'NO_CATEGORY',
+      );
+    }
+
     const items = await this.geminiService.generateInitialRecommendations(
       diary.content,
       ownedCategories.map((category) => ({
@@ -179,7 +160,6 @@ export class RecommendService {
 
       created.push(
         await this.saveRecommendation(
-          userId,
           diary,
           { ...item, scheduleTitle: item.scheduleTitle },
           ownedCategories,
@@ -202,12 +182,18 @@ export class RecommendService {
       where: { userId },
     });
 
+    if (ownedCategories.length === 0) {
+      throw new ConflictException(
+        '일정 추천을 받으려면 먼저 카테고리를 생성해야 합니다.',
+        'NO_CATEGORY',
+      );
+    }
+
     const todaysRecommends = await this.recommendRepository.find({
       where: { diary: { diaryId: diary.diaryId } },
     });
 
     const recommend = await this.generateOneRecommendation(
-      userId,
       diary,
       ownedCategories,
       todaysRecommends.map((r) => r.title),

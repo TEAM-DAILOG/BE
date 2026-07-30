@@ -8,8 +8,8 @@ const MODEL = 'gemini-flash-lite-latest';
 export interface RecommendationItem {
   // null이면 더 이상 추천할 수 있는(기존 목록과 겹치지 않는) 일정이 없다는 뜻
   scheduleTitle: string | null;
+  // scheduleTitle이 null이 아니면 반드시 값이 있어야 한다 — 새 카테고리 생성은 더 이상 지원하지 않음
   categoryId: number | null;
-  newCategoryName: string | null;
 }
 
 const RECOMMENDATION_ITEM_SCHEMA = {
@@ -17,7 +17,6 @@ const RECOMMENDATION_ITEM_SCHEMA = {
   properties: {
     scheduleTitle: { type: Type.STRING, nullable: true },
     categoryId: { type: Type.INTEGER, nullable: true },
-    newCategoryName: { type: Type.STRING, nullable: true },
   },
 };
 
