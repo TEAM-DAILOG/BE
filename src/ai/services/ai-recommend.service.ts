@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 
@@ -11,16 +11,15 @@ import {
 } from '../dto/ai-recommend.dto';
 import { GeminiService, RecommendationItem } from './ai-gemini.service';
 import { DiaryEntity } from '../../diaries/entities/diary.entity';
-import {
-  CategoryColor,
-  CategoryEntity,
-} from '../../categories/entities/category.entity';
+import { CategoryEntity } from '../../categories/entities/category.entity';
 import { ConflictException } from '../../global/error/custom.exception';
 
 const MAX_INITIAL_RECOMMENDATION_COUNT = 3;
 
 @Injectable()
 export class RecommendService {
+  private readonly logger = new Logger(RecommendService.name);
+
   constructor(
     @InjectRepository(RecommendEntity)
     private readonly recommendRepository: Repository<RecommendEntity>,
@@ -46,53 +45,35 @@ export class RecommendService {
     });
   }
 
-  // ponytail: 새 카테고리 색은 매번 BLUE로 고정 — 색 다양화 필요해지면 그때 로직 추가
-  private async resolveCategory(
+  // AI는 반드시 기존 카테고리 중 하나를 선택해야 한다 — 새 카테고리 생성은 지원하지 않는다.
+  // AI가 유효하지 않은 categoryId를 준 경우(응답 오류) null을 반환해 호출부가 이 아이템만 건너뛰게 한다.
+  private resolveCategory(
     item: RecommendationItem,
-    userId: number,
     ownedCategories: CategoryEntity[],
-  ): Promise<CategoryEntity> {
-    const matched =
-      item.categoryId != null
-        ? ownedCategories.find(
-            (category) => category.categoryId === item.categoryId,
-          )
-        : undefined;
-
-    if (matched) {
-      return matched;
-    }
-
-    // category.service.ts와 동일한 규칙: 유저의 마지막 순서 다음으로 이어붙임
-    const nextOrder =
-      ownedCategories.length > 0
-        ? Math.max(
-            ...ownedCategories.map((category) => category.categoryOrder),
-          ) + 1
-        : 1;
-
-    return this.categoryRepository.save(
-      this.categoryRepository.create({
-        userId,
-        categoryName: item.newCategoryName ?? '기타',
-        categoryColor: CategoryColor.BLUE,
-        categoryOrder: nextOrder,
-      }),
+  ): CategoryEntity | null {
+    return (
+      ownedCategories.find(
+        (category) => category.categoryId === item.categoryId,
+      ) ?? null
     );
   }
 
   // AI가 만든 추천 아이템 하나를 카테고리 연결까지 해서 저장한다.
-  // 이번 배치에서 방금 새로 만든 카테고리는 ownedCategories에 반영해 다음 아이템도 재사용하게 한다.
+  // 카테고리 매칭에 실패하면(AI 응답 오류) 저장하지 않고 null을 반환한다 —
+  // 배치 중 한 아이템의 실패가 이미 저장된 다른 아이템까지 롤백시키지 않게 하기 위함.
   private async saveRecommendation(
-    userId: number,
     diary: DiaryEntity,
     item: RecommendationItem & { scheduleTitle: string },
     ownedCategories: CategoryEntity[],
-  ): Promise<RecommendEntity> {
-    const category = await this.resolveCategory(item, userId, ownedCategories);
+  ): Promise<RecommendEntity | null> {
+    const category = this.resolveCategory(item, ownedCategories);
 
-    if (!ownedCategories.some((c) => c.categoryId === category.categoryId)) {
-      ownedCategories.push(category);
+    if (!category) {
+      this.logger.warn(
+        `AI가 유효하지 않은 categoryId(${item.categoryId})를 반환해 추천 항목을 건너뜁니다: ${item.scheduleTitle}`,
+      );
+
+      return null;
     }
 
     return this.recommendRepository.save(
@@ -108,7 +89,6 @@ export class RecommendService {
   // 일기 내용 + 겹치면 안 되는 제목 목록을 넘겨서 정확히 하나만 추천받는다.
   // AI가 더 추천할 게 없다고 판단하면(scheduleTitle이 null) null을 반환한다.
   private async generateOneRecommendation(
-    userId: number,
     diary: DiaryEntity,
     ownedCategories: CategoryEntity[],
     excludedTitles: string[],
@@ -127,7 +107,6 @@ export class RecommendService {
     }
 
     return this.saveRecommendation(
-      userId,
       diary,
       { ...item, scheduleTitle: item.scheduleTitle },
       ownedCategories,
@@ -161,6 +140,13 @@ export class RecommendService {
       where: { userId },
     });
 
+    if (ownedCategories.length === 0) {
+      throw new ConflictException(
+        '일정 추천을 받으려면 먼저 카테고리를 생성해야 합니다.',
+        'NO_CATEGORY',
+      );
+    }
+
     const items = await this.geminiService.generateInitialRecommendations(
       diary.content,
       ownedCategories.map((category) => ({
@@ -172,19 +158,21 @@ export class RecommendService {
     const created: RecommendEntity[] = [];
 
     // 프롬프트로 최대 3개를 지시했지만, AI 응답을 완전히 신뢰하지 않고 코드에서도 한 번 더 자른다.
+    // 개별 아이템이 유효하지 않은 카테고리를 반환해도(null) 이미 저장된 다른 아이템에는 영향을 주지 않고 건너뛴다.
     for (const item of items.slice(0, MAX_INITIAL_RECOMMENDATION_COUNT)) {
       if (!item.scheduleTitle) {
         continue;
       }
 
-      created.push(
-        await this.saveRecommendation(
-          userId,
-          diary,
-          { ...item, scheduleTitle: item.scheduleTitle },
-          ownedCategories,
-        ),
+      const recommend = await this.saveRecommendation(
+        diary,
+        { ...item, scheduleTitle: item.scheduleTitle },
+        ownedCategories,
       );
+
+      if (recommend) {
+        created.push(recommend);
+      }
     }
 
     return new RecommendListDTO(created);
@@ -202,12 +190,18 @@ export class RecommendService {
       where: { userId },
     });
 
+    if (ownedCategories.length === 0) {
+      throw new ConflictException(
+        '일정 추천을 받으려면 먼저 카테고리를 생성해야 합니다.',
+        'NO_CATEGORY',
+      );
+    }
+
     const todaysRecommends = await this.recommendRepository.find({
       where: { diary: { diaryId: diary.diaryId } },
     });
 
     const recommend = await this.generateOneRecommendation(
-      userId,
       diary,
       ownedCategories,
       todaysRecommends.map((r) => r.title),
