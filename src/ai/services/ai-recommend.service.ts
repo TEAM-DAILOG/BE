@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 
@@ -12,15 +12,14 @@ import {
 import { GeminiService, RecommendationItem } from './ai-gemini.service';
 import { DiaryEntity } from '../../diaries/entities/diary.entity';
 import { CategoryEntity } from '../../categories/entities/category.entity';
-import {
-  ConflictException,
-  InternalServerException,
-} from '../../global/error/custom.exception';
+import { ConflictException } from '../../global/error/custom.exception';
 
 const MAX_INITIAL_RECOMMENDATION_COUNT = 3;
 
 @Injectable()
 export class RecommendService {
+  private readonly logger = new Logger(RecommendService.name);
+
   constructor(
     @InjectRepository(RecommendEntity)
     private readonly recommendRepository: Repository<RecommendEntity>,
@@ -47,29 +46,35 @@ export class RecommendService {
   }
 
   // AI는 반드시 기존 카테고리 중 하나를 선택해야 한다 — 새 카테고리 생성은 지원하지 않는다.
-  // AI가 유효하지 않은 categoryId를 준 경우(응답 오류)에만 여기서 걸린다.
+  // AI가 유효하지 않은 categoryId를 준 경우(응답 오류) null을 반환해 호출부가 이 아이템만 건너뛰게 한다.
   private resolveCategory(
     item: RecommendationItem,
     ownedCategories: CategoryEntity[],
-  ): CategoryEntity {
-    const matched = ownedCategories.find(
-      (category) => category.categoryId === item.categoryId,
+  ): CategoryEntity | null {
+    return (
+      ownedCategories.find(
+        (category) => category.categoryId === item.categoryId,
+      ) ?? null
     );
-
-    if (!matched) {
-      throw new InternalServerException();
-    }
-
-    return matched;
   }
 
   // AI가 만든 추천 아이템 하나를 카테고리 연결까지 해서 저장한다.
+  // 카테고리 매칭에 실패하면(AI 응답 오류) 저장하지 않고 null을 반환한다 —
+  // 배치 중 한 아이템의 실패가 이미 저장된 다른 아이템까지 롤백시키지 않게 하기 위함.
   private async saveRecommendation(
     diary: DiaryEntity,
     item: RecommendationItem & { scheduleTitle: string },
     ownedCategories: CategoryEntity[],
-  ): Promise<RecommendEntity> {
+  ): Promise<RecommendEntity | null> {
     const category = this.resolveCategory(item, ownedCategories);
+
+    if (!category) {
+      this.logger.warn(
+        `AI가 유효하지 않은 categoryId(${item.categoryId})를 반환해 추천 항목을 건너뜁니다: ${item.scheduleTitle}`,
+      );
+
+      return null;
+    }
 
     return this.recommendRepository.save(
       this.recommendRepository.create({
@@ -153,18 +158,21 @@ export class RecommendService {
     const created: RecommendEntity[] = [];
 
     // 프롬프트로 최대 3개를 지시했지만, AI 응답을 완전히 신뢰하지 않고 코드에서도 한 번 더 자른다.
+    // 개별 아이템이 유효하지 않은 카테고리를 반환해도(null) 이미 저장된 다른 아이템에는 영향을 주지 않고 건너뛴다.
     for (const item of items.slice(0, MAX_INITIAL_RECOMMENDATION_COUNT)) {
       if (!item.scheduleTitle) {
         continue;
       }
 
-      created.push(
-        await this.saveRecommendation(
-          diary,
-          { ...item, scheduleTitle: item.scheduleTitle },
-          ownedCategories,
-        ),
+      const recommend = await this.saveRecommendation(
+        diary,
+        { ...item, scheduleTitle: item.scheduleTitle },
+        ownedCategories,
       );
+
+      if (recommend) {
+        created.push(recommend);
+      }
     }
 
     return new RecommendListDTO(created);
