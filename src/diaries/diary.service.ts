@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, ConflictException, } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -60,6 +60,18 @@ export class DiaryService {
   // 일기 작성
   async createDiary(userId: number, dto: CreateDiaryDto): Promise<CreateDiaryResponseDto> {
     const isQuestionDiary = !!dto.questionId;
+
+
+    const existingDiary = await this.diaryRepository.findOne({
+    where: {
+      userId,
+      date: dto.date,
+    },
+  });
+
+  if (existingDiary) {
+    throw new ConflictException('오늘은 이미 일기를 작성했습니다.');
+  }
 
     const diary = this.diaryRepository.create({
       userId,

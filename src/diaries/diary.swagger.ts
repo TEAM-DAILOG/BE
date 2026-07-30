@@ -128,6 +128,7 @@ export function CreateDiarySwagger() {
     ApiResponse({ status: 400, description: '잘못된 요청' }),
     ApiResponse({ status: 401, description: '사용자 인증 실패' }),
     ApiResponse({ status: 404, description: '존재하지 않는 질문' }),
+    ApiResponse({ status: 409, description: '오늘 이미 일기를 작성한 경우' }),
     ApiResponse({ status: 500, description: '서버 내부 오류' }),
   );
 }
