@@ -22,6 +22,7 @@ import {
   FindAnswerSwagger,
   CreateRecommendationsSwagger,
   AddRecommendationSwagger,
+  RegenerateRecommendationsSwagger,
   FindRecommendationsSwagger,
   FindRecommendationsByDiarySwagger,
 } from './ai.swagger';
@@ -124,6 +125,18 @@ export class AiController {
     const data = await this.recommendService.addRecommendation(userId);
 
     return { message: 'AI 일정 추천 추가 생성 성공', data };
+  }
+
+  /**
+   * AI 일정 추천 재생성 (통계 전용 "다른 일정 추천받기")
+   */
+  @AccessTokenAuth()
+  @RegenerateRecommendationsSwagger()
+  @Post('schedules/regenerate')
+  async regenerateRecommendations(@CurrentUserId() userId: number) {
+    const data = await this.recommendService.regenerateRecommendations(userId);
+
+    return { message: 'AI 일정 추천 재생성 성공', data };
   }
 
   /**

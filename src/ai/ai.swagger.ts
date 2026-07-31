@@ -384,6 +384,101 @@ export function AddRecommendationSwagger() {
   );
 }
 
+// AI 일정 추천 재생성 (통계 전용 "다른 일정 추천받기")
+export function RegenerateRecommendationsSwagger() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'AI 일정 추천 재생성 (통계 전용)',
+      description:
+        '통계 화면의 "다른 일정 추천받기" 전용 API입니다. 지금까지 나온 모든 추천(일기 목록 포함)과 겹치지 않는 새 일정을 최대 3개까지(부족하면 그보다 적게) 생성합니다. 기존에 재생성으로 만들어둔 배치가 있으면 삭제하지 않고 보관 처리한 뒤 새 배치로 교체하며, 이후 통계에서는 이 새 배치가 우선 노출됩니다. 일기 화면에 보이는 최초 추천 목록에는 영향을 주지 않습니다. 카테고리가 하나도 없으면 errorCode `NO_CATEGORY`와 함께 409를, 더 이상 추천할 게 없으면 errorCode `NO_MORE_RECOMMENDATIONS`와 함께 409를 반환합니다.',
+    }),
+    ApiResponse({
+      status: 201,
+      description: 'AI 일정 추천 재생성 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: 'AI 일정 추천 재생성 성공',
+          data: {
+            recommendedScheduleCount: 3,
+            recommendedSchedules: [
+              {
+                recommendId: 10,
+                categoryId: 3,
+                categoryTitle: '운동',
+                categoryColor: 'BLUE',
+                scheduleTitle: '저녁 요가 20분',
+                isAdded: false,
+              },
+              {
+                recommendId: 11,
+                categoryId: 4,
+                categoryTitle: '공부',
+                categoryColor: 'GREEN',
+                scheduleTitle: '알고리즘 문제 풀이',
+                isAdded: false,
+              },
+              {
+                recommendId: 12,
+                categoryId: 5,
+                categoryTitle: '독서',
+                categoryColor: 'BLUE',
+                scheduleTitle: '에세이 한 편 읽기',
+                isAdded: false,
+              },
+            ],
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 409,
+      description:
+        '오늘 작성된 일기가 없음(CONFLICT), 카테고리가 하나도 없음(NO_CATEGORY), 또는 더 이상 추천할 일정이 없음(NO_MORE_RECOMMENDATIONS)',
+      content: {
+        'application/json': {
+          examples: {
+            noDiary: {
+              summary: '오늘 작성된 일기가 없음',
+              value: {
+                resultType: 'FAIL',
+                code: 409,
+                errorCode: 'CONFLICT',
+                reason: '오늘 작성된 일기가 없습니다.',
+                data: null,
+              },
+            },
+            noCategory: {
+              summary: '카테고리가 하나도 없음',
+              value: {
+                resultType: 'FAIL',
+                code: 409,
+                errorCode: 'NO_CATEGORY',
+                reason: '일정 추천을 받으려면 먼저 카테고리를 생성해야 합니다.',
+                data: null,
+              },
+            },
+            noMoreRecommendations: {
+              summary: '더 이상 추천할 일정이 없음',
+              value: {
+                resultType: 'FAIL',
+                code: 409,
+                errorCode: 'NO_MORE_RECOMMENDATIONS',
+                reason: '더 이상 추천할 수 있는 일정이 없습니다.',
+                data: null,
+              },
+            },
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 500,
+      description: '서버 내부 오류',
+    }),
+  );
+}
+
 // AI 일정 추천 조회
 export function FindRecommendationsSwagger() {
   return applyDecorators(
