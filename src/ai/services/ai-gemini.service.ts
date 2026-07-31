@@ -34,6 +34,7 @@ export class GeminiService {
   private readonly answerPrompt: string;
   private readonly recommendPrompt: string;
   private readonly initialRecommendPrompt: string;
+  private readonly regenerateRecommendPrompt: string;
 
   constructor(private readonly configService: ConfigService) {
     this.client = new GoogleGenAI({
@@ -48,6 +49,9 @@ export class GeminiService {
     )!;
     this.initialRecommendPrompt = this.configService.get<string>(
       'GEMINI_INITIAL_RECOMMEND_PROMPT',
+    )!;
+    this.regenerateRecommendPrompt = this.configService.get<string>(
+      'GEMINI_REGENERATE_RECOMMEND_PROMPT',
     )!;
   }
 
@@ -95,6 +99,25 @@ export class GeminiService {
     const response = await this.client.models.generateContent({
       model: MODEL,
       contents: `${this.initialRecommendPrompt}\n\n일기 내용:\n${diaryContent}\n\n사용자 카테고리 목록(JSON):\n${JSON.stringify(categories)}`,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: INITIAL_RECOMMENDATION_RESPONSE_SCHEMA,
+      },
+    });
+
+    return JSON.parse(response.text!) as RecommendationItem[];
+  }
+
+  // 통계에서 "다른 일정 추천받기" 호출 전용: 지금까지 나온(모든 타입 통틀어) 제목과
+  // 안 겹치는 일정을 최대 3개까지(부족하면 그보다 적게, 0개도 가능) 배열로 받는다.
+  async generateRegeneratedRecommendations(
+    diaryContent: string,
+    categories: { categoryId: number; categoryName: string }[],
+    existingTitles: string[],
+  ): Promise<RecommendationItem[]> {
+    const response = await this.client.models.generateContent({
+      model: MODEL,
+      contents: `${this.regenerateRecommendPrompt}\n\n일기 내용:\n${diaryContent}\n\n사용자 카테고리 목록(JSON):\n${JSON.stringify(categories)}\n\n기존에 이미 추천된 일정 제목 목록(JSON, 이 목록과 겹치는 일정은 추천하면 안 됨):\n${JSON.stringify(existingTitles)}`,
       config: {
         responseMimeType: 'application/json',
         responseSchema: INITIAL_RECOMMENDATION_RESPONSE_SCHEMA,

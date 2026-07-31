@@ -4,7 +4,7 @@ import { Between, Repository } from 'typeorm';
 
 import { getTodayUtcRange } from '../../global/date.util';
 
-import { RecommendEntity } from '../entities/ai-recommend.entity';
+import { RecommendEntity, RecommendType } from '../entities/ai-recommend.entity';
 import {
   RecommendCreateResponseDTO,
   RecommendListDTO,
@@ -14,7 +14,8 @@ import { DiaryEntity } from '../../diaries/entities/diary.entity';
 import { CategoryEntity } from '../../categories/entities/category.entity';
 import { ConflictException } from '../../global/error/custom.exception';
 
-const MAX_INITIAL_RECOMMENDATION_COUNT = 3;
+// 최초 생성/재생성 배치 하나당 최대 개수 (부족하면 그보다 적게)
+const MAX_RECOMMENDATION_BATCH_COUNT = 3;
 
 @Injectable()
 export class RecommendService {
@@ -65,6 +66,7 @@ export class RecommendService {
     diary: DiaryEntity,
     item: RecommendationItem & { scheduleTitle: string },
     ownedCategories: CategoryEntity[],
+    type: RecommendType,
   ): Promise<RecommendEntity | null> {
     const category = this.resolveCategory(item, ownedCategories);
 
@@ -82,6 +84,7 @@ export class RecommendService {
         category,
         title: item.scheduleTitle,
         isAdded: false,
+        type,
       }),
     );
   }
@@ -92,6 +95,7 @@ export class RecommendService {
     diary: DiaryEntity,
     ownedCategories: CategoryEntity[],
     excludedTitles: string[],
+    type: RecommendType,
   ): Promise<RecommendEntity | null> {
     const item = await this.geminiService.generateRecommendation(
       diary.content,
@@ -110,6 +114,7 @@ export class RecommendService {
       diary,
       { ...item, scheduleTitle: item.scheduleTitle },
       ownedCategories,
+      type,
     );
   }
 
@@ -159,7 +164,7 @@ export class RecommendService {
 
     // 프롬프트로 최대 3개를 지시했지만, AI 응답을 완전히 신뢰하지 않고 코드에서도 한 번 더 자른다.
     // 개별 아이템이 유효하지 않은 카테고리를 반환해도(null) 이미 저장된 다른 아이템에는 영향을 주지 않고 건너뛴다.
-    for (const item of items.slice(0, MAX_INITIAL_RECOMMENDATION_COUNT)) {
+    for (const item of items.slice(0, MAX_RECOMMENDATION_BATCH_COUNT)) {
       if (!item.scheduleTitle) {
         continue;
       }
@@ -168,6 +173,7 @@ export class RecommendService {
         diary,
         { ...item, scheduleTitle: item.scheduleTitle },
         ownedCategories,
+        RecommendType.DIARY,
       );
 
       if (recommend) {
@@ -205,6 +211,7 @@ export class RecommendService {
       diary,
       ownedCategories,
       todaysRecommends.map((r) => r.title),
+      RecommendType.DIARY,
     );
 
     if (!recommend) {
@@ -217,6 +224,8 @@ export class RecommendService {
     return new RecommendCreateResponseDTO(recommend);
   }
 
+  // 일기 파트 전용 — 프론트가 이미 이 값을 일기 화면에 붙여 쓰고 있어서, 통계의
+  // ADDITIONAL 재생성과 무관하게 항상 DIARY 배치만 고정으로 반환한다.
   async getTodayRecommendations(userId: number): Promise<RecommendListDTO> {
     const diary = await this.findTodayDiary(userId);
 
@@ -225,20 +234,128 @@ export class RecommendService {
     }
 
     const recommends = await this.recommendRepository.find({
-      where: { diary: { diaryId: diary.diaryId } },
+      where: { diary: { diaryId: diary.diaryId }, type: RecommendType.DIARY },
       relations: ['category'],
     });
 
     return new RecommendListDTO(recommends);
   }
 
-  // 오늘 일기 여부와 무관하게, 특정 일기에 연결된 AI 추천 일정 목록을 조회한다.
+  // 오늘 일기 여부와 무관하게, 특정 일기에 연결된 DIARY 배치를 조회한다(통계 재생성과 무관).
   async getRecommendationsByDiary(diaryId: number): Promise<RecommendListDTO> {
     const recommends = await this.recommendRepository.find({
-      where: { diary: { diaryId } },
+      where: { diary: { diaryId }, type: RecommendType.DIARY },
       relations: ['category'],
     });
 
     return new RecommendListDTO(recommends);
+  }
+
+  // 통계 메인 전용 — ADDITIONAL(재생성한 최신 배치)이 있으면 그걸, 없으면 DIARY로 폴백한다.
+  async getTodayRecommendationsForStats(
+    userId: number,
+  ): Promise<RecommendListDTO> {
+    const diary = await this.findTodayDiary(userId);
+
+    if (!diary) {
+      throw new ConflictException('오늘 작성된 일기가 없습니다.');
+    }
+
+    const additional = await this.recommendRepository.find({
+      where: {
+        diary: { diaryId: diary.diaryId },
+        type: RecommendType.ADDITIONAL,
+      },
+      relations: ['category'],
+    });
+
+    if (additional.length > 0) {
+      return new RecommendListDTO(additional);
+    }
+
+    const diaryRecommends = await this.recommendRepository.find({
+      where: { diary: { diaryId: diary.diaryId }, type: RecommendType.DIARY },
+      relations: ['category'],
+    });
+
+    return new RecommendListDTO(diaryRecommends);
+  }
+
+  // 통계에서 "다른 일정 추천받기" 호출. 지금까지 나온(타입 무관) 모든 제목을 제외 목록으로
+  // 넘겨서 최대 3개(부족하면 그보다 적게)를 새로 만든다. 기존 ADDITIONAL 배치는 삭제하지 않고
+  // ARCHIVED로 상태만 바꿔 보존하며, 새 배치만 ADDITIONAL로 저장해 통계에 우선 노출시킨다.
+  async regenerateRecommendations(userId: number): Promise<RecommendListDTO> {
+    const diary = await this.findTodayDiary(userId);
+
+    if (!diary) {
+      throw new ConflictException('오늘 작성된 일기가 없습니다.');
+    }
+
+    const ownedCategories = await this.categoryRepository.find({
+      where: { userId },
+    });
+
+    if (ownedCategories.length === 0) {
+      throw new ConflictException(
+        '일정 추천을 받으려면 먼저 카테고리를 생성해야 합니다.',
+        'NO_CATEGORY',
+      );
+    }
+
+    const allExistingRecommends = await this.recommendRepository.find({
+      where: { diary: { diaryId: diary.diaryId } },
+    });
+
+    const items = await this.geminiService.generateRegeneratedRecommendations(
+      diary.content,
+      ownedCategories.map((category) => ({
+        categoryId: category.categoryId,
+        categoryName: category.categoryName,
+      })),
+      allExistingRecommends.map((r) => r.title),
+    );
+
+    // 유효한(카테고리까지 매칭되는) 후보가 하나도 없으면 기존 ADDITIONAL 배치를 건드리지 않는다 —
+    // 재생성 실패가 "직전에 보여주던 배치가 사라지는" 부작용을 남기면 안 되기 때문.
+    const candidates = items
+      .slice(0, MAX_RECOMMENDATION_BATCH_COUNT)
+      .filter(
+        (item): item is RecommendationItem & { scheduleTitle: string } =>
+          !!item.scheduleTitle &&
+          ownedCategories.some((category) => category.categoryId === item.categoryId),
+      );
+
+    if (candidates.length === 0) {
+      throw new ConflictException(
+        '더 이상 추천할 수 있는 일정이 없습니다.',
+        'NO_MORE_RECOMMENDATIONS',
+      );
+    }
+
+    await this.recommendRepository.update(
+      {
+        diary: { diaryId: diary.diaryId },
+        type: RecommendType.ADDITIONAL,
+      },
+      { type: RecommendType.ARCHIVED },
+    );
+
+    const created: RecommendEntity[] = [];
+
+    for (const item of candidates) {
+      // candidates는 이미 카테고리 매칭까지 검증됐으므로 saveRecommendation은 항상 성공한다.
+      const recommend = await this.saveRecommendation(
+        diary,
+        item,
+        ownedCategories,
+        RecommendType.ADDITIONAL,
+      );
+
+      if (recommend) {
+        created.push(recommend);
+      }
+    }
+
+    return new RecommendListDTO(created);
   }
 }
