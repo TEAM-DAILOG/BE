@@ -108,7 +108,8 @@ export class StatsService {
     userId: number,
   ): Promise<RecommendDTO[]> {
     try {
-      const list = await this.recommendService.getTodayRecommendations(userId);
+      const list =
+        await this.recommendService.getTodayRecommendationsForStats(userId);
 
       return list.recommendedSchedules;
     } catch (error) {
