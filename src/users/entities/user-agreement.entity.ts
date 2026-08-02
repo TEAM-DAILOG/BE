@@ -68,5 +68,4 @@ export class UserAgreementEntity extends BaseModel {
     comment: '철회일',
   })
   revokedAt: Date | null;
-
 }
