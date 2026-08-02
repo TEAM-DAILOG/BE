@@ -82,3 +82,42 @@ export function UpdateMyProfileSwagger() {
     ApiResponse({ status: 500, description: '서버 내부 오류' }),
   );
 }
+
+// AI 일기 요약 ON/OFF
+export function UpdateAiSummarySwagger() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'AI 일기 요약 ON/OFF',
+      description: 'AI 일기 요약 기능을 켜거나 끈다.',
+    }),
+    ApiBody({
+      schema: {
+        type: 'object',
+        required: ['isAiSummary'],
+        properties: {
+          isAiSummary: {
+            type: 'boolean',
+            description: 'AI 일기 요약 여부',
+            example: true,
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 200,
+      description: 'AI 일기 요약 설정 변경 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: 'AI 일기 요약 설정 변경 성공',
+          data: {
+            isAiSummary: true,
+          },
+        },
+      },
+    }),
+    ApiResponse({ status: 401, description: '토큰이 없거나 유효하지 않음' }),
+    ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' }),
+    ApiResponse({ status: 500, description: '서버 내부 오류' }),
+  );
+}

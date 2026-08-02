@@ -8,8 +8,12 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { UserService } from './user.service';
-import { UpdateUserDto } from './users.dto';
-import { GetMyProfileSwagger, UpdateMyProfileSwagger } from './users.swagger';
+import { UpdateAiSummaryDto, UpdateUserDto } from './users.dto';
+import {
+  GetMyProfileSwagger,
+  UpdateAiSummarySwagger,
+  UpdateMyProfileSwagger,
+} from './users.swagger';
 import { AccessTokenAuth, CurrentUserId } from '../auth/auth.decorator';
 import { S3Service } from '../global/s3/s3.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -60,5 +64,20 @@ export class UsersController {
     }
     const data = await this.userService.updateUserEntity(userId, updateUserDto);
     return { message: '사용자 정보 수정 성공', data };
+  }
+
+  // 사용자 일기 요약 여부
+  @UpdateAiSummarySwagger()
+  @AccessTokenAuth()
+  @Patch('/ai-summary')
+  async updateAiSummary(
+    @Body() updateAiSummaryDto: UpdateAiSummaryDto,
+    @CurrentUserId() userId: number,
+  ) {
+    const data = await this.userService.updateAiSummary(
+      userId,
+      updateAiSummaryDto,
+    );
+    return { message: 'AI 일기 요약 설정 변경 성공', data };
   }
 }
