@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   Patch,
   Post,
@@ -37,6 +38,7 @@ import {
   SignupSwagger,
   VerifyPasswordResetEmailSwagger,
   VerifySignupEmailSwagger,
+  WithdrawSwagger,
 } from './auth.swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { S3Service } from '../global/s3/s3.service';
@@ -109,6 +111,14 @@ export class AuthController {
   @HttpCode(200)
   logout(@CurrentUserId() userId: number, @Body() dto: LogoutDto) {
     return this.authService.logout(userId, dto);
+  }
+
+  @WithdrawSwagger()
+  @Delete('withdraw')
+  @AccessTokenAuth()
+  @HttpCode(200)
+  withdraw(@CurrentUserId() userId: number) {
+    return this.authService.withdraw(userId);
   }
 
   @ChangePasswordSwagger()

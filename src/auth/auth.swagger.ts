@@ -365,6 +365,41 @@ export function LogoutSwagger() {
   );
 }
 
+export function WithdrawSwagger() {
+  return applyDecorators(
+    ApiOperation({
+      summary: '통합 회원탈퇴',
+      description:
+        '현재 로그인한 사용자를 탈퇴 처리합니다. 탈퇴는 soft delete 방식으로 처리하며, 요청 body는 사용하지 않습니다.',
+    }),
+    ApiResponse({
+      status: 200,
+      description: '회원탈퇴 성공',
+      schema: {
+        example: {
+          resultType: 'SUCCESS',
+          message: '회원탈퇴에 성공했습니다.',
+          data: null,
+        },
+      },
+    }),
+    ApiResponse({
+      status: 401,
+      description: '토큰이 없거나 유효하지 않음',
+      schema: {
+        example: {
+          resultType: 'FAIL',
+          code: 401,
+          errorCode: 'UNAUTHORIZED',
+          reason: '인증에 실패했습니다',
+          data: null,
+        },
+      },
+    }),
+    ApiResponse({ status: 500, description: '서버 내부 오류' }),
+  );
+}
+
 export function SendPasswordResetEmailVerificationSwagger() {
   return applyDecorators(
     ApiOperation({ summary: '자체 비밀번호 찾기 인증번호 전송' }),

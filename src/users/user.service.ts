@@ -70,6 +70,30 @@ export class UserService {
     });
   }
 
+  async findActiveById(
+    userId: number,
+    manager?: EntityManager,
+  ): Promise<UserEntity | null> {
+    const userRepository =
+      manager?.getRepository(UserEntity) ?? this.userRepository;
+
+    return userRepository.findOne({
+      where: { userId },
+    });
+  }
+
+  async findActiveByIdWithLock(
+    userId: number,
+    manager: EntityManager,
+  ): Promise<UserEntity | null> {
+    const userRepository = manager.getRepository(UserEntity);
+
+    return userRepository.findOne({
+      where: { userId },
+      lock: { mode: 'pessimistic_write' },
+    });
+  }
+
   async findActiveLocalByEmail(
     email: string,
     manager?: EntityManager,
@@ -184,14 +208,19 @@ export class UserService {
     return userAgreementRepository.save(agreements);
   }
 
-  async createRefreshToken({
-    user,
-    tokenHash,
-    deviceId = null,
-    deviceType = null,
-    expiresAt,
-  }: CreateRefreshTokenParams): Promise<RefreshTokenEntity> {
-    const refreshToken = this.refreshTokenRepository.create({
+  async createRefreshToken(
+    {
+      user,
+      tokenHash,
+      deviceId = null,
+      deviceType = null,
+      expiresAt,
+    }: CreateRefreshTokenParams,
+    manager?: EntityManager,
+  ): Promise<RefreshTokenEntity> {
+    const refreshTokenRepository =
+      manager?.getRepository(RefreshTokenEntity) ?? this.refreshTokenRepository;
+    const refreshToken = refreshTokenRepository.create({
       user,
       tokenHash,
       deviceId,
@@ -200,7 +229,7 @@ export class UserService {
       revokedAt: null,
     });
 
-    return this.refreshTokenRepository.save(refreshToken);
+    return refreshTokenRepository.save(refreshToken);
   }
 
   async findRefreshTokenByHash(
@@ -219,6 +248,11 @@ export class UserService {
     refreshToken.revokedAt = revokedAt;
 
     return this.refreshTokenRepository.save(refreshToken);
+  }
+
+  async softDeleteUser(userId: number, manager: EntityManager): Promise<void> {
+    const userRepository = manager.getRepository(UserEntity);
+    await userRepository.softDelete(userId);
   }
 
   private createAgreement({
