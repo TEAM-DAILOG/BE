@@ -14,7 +14,12 @@ import {
   UserAgreementEntity,
 } from './entities/user-agreement.entity';
 import { UserEntity } from './entities/user.entity';
-import { UpdateUserDto, UserResponseDto } from './users.dto';
+import {
+  AiSummaryResponseDto,
+  UpdateAiSummaryDto,
+  UpdateUserDto,
+  UserResponseDto,
+} from './users.dto';
 
 const CURRENT_AGREEMENT_VERSION = '1.0';
 const POSTGRES_UNIQUE_VIOLATION_CODE = '23505';
@@ -278,5 +283,21 @@ export class UserService {
         throw new BadRequestException('이미 사용 중인 이메일입니다.');
       throw error;
     }
+  }
+
+  // 사용자 AI 일기 요약 설정 변경
+  async updateAiSummary(
+    userId: number,
+    updateAiSummaryDto: UpdateAiSummaryDto,
+  ): Promise<AiSummaryResponseDto> {
+    const foundUser = await this.userRepository.findOne({
+      where: { userId },
+    });
+    if (!foundUser) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+
+    Object.assign(foundUser, updateAiSummaryDto);
+    const saved = await this.userRepository.save(foundUser);
+    const { isAiSummary } = saved;
+    return { isAiSummary };
   }
 }
