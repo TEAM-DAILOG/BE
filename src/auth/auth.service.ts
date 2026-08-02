@@ -391,6 +391,30 @@ export class AuthService {
     };
   }
 
+  async withdraw(userId: number) {
+    const user = await this.userService.findActiveById(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('인증에 실패했습니다');
+    }
+
+    const withdrawnAt = new Date();
+
+    await this.dataSource.transaction(async (manager) => {
+      await this.userService.revokeAllRefreshTokens(
+        user.userId,
+        withdrawnAt,
+        manager,
+      );
+      await this.userService.softDeleteUser(user.userId, manager);
+    });
+
+    return {
+      message: '회원탈퇴에 성공했습니다.',
+      data: null,
+    };
+  }
+
   private async validateSignupEmail(email: string): Promise<void> {
     if (!this.isValidEmail(email)) {
       throw new BadRequestException('이메일 형식이 올바르지 않습니다');
