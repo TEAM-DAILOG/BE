@@ -290,14 +290,11 @@ export class UserService {
     userId: number,
     updateAiSummaryDto: UpdateAiSummaryDto,
   ): Promise<AiSummaryResponseDto> {
-    const foundUser = await this.userRepository.findOne({
-      where: { userId },
+    const result = await this.userRepository.update(userId, {
+      isAiSummary: updateAiSummaryDto.isAiSummary,
     });
-    if (!foundUser) throw new NotFoundException('사용자를 찾을 수 없습니다.');
-
-    Object.assign(foundUser, updateAiSummaryDto);
-    const saved = await this.userRepository.save(foundUser);
-    const { isAiSummary } = saved;
-    return { isAiSummary };
+    if (!result.affected)
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    return { isAiSummary: updateAiSummaryDto.isAiSummary };
   }
 }
