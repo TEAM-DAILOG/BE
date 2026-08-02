@@ -67,5 +67,4 @@ export class RefreshTokenEntity extends BaseModel {
     comment: '폐기일',
   })
   revokedAt: Date | null;
-
 }
