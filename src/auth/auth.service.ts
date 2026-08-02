@@ -307,16 +307,37 @@ export class AuthService {
       throw new UnauthorizedException('인증에 실패했습니다');
     }
 
-    const accessToken = await this.signAccessToken(user);
-    const refreshToken = await this.signRefreshToken(user);
+    const { accessToken, refreshToken, tokenUser } =
+      await this.dataSource.transaction(async (manager) => {
+        const lockedUser = await this.userService.findActiveByIdWithLock(
+          user.userId,
+          manager,
+        );
 
-    await this.userService.createRefreshToken({
-      user,
-      tokenHash: this.hashToken(refreshToken),
-      deviceId: this.normalizeOptionalString(loginDto.deviceId),
-      deviceType: loginDto.deviceType ?? null,
-      expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRES_IN_MS),
-    });
+        if (
+          !lockedUser ||
+          typeof lockedUser.password !== 'string' ||
+          lockedUser.password.length === 0
+        ) {
+          throw new UnauthorizedException('인증에 실패했습니다');
+        }
+
+        const accessToken = await this.signAccessToken(lockedUser);
+        const refreshToken = await this.signRefreshToken(lockedUser);
+
+        await this.userService.createRefreshToken(
+          {
+            user: lockedUser,
+            tokenHash: this.hashToken(refreshToken),
+            deviceId: this.normalizeOptionalString(loginDto.deviceId),
+            deviceType: loginDto.deviceType ?? null,
+            expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRES_IN_MS),
+          },
+          manager,
+        );
+
+        return { accessToken, refreshToken, tokenUser: lockedUser };
+      });
 
     return {
       message: '로그인에 성공했습니다.',
@@ -324,10 +345,10 @@ export class AuthService {
         accessToken,
         refreshToken,
         user: {
-          userId: user.userId,
-          email: user.email,
-          name: user.name,
-          profileImageUrl: user.profileImageUrl,
+          userId: tokenUser.userId,
+          email: tokenUser.email,
+          name: tokenUser.name,
+          profileImageUrl: tokenUser.profileImageUrl,
         },
       },
     };
@@ -387,6 +408,33 @@ export class AuthService {
 
     return {
       message: '로그아웃에 성공했습니다.',
+      data: null,
+    };
+  }
+
+  async withdraw(userId: number) {
+    const withdrawnAt = new Date();
+
+    await this.dataSource.transaction(async (manager) => {
+      const user = await this.userService.findActiveByIdWithLock(
+        userId,
+        manager,
+      );
+
+      if (!user) {
+        throw new UnauthorizedException('인증에 실패했습니다');
+      }
+
+      await this.userService.revokeAllRefreshTokens(
+        user.userId,
+        withdrawnAt,
+        manager,
+      );
+      await this.userService.softDeleteUser(user.userId, manager);
+    });
+
+    return {
+      message: '회원탈퇴에 성공했습니다.',
       data: null,
     };
   }
