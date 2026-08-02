@@ -3,11 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UnauthorizedException } from '../global/error/custom.exception';
+import { UserService } from '../users/user.service';
 import { AccessTokenPayload, AuthenticatedUser } from './auth.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(configService: ConfigService) {
+  constructor(
+    configService: ConfigService,
+    private readonly userService: UserService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -15,8 +19,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: AccessTokenPayload): AuthenticatedUser {
+  async validate(payload: AccessTokenPayload): Promise<AuthenticatedUser> {
     if (!Number.isInteger(payload.sub) || payload.sub < 1) {
+      throw new UnauthorizedException('인증에 실패했습니다');
+    }
+
+    const user = await this.userService.findActiveById(payload.sub);
+
+    if (!user) {
       throw new UnauthorizedException('인증에 실패했습니다');
     }
 
