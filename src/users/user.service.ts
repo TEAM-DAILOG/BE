@@ -70,6 +70,18 @@ export class UserService {
     });
   }
 
+  async findActiveById(
+    userId: number,
+    manager?: EntityManager,
+  ): Promise<UserEntity | null> {
+    const userRepository =
+      manager?.getRepository(UserEntity) ?? this.userRepository;
+
+    return userRepository.findOne({
+      where: { userId },
+    });
+  }
+
   async findActiveLocalByEmail(
     email: string,
     manager?: EntityManager,
@@ -219,6 +231,11 @@ export class UserService {
     refreshToken.revokedAt = revokedAt;
 
     return this.refreshTokenRepository.save(refreshToken);
+  }
+
+  async softDeleteUser(userId: number, manager: EntityManager): Promise<void> {
+    const userRepository = manager.getRepository(UserEntity);
+    await userRepository.softDelete(userId);
   }
 
   private createAgreement({
