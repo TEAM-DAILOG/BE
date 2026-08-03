@@ -19,6 +19,22 @@ import {
 import { RecommendDTO } from '../ai/dto/ai-recommend.dto';
 import { toIsoDateTime } from '../global/date.util';
 
+// KST 자정(=UTC 15시)을 하루의 경계로 고정한다. 서버 프로세스 TZ와 무관하게 항상 UTC 기준으로 계산.
+// ai-question.service.ts의 todayDateString()과 동일한 로직 — "지난달" 계산에서 "이번 달"을
+// 오늘의 질문과 같은 기준으로 판단하기 위해 그대로 가져옴.
+const KST_MIDNIGHT_UTC_HOUR = 15;
+
+function getKstAdjustedDate(): Date {
+  const now = new Date();
+  const rolledOver = new Date(now.getTime());
+
+  if (now.getUTCHours() >= KST_MIDNIGHT_UTC_HOUR) {
+    rolledOver.setUTCDate(rolledOver.getUTCDate() + 1);
+  }
+
+  return rolledOver;
+}
+
 // year/month를 안 넘기면 이번 달(UTC) 기준으로 범위를 계산한다
 function getMonthRange(
   year?: number,
@@ -121,8 +137,9 @@ export class StatsService {
     }
   }
 
+  // "이번 달"을 오늘의 질문과 동일하게 KST 자정(=UTC 15시) 경계로 판단한 뒤, 하나 전 달을 계산한다.
   private getLastMonth(): { year: number; month: number } {
-    const now = new Date();
+    const now = getKstAdjustedDate();
     const lastMonthDate = new Date(
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1),
     );
