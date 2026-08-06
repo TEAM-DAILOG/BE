@@ -1,22 +1,12 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseIntPipe,
-  Post,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { QuestionService } from './services/ai-question.service';
 import { AnswerService } from './services/ai-answer.service';
 import { RecommendService } from './services/ai-recommend.service';
-import { LinkDiaryQuestionRequestDTO } from './dto/ai-diary-question.dto';
 import { AccessTokenAuth, CurrentUserId } from '../auth/auth.decorator';
 import {
   FindTodayQuestionSwagger,
-  RegenerateTodayQuestionSwagger,
-  LinkDiaryQuestionSwagger,
   FindDiaryQuestionSwagger,
   CreateAnswerSwagger,
   FindAnswerSwagger,
@@ -45,28 +35,6 @@ export class AiController {
     const data = await this.questionService.getTodayQuestion();
 
     return { message: '오늘의 질문 조회 성공', data };
-  }
-
-  /**
-   * 오늘의 질문 재생성 (테스트용)
-   */
-  @RegenerateTodayQuestionSwagger()
-  @Post('questions/today/regenerate')
-  async regenerateTodayQuestion() {
-    const data = await this.questionService.regenerateTodayQuestion();
-
-    return { message: '오늘의 질문 재생성 성공', data };
-  }
-
-  /**
-   * 질문-일기 연결 (테스트용)
-   */
-  @LinkDiaryQuestionSwagger()
-  @Post('questions/link')
-  async linkDiaryQuestion(@Body() dto: LinkDiaryQuestionRequestDTO) {
-    await this.questionService.linkDiaryQuestion(dto.questionId, dto.diaryId);
-
-    return { message: '질문-일기 연결 성공' };
   }
 
   /**

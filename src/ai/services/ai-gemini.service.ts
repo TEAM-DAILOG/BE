@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI, Type } from '@google/genai';
+import { InternalServerException } from '../../global/error/custom.exception';
 
 // ponytail: '-latest' 별칭 사용 — 특정 버전 고정 시 이번처럼 구모델 폐기로 깨질 수 있음
 const MODEL = 'gemini-flash-lite-latest';
@@ -26,6 +27,34 @@ const INITIAL_RECOMMENDATION_RESPONSE_SCHEMA = {
   type: Type.ARRAY,
   items: RECOMMENDATION_ITEM_SCHEMA,
 };
+
+// Gemini가 빈 응답을 줄 수 있어(네트워크/세이프티 필터 등), 그대로 쓰면
+// TypeError로 흘러가던 걸 원인이 드러나는 커스텀 예외로 바꿔준다.
+function requireAiText(text: string | undefined): string {
+  if (!text) {
+    throw new InternalServerException(
+      'AI가 빈 응답을 반환했습니다.',
+      'AI_EMPTY_RESPONSE',
+    );
+  }
+
+  return text;
+}
+
+// responseSchema를 지정해도 Gemini가 깨진 JSON을 줄 수 있어, 파싱 실패를 그대로
+// SyntaxError로 흘려보내지 않고 원인이 드러나는 커스텀 예외로 바꿔준다.
+function parseAiJson<T>(text: string | undefined): T {
+  const raw = requireAiText(text);
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    throw new InternalServerException(
+      'AI 응답을 파싱할 수 없습니다.',
+      'AI_RESPONSE_PARSE_ERROR',
+    );
+  }
+}
 
 @Injectable()
 export class GeminiService {
@@ -61,7 +90,7 @@ export class GeminiService {
       contents: this.questionPrompt,
     });
 
-    return response.text!.trim();
+    return requireAiText(response.text).trim();
   }
 
   async generateAnswer(diaryContent: string): Promise<string> {
@@ -70,7 +99,7 @@ export class GeminiService {
       contents: `${this.answerPrompt}\n\n일기 내용:\n${diaryContent}`,
     });
 
-    return response.text!.trim();
+    return requireAiText(response.text).trim();
   }
 
   async generateRecommendation(
@@ -87,7 +116,7 @@ export class GeminiService {
       },
     });
 
-    return JSON.parse(response.text!) as RecommendationItem;
+    return parseAiJson<RecommendationItem>(response.text);
   }
 
   // 오늘 첫 호출 전용: 기존 추천 목록과 비교할 필요가 없어 맥락을 분리한 프롬프트로,
@@ -105,7 +134,7 @@ export class GeminiService {
       },
     });
 
-    return JSON.parse(response.text!) as RecommendationItem[];
+    return parseAiJson<RecommendationItem[]>(response.text);
   }
 
   // 통계에서 "다른 일정 추천받기" 호출 전용: 지금까지 나온(모든 타입 통틀어) 제목과
@@ -124,6 +153,6 @@ export class GeminiService {
       },
     });
 
-    return JSON.parse(response.text!) as RecommendationItem[];
+    return parseAiJson<RecommendationItem[]>(response.text);
   }
 }
