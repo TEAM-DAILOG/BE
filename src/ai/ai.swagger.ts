@@ -1,5 +1,5 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 
 // 오늘의 질문 조회
 export function FindTodayQuestionSwagger() {
@@ -24,36 +24,34 @@ export function FindTodayQuestionSwagger() {
     }),
     ApiResponse({
       status: 500,
-      description: '서버 내부 오류',
-    }),
-  );
-}
-
-// 오늘의 질문 재생성 (테스트용)
-export function RegenerateTodayQuestionSwagger() {
-  return applyDecorators(
-    ApiOperation({
-      summary: '오늘의 질문 재생성 (테스트용)',
-      description: '오늘의 질문을 재생성합니다. 만들어진 질문을 덮어쓰기합니다',
-    }),
-    ApiResponse({
-      status: 200,
-      description: '오늘의 질문 재생성 성공',
-      schema: {
-        example: {
-          resultType: 'SUCCESS',
-          message: '오늘의 질문 재생성 성공',
-          data: {
-            questionId: 1,
-            content: '오늘 나를 웃게 만든 일이 있었나요?',
-            targetDate: '2026-07-19T00:00:00Z',
+      description:
+        '서버 내부 오류, 또는 AI가 빈 응답을 반환함(AI_EMPTY_RESPONSE)',
+      content: {
+        'application/json': {
+          examples: {
+            internalError: {
+              summary: '서버 내부 오류',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'INTERNAL_SERVER_ERROR',
+                reason: '서버 내부 오류가 발생했습니다',
+                data: null,
+              },
+            },
+            aiEmptyResponse: {
+              summary: 'AI가 빈 응답을 반환함',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'AI_EMPTY_RESPONSE',
+                reason: 'AI가 빈 응답을 반환했습니다.',
+                data: null,
+              },
+            },
           },
         },
       },
-    }),
-    ApiResponse({
-      status: 500,
-      description: '서버 내부 오류',
     }),
   );
 }
@@ -94,7 +92,34 @@ export function CreateAnswerSwagger() {
     }),
     ApiResponse({
       status: 500,
-      description: '서버 내부 오류',
+      description:
+        '서버 내부 오류, 또는 AI가 빈 응답을 반환함(AI_EMPTY_RESPONSE)',
+      content: {
+        'application/json': {
+          examples: {
+            internalError: {
+              summary: '서버 내부 오류',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'INTERNAL_SERVER_ERROR',
+                reason: '서버 내부 오류가 발생했습니다',
+                data: null,
+              },
+            },
+            aiEmptyResponse: {
+              summary: 'AI가 빈 응답을 반환함',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'AI_EMPTY_RESPONSE',
+                reason: 'AI가 빈 응답을 반환했습니다.',
+                data: null,
+              },
+            },
+          },
+        },
+      },
     }),
   );
 }
@@ -128,46 +153,6 @@ export function FindAnswerSwagger() {
     ApiResponse({
       status: 404,
       description: '존재하지 않는 일기이거나 아직 생성된 답변이 없음',
-    }),
-    ApiResponse({
-      status: 500,
-      description: '서버 내부 오류',
-    }),
-  );
-}
-
-// 질문-일기 연결 (테스트용)
-export function LinkDiaryQuestionSwagger() {
-  return applyDecorators(
-    ApiOperation({
-      summary: '질문-일기 연결 (테스트용)',
-      description:
-        'questionId와 diaryId로 질문-일기 매핑을 생성/갱신합니다. diary.service.ts에서 정식 연동되기 전까지 쓰는 임시 테스트용 엔드포인트입니다.',
-    }),
-    ApiBody({
-      schema: {
-        type: 'object',
-        required: ['questionId', 'diaryId'],
-        properties: {
-          questionId: { type: 'number', example: 1 },
-          diaryId: { type: 'number', example: 1 },
-        },
-      },
-    }),
-    ApiResponse({
-      status: 201,
-      description: '질문-일기 연결 성공',
-      schema: {
-        example: {
-          resultType: 'SUCCESS',
-          message: '질문-일기 연결 성공',
-          data: null,
-        },
-      },
-    }),
-    ApiResponse({
-      status: 404,
-      description: '존재하지 않는 질문 또는 일기',
     }),
     ApiResponse({
       status: 500,
@@ -307,7 +292,44 @@ export function CreateRecommendationsSwagger() {
     }),
     ApiResponse({
       status: 500,
-      description: '서버 내부 오류',
+      description:
+        '서버 내부 오류, 또는 AI 응답이 비어있거나(AI_EMPTY_RESPONSE) 파싱할 수 없음(AI_RESPONSE_PARSE_ERROR)',
+      content: {
+        'application/json': {
+          examples: {
+            internalError: {
+              summary: '서버 내부 오류',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'INTERNAL_SERVER_ERROR',
+                reason: '서버 내부 오류가 발생했습니다',
+                data: null,
+              },
+            },
+            aiEmptyResponse: {
+              summary: 'AI가 빈 응답을 반환함',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'AI_EMPTY_RESPONSE',
+                reason: 'AI가 빈 응답을 반환했습니다.',
+                data: null,
+              },
+            },
+            aiResponseParseError: {
+              summary: 'AI 응답을 파싱할 수 없음',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'AI_RESPONSE_PARSE_ERROR',
+                reason: 'AI 응답을 파싱할 수 없습니다.',
+                data: null,
+              },
+            },
+          },
+        },
+      },
     }),
   );
 }
@@ -379,7 +401,44 @@ export function AddRecommendationSwagger() {
     }),
     ApiResponse({
       status: 500,
-      description: '서버 내부 오류',
+      description:
+        '서버 내부 오류, 또는 AI 응답이 비어있거나(AI_EMPTY_RESPONSE) 파싱할 수 없음(AI_RESPONSE_PARSE_ERROR)',
+      content: {
+        'application/json': {
+          examples: {
+            internalError: {
+              summary: '서버 내부 오류',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'INTERNAL_SERVER_ERROR',
+                reason: '서버 내부 오류가 발생했습니다',
+                data: null,
+              },
+            },
+            aiEmptyResponse: {
+              summary: 'AI가 빈 응답을 반환함',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'AI_EMPTY_RESPONSE',
+                reason: 'AI가 빈 응답을 반환했습니다.',
+                data: null,
+              },
+            },
+            aiResponseParseError: {
+              summary: 'AI 응답을 파싱할 수 없음',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'AI_RESPONSE_PARSE_ERROR',
+                reason: 'AI 응답을 파싱할 수 없습니다.',
+                data: null,
+              },
+            },
+          },
+        },
+      },
     }),
   );
 }
@@ -474,7 +533,44 @@ export function RegenerateRecommendationsSwagger() {
     }),
     ApiResponse({
       status: 500,
-      description: '서버 내부 오류',
+      description:
+        '서버 내부 오류, 또는 AI 응답이 비어있거나(AI_EMPTY_RESPONSE) 파싱할 수 없음(AI_RESPONSE_PARSE_ERROR)',
+      content: {
+        'application/json': {
+          examples: {
+            internalError: {
+              summary: '서버 내부 오류',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'INTERNAL_SERVER_ERROR',
+                reason: '서버 내부 오류가 발생했습니다',
+                data: null,
+              },
+            },
+            aiEmptyResponse: {
+              summary: 'AI가 빈 응답을 반환함',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'AI_EMPTY_RESPONSE',
+                reason: 'AI가 빈 응답을 반환했습니다.',
+                data: null,
+              },
+            },
+            aiResponseParseError: {
+              summary: 'AI 응답을 파싱할 수 없음',
+              value: {
+                resultType: 'FAIL',
+                code: 500,
+                errorCode: 'AI_RESPONSE_PARSE_ERROR',
+                reason: 'AI 응답을 파싱할 수 없습니다.',
+                data: null,
+              },
+            },
+          },
+        },
+      },
     }),
   );
 }

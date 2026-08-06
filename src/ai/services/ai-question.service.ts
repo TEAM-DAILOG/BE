@@ -121,26 +121,7 @@ export class QuestionService implements OnApplicationBootstrap {
     }
   }
 
-  // 테스트용: 오늘의 질문을 강제로 재생성한다
-  async regenerateTodayQuestion(): Promise<AIQuestionDTO> {
-    const targetDate = todayDateString();
-    const content = await this.geminiService.generateTodayQuestion();
-
-    const existing = await this.questionRepository.findOne({
-      where: { targetDate },
-    });
-
-    const question = await this.questionRepository.save(
-      existing
-        ? { ...existing, content }
-        : this.questionRepository.create({ content, targetDate }),
-    );
-
-    return new AIQuestionDTO(question);
-  }
-
-  // TODO: 지금은 테스트 엔드포인트에서만 호출됨 — diary.service.ts의 createDiary()에서
-  // 질문일기(questionId 있는 경우) 생성 시 이 메소드를 호출해서 실제 연결이 이뤄지도록 해야 함
+  // diary.service.ts의 createDiary()에서 질문일기(questionId 있는 경우) 생성 시 호출된다
   async linkDiaryQuestion(questionId: number, diaryId: number): Promise<void> {
     const question = await this.questionRepository.findOne({
       where: { questionId },

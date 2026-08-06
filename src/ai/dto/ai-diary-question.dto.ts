@@ -1,18 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty } from 'class-validator';
 import { DiaryQuestionEntity } from '../entities/ai-diary-question.entity';
-
-export class LinkDiaryQuestionRequestDTO {
-  @ApiProperty({ example: 1, description: '질문 ID' })
-  @IsInt()
-  @IsNotEmpty()
-  questionId: number;
-
-  @ApiProperty({ example: 1, description: '일기 ID' })
-  @IsInt()
-  @IsNotEmpty()
-  diaryId: number;
-}
 
 export class DiaryQuestionDTO {
   @ApiProperty({ example: 1, description: '일기-질문 매핑 아이디' })
