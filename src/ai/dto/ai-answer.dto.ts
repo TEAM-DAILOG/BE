@@ -16,19 +16,12 @@ export class AIAnswerCreateRequestDTO {
 }
 
 export class AIanswercreateResponseDTO {
-  @ApiProperty({ example: 'AI 답장의 id입니다' })
   answerId: number;
 
-  @ApiProperty({ example: '일기의 Id 입니다' })
   diaryId: number;
 
-  @ApiProperty({ example: 'AI 답장의 내용입니다' })
   answer: string;
 
-  @ApiProperty({
-    description: 'AI 답장의 생성일자입니다',
-    example: '2026-07-19T09:00:00Z',
-  })
   createdAt: string;
 
   constructor(answer: AnswerEntity) {
@@ -40,10 +33,8 @@ export class AIanswercreateResponseDTO {
 }
 
 export class AIAnswerDTO {
-  @ApiProperty({ example: 'AI 답장의 id입니다' })
   answerId: number;
 
-  @ApiProperty({ example: 'AI 답장의 내용입니다' })
   answer: string;
 
   constructor(answer: AnswerEntity) {
