@@ -201,7 +201,8 @@ export class DeleteScheduleScopeQueryDto {
   @ApiProperty({
     enum: SCHEDULE_SCOPES,
     example: 'SINGLE',
-    description: '삭제 범위',
+    description:
+      '삭제 범위입니다. PERIOD 타입의 기간 반복 일정은 ALL만 사용할 수 있습니다.',
   })
   @IsIn(SCHEDULE_SCOPES)
   scope: (typeof SCHEDULE_SCOPES)[number];
