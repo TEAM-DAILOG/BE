@@ -376,8 +376,17 @@ export class ScheduleService {
         scheduleId,
       );
 
+      if (
+        scope === 'SINGLE' &&
+        schedule.repeatGroup?.repeatType === RepeatType.PERIOD
+      ) {
+        throw new CustomBadRequestException(
+          '기간 반복 일정은 전체 삭제만 가능합니다.',
+        );
+      }
+
       if (scope === 'ALL' && schedule.groupId !== null) {
-        await scheduleRepository
+        const groupSchedules = await scheduleRepository
           .createQueryBuilder('schedule')
           .setLock('pessimistic_write')
           .where('schedule.groupId = :groupId', {
@@ -389,10 +398,16 @@ export class ScheduleService {
           .orderBy('schedule.scheduleId', 'ASC')
           .getMany();
 
-        await scheduleRepository.delete({
-          groupId: schedule.groupId,
-          userId,
-        });
+        if (schedule.repeatGroup?.repeatType === RepeatType.PERIOD) {
+          await scheduleRepository.delete(
+            groupSchedules.map(({ scheduleId }) => scheduleId),
+          );
+        } else {
+          await scheduleRepository.delete({
+            groupId: schedule.groupId,
+            userId,
+          });
+        }
         await repeatGroupRepository.delete({
           groupId: schedule.groupId,
           userId,
@@ -466,16 +481,20 @@ export class ScheduleService {
       );
     }
 
+    let repeatGroup: ScheduleRepeatGroupEntity | null = null;
+
     if (schedule.groupId !== null) {
-      await manager.getRepository(ScheduleRepeatGroupEntity).findOne({
-        where: {
-          groupId: schedule.groupId,
-          userId,
-        },
-        lock: {
-          mode: 'pessimistic_write',
-        },
-      });
+      repeatGroup = await manager
+        .getRepository(ScheduleRepeatGroupEntity)
+        .findOne({
+          where: {
+            groupId: schedule.groupId,
+            userId,
+          },
+          lock: {
+            mode: 'pessimistic_write',
+          },
+        });
     }
 
     const lockedSchedule = await scheduleRepository.findOne({
@@ -498,6 +517,8 @@ export class ScheduleService {
     if (lockedSchedule.groupId !== schedule.groupId) {
       throw new ScheduleLockStateChangedError();
     }
+
+    lockedSchedule.repeatGroup = repeatGroup;
 
     return lockedSchedule;
   }
