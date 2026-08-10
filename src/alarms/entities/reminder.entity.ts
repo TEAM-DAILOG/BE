@@ -24,7 +24,7 @@ export class ReminderEntity extends BaseModel {
   @Column({
     type: 'time',
     nullable: true,
-    default: '18:00:00',
+    default: '09:00:00',
     comment: '알람 시간',
   })
   time: string | null;
