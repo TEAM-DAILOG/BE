@@ -815,7 +815,7 @@ export class ScheduleController {
   @ApiOperation({
     summary: '일정 삭제',
     description:
-      '로그인한 사용자의 일정을 삭제합니다. 반복 일정은 선택한 일정만 삭제하거나 동일한 반복 그룹 전체를 삭제할 수 있습니다.',
+      '로그인한 사용자의 일정을 삭제합니다. 반복 일정은 선택한 일정만 삭제하거나 동일한 반복 그룹 전체를 삭제할 수 있습니다. 단, PERIOD 타입의 기간 반복 일정은 scope=ALL로만 삭제할 수 있습니다.',
   })
   @ApiOkResponse({
     description: '일정 삭제 성공',
@@ -825,12 +825,22 @@ export class ScheduleController {
     ),
   })
   @ApiBadRequestResponse({
-    description: '삭제 scope DTO validation 실패',
-    schema: createErrorResponseSchema(
-      400,
-      'BAD_REQUEST',
-      'scope must be one of the following values: SINGLE, ALL',
-    ),
+    description:
+      '삭제 scope DTO validation 실패 또는 PERIOD 일정의 SINGLE 삭제 요청',
+    schema: {
+      oneOf: [
+        createErrorResponseSchema(
+          400,
+          'BAD_REQUEST',
+          'scope must be one of the following values: SINGLE, ALL',
+        ),
+        createErrorResponseSchema(
+          400,
+          'BAD_REQUEST',
+          '기간 반복 일정은 전체 삭제만 가능합니다.',
+        ),
+      ],
+    },
   })
   @ApiNotFoundResponse({
     description: '일정을 찾을 수 없음',
@@ -848,7 +858,8 @@ export class ScheduleController {
     required: true,
     enum: ['SINGLE', 'ALL'],
     example: 'SINGLE',
-    description: '삭제 범위',
+    description:
+      '삭제 범위입니다. PERIOD 타입의 기간 반복 일정은 ALL만 사용할 수 있습니다.',
   })
   async deleteSchedule(
     @Req() request: AuthenticatedRequest,
