@@ -15,7 +15,7 @@ DAILOG의 백엔드 레포지토리입니다.
 
 ## Team
 
-|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/4424180b-f020-4673-9b1d-d65f4f8e07f0" />| <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/243661be-0fed-4e8e-95a0-98f423ac503e" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/0875ccd0-0da0-4c9f-9c4a-7037108cce61" />| <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/1feaf120-24b0-4601-afca-23ba0524e027" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/4424180b-f020-4673-9b1d-d65f4f8e07f0" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/4424180b-f020-4673-9b1d-d65f4f8e07f0" />|
+|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/4424180b-f020-4673-9b1d-d65f4f8e07f0" />| <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/243661be-0fed-4e8e-95a0-98f423ac503e" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/5bba97dc-2693-4c43-8b5a-60326478c719" />| <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/1feaf120-24b0-4601-afca-23ba0524e027" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/4424180b-f020-4673-9b1d-d65f4f8e07f0" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/4424180b-f020-4673-9b1d-d65f4f8e07f0" />|
 |:-:|:-:|:-:|:-:|:-:|:-:|
 | [우변/양우영](https://github.com/yangwooyoung123) | [신/성태경](https://github.com/sungtaegyeong) | [볼리/김건우](https://github.com/kimkimgungunwoo) | [셔니/박시현](https://github.com/hyuneey2) | [망곰/최승연](https://github.com/seungyeon-choi04) | [린/소예린](https://github.com/soyerin0407) |
 | **Back-End (팀장)** | **Back-End** | **Back-End** | **Back-End** | **Back-End** | **Back-End** |
@@ -23,6 +23,16 @@ DAILOG의 백엔드 레포지토리입니다.
 
 ## ⚙️ 시스템 구성도
 ### 🔧 기술 스택
+| Category | Technology | Description |
+| :--- | :--- | :--- |
+| **Framework** | ![NestJS](https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white) | REST API 서버 구축 및 비즈니스 로직 처리 (TypeORM, JWT 인증, Swagger 문서화) |
+| **App Server** | ![Nginx](https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white) | EC2 리버스 프록시 설정 및 요청 크기 제한 관리 |
+| **Database** | ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white) | TypeORM 기반 데이터 관리 및 마이그레이션 |
+| **Compute** | ![AWS](https://img.shields.io/badge/AWS-%23232F3E.svg?style=for-the-badge&logo=amazon-aws&logoColor=white) | EC2 인스턴스 기반 애플리케이션 호스팅 및 PM2 프로세스 관리 |
+| **Storage** | ![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=flat-square&logo=amazons3&logoColor=white) | 일기·프로필 이미지 업로드 및 객체 URL 관리 |
+| **CI/CD** | ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) | main 브랜치 Push 시 자동 빌드·검증 및 EC2 자동 배포 |
+
+
 ### 🏗 Service Architecture Flow
 ## 📁 시스템 디렉토리 구조
 > NestJS는 기능(도메인) 단위로 모듈을 나눠서 관리합니다. `controllers/`, `services/`, `dtos/` 처럼 역할별로 폴더를 나누는 계층형 구조 대신, 도메인 하나에 필요한 `controller`, `service`, `dto`, `entity`를 같은 폴더 안에 모아두는 도메인 단위 구조를 사용합니다.
@@ -126,13 +136,6 @@ BE
 ├── package.json
 └── README.md
 ```
-## ⚙️ 프로젝트 실행 방법
-### 1️⃣ 의존성 설치
-### 2️⃣ 환경 변수 설정 (.env)
-### 3️⃣ Prisma 마이그레이션
-### 4️⃣ seed 데이터 삽입
-### 5️⃣ 개발 서버 실행
-### 6️⃣ 프로덕션 실행
 ## 📍 Back-End GitHub 협업
  
 ### ▷ 작업 프로세스 요약
@@ -330,9 +333,86 @@ module.exports = {
 | 에러 코드 네이밍 | `<도메인>_<상황>` 형태의 스네이크 케이스 사용 (예: `TASK_NOT_FOUND`, `USER_NICKNAME_DUPLICATED`, `ALARM_NOT_FOUND`) |
 | 신규 에러 유형 | 새로운 에러 유형이 생길 때마다 팀 노션/문서에 업데이트 |
 ## 📝 주요 API 목록
-### 🔐 OAuth Domain
-### 🔐 Diary Domain
-### 🔐 Alarm Domain
-### 🔐 Shcedule Domain
-### 🔐 AI Domain
-### 🔐 Category Domain
+
+### 🔐 Auth Domain
+| 기능명 | Method | Endpoint | 설명 |
+| :--- | :---: | :--- | :--- |
+| 이메일 중복 확인 | POST | `/auth/signup/email/check` | 회원가입 이메일 중복 체크 |
+| 이메일 인증번호 전송 | POST | `/auth/signup/email/verification/send` | 회원가입 이메일 인증번호 전송 |
+| 이메일 인증번호 검증 | POST | `/auth/signup/email/verification/verify` | 회원가입 이메일 인증번호 검증 |
+| 자체 회원가입 | POST | `/auth/signup` | 자체 회원가입 |
+| 자체 로그인 | POST | `/auth/login` | 자체 로그인 |
+| Access Token 재발급 | POST | `/auth/token/reissue` | Refresh Token 기반 Access Token 재발급 |
+| 로그아웃 | POST | `/auth/logout` | 통합 로그아웃 |
+| 회원 탈퇴 | DELETE | `/auth/withdraw` | 회원 탈퇴 |
+| 비밀번호 변경 | PATCH | `/auth/password` | 로그인 상태에서 비밀번호 변경 |
+| 현재 비밀번호 확인 | POST | `/auth/password/check` | 현재 비밀번호 일치 여부 확인 |
+| 비밀번호 찾기 인증번호 전송 | POST | `/auth/password/reset/email/verification/send` | 비밀번호 찾기 인증번호 전송 |
+| 비밀번호 찾기 인증번호 검증 | POST | `/auth/password/reset/email/verification/verify` | 비밀번호 찾기 인증번호 검증 |
+| 비밀번호 재설정 | PATCH | `/auth/password/reset` | 비밀번호 재설정 |
+
+### 👤 User Domain
+| 기능명 | Method | Endpoint | 설명 |
+| :--- | :---: | :--- | :--- |
+| 사용자 정보 조회 | GET | `/users/me` | 로그인 사용자 정보 조회 |
+| 사용자 정보 수정 | PATCH | `/users/me` | 닉네임, 이메일, 프로필 이미지 수정 |
+| AI 일기 요약 ON/OFF | PATCH | `/users/ai-summary` | AI 일기 요약 기능 활성화 여부 변경 |
+
+### 🔔 Alarm Domain
+| 기능명 | Method | Endpoint | 설명 |
+| :--- | :---: | :--- | :--- |
+| 알람 설정 조회 | GET | `/alarms` | 로그인 사용자 알림 설정 조회 |
+| 알람 설정 수정 | PATCH | `/alarms` | 푸시/일기/답장 알림 ON·OFF 수정 |
+| 리마인드 설정 조회 | GET | `/alarms/reminder` | 리마인드 요일·시간 조회 |
+| 리마인드 설정 수정 | PATCH | `/alarms/reminder` | 리마인드 요일·시간 수정 |
+| FCM 토큰 등록 | POST | `/alarms/push-token` | 앱 로그인·실행 시 FCM 토큰 등록 |
+| FCM 토큰 삭제 | DELETE | `/alarms/push-token/:tokenId` | 앱 로그아웃 시 FCM 토큰 삭제 |
+
+### 📅 Schedule Domain
+| 기능명 | Method | Endpoint | 설명 |
+| :--- | :---: | :--- | :--- |
+| 전체 일정 목록 조회 | GET | `/schedules` | 날짜 범위 기반 일정 조회 |
+| 가까운 일정 조회 | GET | `/schedules/upcoming` | 내일~7일 후 미완료 일정 조회 |
+| 일정 등록 | POST | `/schedules` | 단일·반복 일정 생성 |
+| 일정 수정 | PATCH | `/schedules/:scheduleId` | 일정 정보 수정 |
+| 일정 완료 상태 변경 | PATCH | `/schedules/:scheduleId/completion` | 일정 완료·미완료 처리 |
+| 일정 삭제 | DELETE | `/schedules/:scheduleId` | 일정 삭제 |
+
+### 🗂️ Category Domain
+| 기능명 | Method | Endpoint | 설명 |
+| :--- | :---: | :--- | :--- |
+| 카테고리 목록 조회 | GET | `/categories` | 사용자 카테고리 목록 조회 |
+| 카테고리 생성 | POST | `/categories` | 카테고리 생성 |
+| 카테고리 수정 | PATCH | `/categories/:categoryId` | 카테고리 이름·색상 수정 |
+| 카테고리 삭제 | DELETE | `/categories/:categoryId` | 카테고리 삭제 |
+| 카테고리 순서 변경 | PATCH | `/categories/order` | 카테고리 순서 변경 |
+
+### 📔 Diary Domain
+| 기능명 | Method | Endpoint | 설명 |
+| :--- | :---: | :--- | :--- |
+| 일기 목록 조회 | GET | `/diaries` | 사용자 전체 일기 목록 조회 |
+| 일기 상세 조회 | GET | `/diaries/:diaryId` | 일기 상세 조회 |
+| 일기 작성 | POST | `/diaries` | 일기 작성 (이미지 최대 3장) |
+| 일기 수정 | PATCH | `/diaries/:diaryId` | 일기 제목·내용 수정 |
+| 일기 삭제 | DELETE | `/diaries/:diaryId` | 일기 삭제 |
+
+### 📊 Stats Domain
+| 기능명 | Method | Endpoint | 설명 |
+| :--- | :---: | :--- | :--- |
+| 통계 메인 조회 | GET | `/stats` | 오늘·이번 주 일정 통계 조회 |
+| 일정 통계 상세 조회 | GET | `/stats/detail` | 월별 일정 통계 상세 조회 |
+| 미완료 일정 조회 | GET | `/stats/schedules/pending` | 월별 미완료 일정 조회 |
+| 완료 일정 조회 | GET | `/stats/schedules/completed` | 월별 완료 일정 조회 |
+
+### 🤖 AI Domain
+| 기능명 | Method | Endpoint | 설명 |
+| :--- | :---: | :--- | :--- |
+| 오늘의 질문 조회 | GET | `/ai/questions/today` | 오늘의 AI 질문 조회 |
+| AI 답변 생성 | POST | `/ai/answer/:diaryId` | 일기 기반 AI 답변 생성 |
+| AI 답변 조회 | GET | `/ai/answer/:diaryId` | 생성된 AI 답변 조회 |
+| AI 일정 추천 최초 생성 | POST | `/ai/schedules` | 오늘 일기 기반 일정 3개 추천 |
+| AI 일정 추천 추가 생성 | POST | `/ai/schedules/add` | 추천 일정 1개 추가 생성 |
+| AI 일정 추천 재생성 | POST | `/ai/schedules/regenerate` | 통계용 일정 추천 재생성 |
+| AI 일정 추천 조회 | GET | `/ai/schedules` | 오늘 AI 일정 추천 조회 |
+| 일기별 AI 일정 추천 조회 | GET | `/ai/schedules/:diaryId` | 특정 일기의 AI 추천 조회 |
+
