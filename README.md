@@ -15,7 +15,7 @@ DAILOG의 백엔드 레포지토리입니다.
 
 ## Team
 
-|  사진 | 사진  |  사진  | 사진 | 사진 | 사진 |
+| <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/1b5b7116-0126-46b1-924d-93ad25138557" />| 사진  |  사진  | 사진 | 사진 | 사진 |
 |:-:|:-:|:-:|:-:|:-:|:-:|
 | [우변/양우영](https://github.com/yangwooyoung123) | [신/성태경](https://github.com/sungtaegyeong) | [볼리/김건우](https://github.com/kimkimgungunwoo) | [셔니/박시현](https://github.com/hyuneey2) | [망곰/최승연](https://github.com/seungyeon-choi04) | [린/소예린](https://github.com/soyerin0407) |
 | **Back-End (팀장)** | **Back-End** | **Back-End** | **Back-End** | **Back-End** | **Back-End** |
