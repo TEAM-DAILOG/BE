@@ -39,7 +39,8 @@ export class RecommendEntity {
     enum: RecommendType,
     enumName: 'recommend_type_enum',
     default: RecommendType.DIARY,
-    comment: '추천 배치 종류 (일기 고정 / 통계 최신 재생성 / 보관된 예전 재생성)',
+    comment:
+      '추천 배치 종류 (일기 고정 / 통계 최신 재생성 / 보관된 예전 재생성)',
   })
   type: RecommendType;
 

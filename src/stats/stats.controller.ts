@@ -16,9 +16,7 @@ import {
 export class StatsController {
   constructor(private readonly statsService: StatsService) {}
 
-  /**
-   * 통계 메인 조회
-   */
+  // 통계 메인 조회
   @AccessTokenAuth()
   @GetMainStatsSwagger()
   @Get()
@@ -31,9 +29,7 @@ export class StatsController {
     };
   }
 
-  /**
-   * 일정 통계 상세 조회
-   */
+  // 일정 통계 상세 조회
   @AccessTokenAuth()
   @GetScheduleDetailSwagger()
   @Get('detail')
@@ -55,9 +51,7 @@ export class StatsController {
     };
   }
 
-  /**
-   * 미완료 일정 조회
-   */
+  // 미완료 일정 조회
   @AccessTokenAuth()
   @GetPendingStatsSwagger()
   @Get('schedules/pending')
@@ -74,9 +68,7 @@ export class StatsController {
     return { message: '미완료 일정 조회 성공', data };
   }
 
-  /**
-   * 완료된 일정 조회
-   */
+  // 완료된 일정 조회
   @AccessTokenAuth()
   @GetCompletedStatsSwagger()
   @Get('schedules/completed')

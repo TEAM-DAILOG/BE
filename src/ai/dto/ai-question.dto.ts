@@ -3,11 +3,8 @@ import { toIsoDateTime } from '../../global/date.util';
 
 export class AIQuestionDTO {
   questionId: number;
-
   content: string;
-
   targetDate: string;
-
   constructor(question: QuestionEntity) {
     this.questionId = question.questionId;
     this.content = question.content;

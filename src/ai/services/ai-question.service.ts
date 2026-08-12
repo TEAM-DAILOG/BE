@@ -1,4 +1,10 @@
-import { Injectable, Inject, forwardRef, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  forwardRef,
+  Logger,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cron } from '@nestjs/schedule';
