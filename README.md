@@ -34,7 +34,7 @@ DAILOG의 백엔드 레포지토리입니다.
 
 ### 🏗 Service Architecture Flow
 <div align="center">
-<img width="1639" height="621" alt="Group 20" src="https://github.com/user-attachments/assets/cb65a5d3-c56b-40d2-96be-d6889232aaaa" />
+<img width="2459" height="932" alt="Group 27" src="https://github.com/user-attachments/assets/69992cfe-64c0-45ec-8bc2-55d4da5f5af6" />
 </div>
 
 
