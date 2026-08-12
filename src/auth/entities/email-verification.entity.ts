@@ -76,5 +76,4 @@ export class EmailVerificationEntity extends BaseModel {
 
   @Column({ name: 'consumed_at', type: 'timestamp', nullable: true })
   consumedAt: Date | null;
-
 }

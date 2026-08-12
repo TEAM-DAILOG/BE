@@ -4,7 +4,10 @@ import { Between, Repository } from 'typeorm';
 
 import { getTodayUtcRange } from '../../global/date.util';
 
-import { RecommendEntity, RecommendType } from '../entities/ai-recommend.entity';
+import {
+  RecommendEntity,
+  RecommendType,
+} from '../entities/ai-recommend.entity';
 import {
   RecommendCreateResponseDTO,
   RecommendListDTO,
@@ -322,7 +325,9 @@ export class RecommendService {
       .filter(
         (item): item is RecommendationItem & { scheduleTitle: string } =>
           !!item.scheduleTitle &&
-          ownedCategories.some((category) => category.categoryId === item.categoryId),
+          ownedCategories.some(
+            (category) => category.categoryId === item.categoryId,
+          ),
       );
 
     if (candidates.length === 0) {

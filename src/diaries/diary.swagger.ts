@@ -144,6 +144,11 @@ export function UpdateDiarySwagger() {
         properties: {
           title: { type: 'string', example: '수정된 제목' },
           content: { type: 'string', example: '수정된 내용' },
+          images: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['https://s3.amazonaws.com/image1.jpg'],
+          },
         },
       },
     }),

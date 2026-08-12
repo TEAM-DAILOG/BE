@@ -17,13 +17,9 @@ export class AIAnswerCreateRequestDTO {
 
 export class AIanswercreateResponseDTO {
   answerId: number;
-
   diaryId: number;
-
   answer: string;
-
   createdAt: string;
-
   constructor(answer: AnswerEntity) {
     this.answerId = answer.answerId;
     this.diaryId = answer.diary.diaryId;
@@ -34,9 +30,7 @@ export class AIanswercreateResponseDTO {
 
 export class AIAnswerDTO {
   answerId: number;
-
   answer: string;
-
   constructor(answer: AnswerEntity) {
     this.answerId = answer.answerId;
     this.answer = answer.answer;
