@@ -110,7 +110,9 @@ BE
 │   │   ├── schedule.controller.ts
 │   │   ├── schedule.dto.ts
 │   │   ├── schedule.module.ts
-│   │   └── schedule.service.ts
+│   │   ├── schedule.service.spec.ts
+│   │   ├── schedule.service.ts
+│   │   └── schedule.swagger.ts
 │   ├── stats/                  # 통계 기능
 │   │   ├── stats.controller.ts
 │   │   ├── stats.dto.ts
