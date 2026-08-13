@@ -1,11 +1,8 @@
 import { SoftDeleteModel } from '@/src/global/base-model';
 import {
   Column,
-  CreateDateColumn,
-  DeleteDateColumn,
   Entity,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
 export enum CategoryColor {
@@ -55,5 +52,4 @@ export class CategoryEntity extends SoftDeleteModel {
     comment: '카테고리 순서',
   })
   categoryOrder: number;
-
 }

@@ -26,7 +26,7 @@ export class AlarmNotificationService {
   // 리마인드 알람 스케줄러
   async handleDiaryReminder() {
     const now = new Date();
-    const currentDay = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'][
+    const currentDay = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][
       now.getDay()
     ];
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`;
@@ -38,6 +38,7 @@ export class AlarmNotificationService {
 
     for (const reminder of reminders) {
       // 사용자가 현재 요일 및 시간에 포함되어 있는지 확인
+      if (!reminder.userAlarm?.user) continue;
       if (!reminder.days?.includes(currentDay)) continue;
       if (reminder.time != currentTime) continue;
 

@@ -15,7 +15,7 @@ DAILOG의 백엔드 레포지토리입니다.
 
 ## Team
 
-|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/4424180b-f020-4673-9b1d-d65f4f8e07f0" />| <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/243661be-0fed-4e8e-95a0-98f423ac503e" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/5bba97dc-2693-4c43-8b5a-60326478c719" />| <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/1feaf120-24b0-4601-afca-23ba0524e027" />|| |
+|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/4424180b-f020-4673-9b1d-d65f4f8e07f0" />| <img width="135" height="135" alt="image" src="https://github.com/user-attachments/assets/243661be-0fed-4e8e-95a0-98f423ac503e" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/5bba97dc-2693-4c43-8b5a-60326478c719" />| <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/1feaf120-24b0-4601-afca-23ba0524e027" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/6ebe1ccb-cc6a-49c5-8bc9-9678b9214eaa" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/2e4fae85-91dc-4a69-871f-293bec89e40f" />|
 |:-:|:-:|:-:|:-:|:-:|:-:|
 | [우변/양우영](https://github.com/yangwooyoung123) | [신/성태경](https://github.com/sungtaegyeong) | [볼리/김건우](https://github.com/kimkimgungunwoo) | [셔니/박시현](https://github.com/hyuneey2) | [망곰/최승연](https://github.com/seungyeon-choi04) | [린/소예린](https://github.com/soyerin0407) |
 | **Back-End (팀장)** | **Back-End** | **Back-End** | **Back-End** | **Back-End** | **Back-End** |
@@ -32,8 +32,12 @@ DAILOG의 백엔드 레포지토리입니다.
 | **Storage** | ![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=flat-square&logo=amazons3&logoColor=white) | 일기·프로필 이미지 업로드 및 객체 URL 관리 |
 | **CI/CD** | ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) | main 브랜치 Push 시 자동 빌드·검증 및 EC2 자동 배포 |
 
-
 ### 🏗 Service Architecture Flow
+<div align="center">
+<img width="2459" height="932" alt="Group 27" src="https://github.com/user-attachments/assets/69992cfe-64c0-45ec-8bc2-55d4da5f5af6" />
+</div>
+
+
 ## 📁 시스템 디렉토리 구조
 > NestJS는 기능(도메인) 단위로 모듈을 나눠서 관리합니다. `controllers/`, `services/`, `dtos/` 처럼 역할별로 폴더를 나누는 계층형 구조 대신, 도메인 하나에 필요한 `controller`, `service`, `dto`, `entity`를 같은 폴더 안에 모아두는 도메인 단위 구조를 사용합니다.
 ```bash

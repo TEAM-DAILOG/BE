@@ -27,11 +27,8 @@ export class StatsMonthQueryDto {
 
 export class MostFrequentCategoryDTO {
   categoryId: number;
-
   categoryName: string;
-
   categoryColor: CategoryColor;
-
   constructor(category: CategoryEntity) {
     this.categoryId = category.categoryId;
     this.categoryName = category.categoryName;
@@ -41,11 +38,8 @@ export class MostFrequentCategoryDTO {
 
 export class StatsMainDTO {
   lastMonth: number;
-
   lastMonthCompletionRate: number;
-
   recommendedSchedules: RecommendDTO[];
-
   constructor(
     lastMonth: number,
     lastMonthCompletionRate: number,
@@ -60,23 +54,16 @@ export class StatsMainDTO {
 //카테고리 현재 구현
 export class CategoryRankScheduleDTO {
   scheduleId: number;
-
   title: string;
-
   date: string;
 }
 
 export class CategoryRankInfoDTO {
   categoryId: number;
-
   categoryName: string;
-
   count: number;
-
   categoryColor: CategoryColor;
-
   schedules: CategoryRankScheduleDTO[];
-
   constructor(
     category: CategoryEntity,
     count: number,
@@ -92,13 +79,9 @@ export class CategoryRankInfoDTO {
 
 export class ScheduleDetailDTO {
   targetYear: number;
-
   targetMonth: number;
-
   mostFrequentCategory: MostFrequentCategoryDTO | null;
-
   categoryRankInfo: CategoryRankInfoDTO[];
-
   constructor(
     targetYear: number,
     targetMonth: number,
@@ -114,17 +97,11 @@ export class ScheduleDetailDTO {
 
 export class ScheduleStatsDTO {
   scheduleId: number;
-
   title: string;
-
   date: string;
-
   categoryId: number;
-
   categoryName: string;
-
   categoryColor: CategoryColor;
-
   constructor(schedule: Schedule, category: CategoryEntity) {
     this.scheduleId = schedule.scheduleId;
     this.title = schedule.title;
@@ -137,13 +114,9 @@ export class ScheduleStatsDTO {
 
 export class IncompletedScheduleStatsDTO {
   incompletedScheduleCount: number;
-
   completionRate: number;
-
   targetYear: number;
-
   targetMonth: number;
-
   incompletedSchedules: ScheduleStatsDTO[];
 
   constructor(
@@ -163,13 +136,9 @@ export class IncompletedScheduleStatsDTO {
 
 export class CompletedScheduleStatsDTO {
   completedScheduleCount: number;
-
   targetYear: number;
-
   targetMonth: number;
-
   completedSchedules: ScheduleStatsDTO[];
-
   constructor(
     completedScheduleCount: number,
     targetYear: number,

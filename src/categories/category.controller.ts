@@ -32,9 +32,7 @@ import { AccessTokenAuth, CurrentUserId } from '../auth/auth.decorator';
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
-  /**
-   * 카테고리 목록 조회
-   */
+  // 카테고리 목록 조회
   @AccessTokenAuth()
   @FindAllCategorySwagger()
   @Get()
@@ -43,9 +41,7 @@ export class CategoryController {
     return { message: '카테고리 목록 조회 성공', data };
   }
 
-  /**
-   * 카테고리 생성
-   */
+  // 카테고리 생성
   @AccessTokenAuth()
   @CreateCategorySwagger()
   @Post()
@@ -57,11 +53,7 @@ export class CategoryController {
     return { message: '카테고리 생성 성공', data };
   }
 
-
-  
-  /**
-   * 카테고리 순서 변경
-   */
+  // 카테고리 순서 변경
 
   @AccessTokenAuth()
   @ReorderCategorySwagger()
@@ -73,10 +65,9 @@ export class CategoryController {
     const data = await this.categoryService.reorderCategory(userId, dto);
     return { message: '카테고리 순서 변경 성공', data };
   }
-  
-  /**
-   * 카테고리 수정
-   */
+
+  // 카테고리 수정
+
   @AccessTokenAuth()
   @UpdateCategorySwagger()
   @Patch(':categoryId')
@@ -93,9 +84,7 @@ export class CategoryController {
     return { message: '카테고리 수정 성공', data };
   }
 
-  /**
-   * 카테고리 삭제
-   */
+  // 카테고리 삭제
   @AccessTokenAuth()
   @DeleteCategorySwagger()
   @Delete(':categoryId')
@@ -106,5 +95,4 @@ export class CategoryController {
     await this.categoryService.deleteCategory(categoryId, userId);
     return { message: '카테고리 삭제 성공', data: null };
   }
-
 }

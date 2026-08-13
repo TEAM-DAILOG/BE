@@ -9,7 +9,6 @@ import { DiaryService } from './diary.service';
 import { AiModule } from '../ai/ai.module';
 import { S3Service } from '../global/s3/s3.service';
 
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([DiaryEntity, DiaryImageEntity]),

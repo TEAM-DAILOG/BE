@@ -68,5 +68,4 @@ export class ScheduleEntity extends BaseModel {
     default: false,
   })
   isCompleted: boolean;
-
 }
