@@ -15,7 +15,7 @@ DAILOG의 백엔드 레포지토리입니다.
 
 ## Team
 
-|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/4424180b-f020-4673-9b1d-d65f4f8e07f0" />| <img width="135" height="135" alt="image" src="https://github.com/user-attachments/assets/243661be-0fed-4e8e-95a0-98f423ac503e" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/5bba97dc-2693-4c43-8b5a-60326478c719" />| <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/1feaf120-24b0-4601-afca-23ba0524e027" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/6ebe1ccb-cc6a-49c5-8bc9-9678b9214eaa" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/2e4fae85-91dc-4a69-871f-293bec89e40f" />|
+|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/4424180b-f020-4673-9b1d-d65f4f8e07f0" />| <img width="135" height="135" alt="image" src="https://github.com/user-attachments/assets/243661be-0fed-4e8e-95a0-98f423ac503e" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/5bba97dc-2693-4c43-8b5a-60326478c719" />| <img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/1feaf120-24b0-4601-afca-23ba0524e027" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/9ac509bd-7f34-4bb2-b1c8-92e3194ebf14" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/2e4fae85-91dc-4a69-871f-293bec89e40f" />|
 |:-:|:-:|:-:|:-:|:-:|:-:|
 | [우변/양우영](https://github.com/yangwooyoung123) | [신/성태경](https://github.com/sungtaegyeong) | [볼리/김건우](https://github.com/kimkimgungunwoo) | [셔니/박시현](https://github.com/hyuneey2) | [망곰/최승연](https://github.com/seungyeon-choi04) | [린/소예린](https://github.com/soyerin0407) |
 | **Back-End (팀장)** | **Back-End** | **Back-End** | **Back-End** | **Back-End** | **Back-End** |
@@ -110,7 +110,9 @@ BE
 │   │   ├── schedule.controller.ts
 │   │   ├── schedule.dto.ts
 │   │   ├── schedule.module.ts
-│   │   └── schedule.service.ts
+│   │   ├── schedule.service.spec.ts
+│   │   ├── schedule.service.ts
+│   │   └── schedule.swagger.ts
 │   ├── stats/                  # 통계 기능
 │   │   ├── stats.controller.ts
 │   │   ├── stats.dto.ts
