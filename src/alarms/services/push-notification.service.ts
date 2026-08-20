@@ -20,7 +20,7 @@ export class PushNotificationService {
       });
       return true;
     } catch (error) {
-      this.logger.error(`일기 작성 알림 전송 실패 - token: ${fcmToken}`, error);
+      this.logger.error(`일기 작성 알림 전송 실패 - token: ${fcmToken} | code: ${(error as any).code} | message: ${(error as any).message}`);
       return false;
     }
   }
@@ -36,7 +36,7 @@ export class PushNotificationService {
       });
       return true;
     } catch (error) {
-      this.logger.error(`일기 답장 알림 전송 실패 - token: ${fcmToken}`, error);
+      this.logger.error(`일기 답장 알림 전송 실패 - token: ${fcmToken} | code: ${(error as any).code} | message: ${(error as any).message}`);
       return false;
     }
   }
