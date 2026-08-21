@@ -12,6 +12,7 @@ import { RecommendService } from './services/ai-recommend.service';
 import { GeminiService } from './services/ai-gemini.service';
 import { DiariesModule } from '../diaries/diary.module';
 import { CategoryModule } from '../categories/category.module';
+import { AlarmsModule } from '../alarms/alarms.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { CategoryModule } from '../categories/category.module';
     ]),
     forwardRef(() => DiariesModule),
     CategoryModule,
+    AlarmsModule,
   ],
   controllers: [AiController],
   providers: [QuestionService, AnswerService, RecommendService, GeminiService],

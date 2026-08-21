@@ -7,15 +7,16 @@ import { AIanswercreateResponseDTO, AIAnswerDTO } from '../dto/ai-answer.dto';
 import { GeminiService } from './ai-gemini.service';
 import { DiaryService } from '../../diaries/diary.service';
 import { NotFoundException } from '../../global/error/custom.exception';
+import { AlarmNotificationService } from '@/src/alarms/services/alarm-notification.service';
 
 @Injectable()
 export class AnswerService {
   constructor(
     @InjectRepository(AnswerEntity)
     private readonly answerRepository: Repository<AnswerEntity>,
-
     private readonly geminiService: GeminiService,
     private readonly diaryService: DiaryService,
+    private readonly alarmNotificationService: AlarmNotificationService,
   ) {}
 
   // TODO: 테스트 단계라 매번 덮어쓰기 중 — 정식 오픈 전엔 이미 답변이 있으면 그대로 반환하는 정책으로 변경 검토
@@ -32,7 +33,7 @@ export class AnswerService {
         ? { ...existing, answer: content, diary }
         : this.answerRepository.create({ answer: content, diary }),
     );
-
+    await this.alarmNotificationService.notifyDiaryReply(diary.userId);
     return new AIanswercreateResponseDTO(answer);
   }
 
