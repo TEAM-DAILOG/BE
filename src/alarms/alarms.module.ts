@@ -28,6 +28,12 @@ import { DiaryEntity } from '../diaries/entities/diary.entity';
     AlarmNotificationService,
     firebaseAdminProvider,
   ],
-  exports: [TypeOrmModule, AlarmService],
+  exports: [
+    TypeOrmModule,
+    AlarmService,
+    AlarmNotificationService,
+    PushNotificationService,
+    firebaseAdminProvider,
+  ],
 })
 export class AlarmsModule {}
